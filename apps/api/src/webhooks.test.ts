@@ -434,7 +434,7 @@ describe("POST /webhooks/github (M3 T3.2)", () => {
     const { app: appF, queue: queueF, state: stF } = await buildGithubApp(seed);
     const body = prBody();
     const raw = JSON.stringify(body);
-    const res = await app.inject({
+    const res = await appF.inject({
       method: "POST",
       url: "/webhooks/github",
       headers: { ...prHeaders(body, { "x-hub-delivery": "delivery-1" }), "x-hub-signature-256": sign(raw, "an-attacker-secret") },
