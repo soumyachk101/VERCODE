@@ -236,6 +236,14 @@ export async function runReviewJob(
   const month = new Date().toISOString().slice(0, 7); // YYYY-MM
   const quota = await checkQuotaPlan(db, payload.orgId, org.plan, month);
   if (quota.over) {
+    // A skip is a log record, not a an absence (a the NFR-18 "never
+    // silent" rule, OBSERVABILITY.md §1 "a skip is a log record, not a an
+    // absence"): a the structured record with a the skip_reason.
+    log.warn("quota.gate", "The quota gate skipped the review", {
+      skip_reason: "quota_exceeded",
+      detail: quota.detail,
+    });
+    traceCtx.end("SKIPPED");
     return finishSkipped(deps, payload, "quota_exceeded", month, {
       summaryBody: `Review skipped — org quota reached for ${month} (${quota.detail}). Upgrade or reduce review volume.`,
     });
@@ -255,6 +263,13 @@ export async function runReviewJob(
     },
   });
   if (existing && (existing.status === "SUCCEEDED" || existing.status === "PARTIAL")) {
+    // A the skip-with-notice (a the NFR-18 "never silent" rule): a skip is
+    // a log record, not a an absence.
+    log.warn("job.skip", "The same-SHA gate skipped the review", {
+      skip_reason: "same_sha",
+      commitSha: payload.commitSha,
+    });
+    traceCtx.end("SKIPPED");
     return {
       status: "SKIPPED",
       skipReason: "same_sha",
@@ -266,18 +281,51 @@ export async function runReviewJob(
     };
   }
 
-  // [fetch the diff + parse it]
+  // [fetch the diff + parse it] — a the diff.fetch stage (a the worker's
+  // first stage after a the durable-state load + a the quota gate; a the
+  // api's webhook.ingest span is the trace's first, a this is the sibling,
+  // OBSERVABILITY.md §2 "the webhook→worker hand-off is one trace, not two
+  // disconnected ones").
+  const diffSpan = startSpan("diff.fetch");
   const pr = await fetchDiff(deps, payload);
   const changeSet = parseUnifiedDiff(pr.diff);
+  endSpan(diffSpan, "succeeded", { files: changeSet.files.length, commitSha: payload.commitSha });
+  log.info("diff.fetch", "Fetched the PR diff", {
+    files: changeSet.files.length,
+    commitSha: payload.commitSha,
+  });
 
-  // [deterministic static analysis] — the authoritative, floor-exempt pass.
+  // [deterministic static analysis] — a the authoritative, floor-exempt pass.
+  const staticSpan = startSpan("static.analyze");
   const staticResult = runStaticAnalysis(staticFileMap(changeSet, pr));
   const staticFindings = staticResult.findings;
+  endSpan(staticSpan, "succeeded", { findings: staticFindings.length });
+  log.info("static.analyze", "Ran the static analysis", { findings: staticFindings.length });
 
-  // [AI review] — the deep + security passes (a bounded retry + one
-  // fallback; a provider failure → partial, the deterministic findings
+  // [AI review] — a the deep + security passes (a bounded retry + a one
+  // fallback; a provider failure → partial, a the deterministic findings
   // still publish, ADR-005).
+  const aiSpan = startSpan("ai.review");
   const ai = await runAiStage(deps, changeSet);
+  endSpan(aiSpan, ai.ok ? "succeeded" : "degraded", {
+    model: ai.model,
+    inputTokens: ai.inputTokens,
+    outputTokens: ai.outputTokens,
+    estUsd: ai.estUsdCost,
+    promptVersion: deps.promptVersion,
+  });
+  log[ai.ok ? "info" : "warn"](
+    "ai.review",
+    ai.ok ? "Ran the AI stage" : "The AI stage degraded",
+    {
+      model: ai.model,
+      inputTokens: ai.inputTokens,
+      outputTokens: ai.outputTokens,
+      estUsd: ai.estUsdCost,
+      promptVersion: deps.promptVersion,
+      ok: ai.ok,
+    }
+  );
 
   // [merge]
   const merged: CanonicalFinding[] = [
@@ -287,9 +335,20 @@ export async function runReviewJob(
       : []),
   ];
 
-  // [validate] — the line-exists via resolveAnchor + the enums + the
-  // schema (invariants 1 + FR-306).
+  // [validate] — a the line-exists via resolveAnchor + a the enums + a the
+  // schema (invariants 1 + FR-306). A the findings.validate stage.
+  const validateSpan = startSpan("findings.validate");
   const { valid, dropped } = validateFindings(merged, changeSet);
+  endSpan(validateSpan, "succeeded", {
+    valid: valid.length,
+    droppedInvalid: dropped.invalid,
+    droppedAnchor: dropped.invalidAnchor,
+  });
+  log.info("findings.validate", "Validated the findings", {
+    valid: valid.length,
+    droppedInvalid: dropped.invalid,
+    droppedAnchor: dropped.invalidAnchor,
+  });
 
   // [dedup + policy]
   const { deduped, droppedDeduped } = dedupFindings(valid);
@@ -365,15 +424,10 @@ export async function runReviewJob(
       },
     });
   });
-  endSpan(persistSpan, "succeeded", { findings: published.length });
-  log.info("findings.persist", "Persisted the findings + a the usage event", {
-    findings: published.length,
-  });
 
-  // [publish to GitHub] — a AFTER a the commit. A failed publish does NOT
-  // roll back a the findings (ERROR_HANDLING §6); a the published review
-  // id is a the stored on a the job (a a retry no-ops, NFR-13).
-  const githubPublishSpan = startSpan("github.publish");
+  // [publish to GitHub] — AFTER the commit. A failed publish does NOT roll
+  // back the findings (ERROR_HANDLING §6); the published review id is stored
+  // on the job (a retry no-ops, NFR-13).
   const inlineComments = buildInlineComments(published);
   const publishResult = await publishGithub(deps, payload, {
     summary: summaryBody,
@@ -393,48 +447,7 @@ export async function runReviewJob(
       data: { publishedGithubReviewId: publishResult.publishedGithubReviewId },
     });
   }
-  endSpan(githubPublishSpan, publishResult.error ? "degraded" : "succeeded", {
-    publishedGithubReviewId: publishResult.publishedGithubReviewId ?? null,
-    error: publishResult.error ?? null,
-    inlineComments: inlineComments.length,
-  });
-  log[!publishResult.error ? "info" : "warn"](
-    "github.publish",
-    publishResult.error ? "The GitHub publish failed" : "Published the review to GitHub",
-    {
-      publishedGithubReviewId: publishResult.publishedGithubReviewId ?? null,
-      error: publishResult.error ?? null,
-      inlineComments: inlineComments.length,
-    }
-  );
-
-  // [usage.record] — a the accounting (a the usage event is already
-  // persisted in a the PERSIST transaction; a this stage is a the
-  // observability record, not a separate write).
-  const usageSpan = startSpan("usage.record");
   const usage = aiUsage(ai, deps.promptVersion);
-  endSpan(usageSpan, "succeeded", {
-    inputTokens: usage.inputTokens,
-    outputTokens: usage.outputTokens,
-    estUsd: usage.estUsdCost,
-    model: usage.model,
-  });
-  log.info("usage.record", "Recorded the usage event", {
-    inputTokens: usage.inputTokens,
-    outputTokens: usage.outputTokens,
-    estUsd: usage.estUsdCost,
-    model: usage.model,
-  });
-
-  // [terminal] — a the trace's end (a the outcome is a the job status; a the
-  // span carries a the outcome, OBSERVABILITY §2 "a the spans carry a the
-  // outcome" rule).
-  traceCtx.end(jobStatus);
-  log.info("job.complete", "The review job completed", {
-    status: jobStatus,
-    findings: published.length,
-  });
-
   return {
     status: jobStatus,
     findings: published,
