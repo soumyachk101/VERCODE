@@ -107,7 +107,7 @@ export function githubWebhookRoutes(
   app.addContentTypeParser(
     "application/json",
     { parseAs: "buffer" },
-    (_req: FastifyRequest, payload: Buffer, done: (err: unknown, value: unknown) => void) => {
+    (_req: FastifyRequest, payload: Buffer, done: (err: Error | null, value: unknown) => void) => {
       const raw = payload.toString("utf8");
       (_req as unknown as { rawBody?: string }).rawBody = raw;
       try {

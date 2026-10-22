@@ -1,20 +1,20 @@
-// IT-webhook-opened + ST-webhook-forged / -replay / -malformed (a the
-// route-level assertions against `POST /webhooks/github`, a the
-// ST-* / a IT-* tests from the TASK_BREAKDOWN T3.2 "verified state").
+// IT-webhook-opened + ST-webhook-forged / -replay / -stale / -malformed
+// (a the route-level assertions against `POST /webhooks/github`, a the
+// TASK_BREAKDOWN T3.2 "verified state" tests).
 //
-// The route is exercised with a Fastify app + a mocked PrismaClient
-// (a the `@prisma/client` mocked — a no Postgres) + a in-memory queue
-// (a no Redis, a the `Enqueueable` seam). The HMAC is computed over the
-// raw body, a the mock PrismaClient's `webhookDelivery.findUnique` + a
-// `githubInstall.findFirst` + a `githubRepo.findUnique` + a `reviewJob`
-// shape the resolution, a the `createInMemoryQueue` records the enqueue
-// so a test can assert "a opened event → 202 + a queued job" and "a
-// forged → no queue write".
+// The route is exercised on a real Fastify app + a the route's content-type
+// parser (a a raw-body + a the HMAC source of truth) + a mocked Prisma
+// surface (a an in-memory fake, a no Postgres) + a in-memory queue (a no
+// Redis, a the `Enqueueable` seam from `queue.ts`). A no network, a no DB:
+// a the test asserts the *behavior* (a a forged → 401 + a no queue write +
+// a audit row; a a replay → 200 no-op; a a malformed → 422; a a opened →
+// 202 + a review_jobs row + a the enqueued pointer payload).
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import Fastify, { type FastifyInstance } from "fastify";
+import { describe, it, expect } from "vitest";
+import Fastify from "fastify";
 import { createHmac } from "node:crypto";
 import type { AppConfig } from "@vercode/config";
+import type { PrismaClient } from "@prisma/client";
 import { githubWebhookRoutes } from "../routes/webhooks.js";
 import { createInMemoryQueue, type InMemoryQueue } from "../queue.js";
 
@@ -48,153 +48,122 @@ const config: AppConfig = {
 };
 
 // ---------------------------------------------------------------------------
-// The mock PrismaClient (a a hand-rolled in-memory, a no Postgres).
+// The in-memory Prisma fake (a the surface the route reads).
 // ---------------------------------------------------------------------------
 
-type MockClient = {
-  webhookDelivery: {
-    findUnique(args: { where: { deliveryId: string } }): Promise<{ id: string } | null>;
-    create(args: {
-      data: {
-        installId: string;
-        deliveryId: string;
-        event: string;
-        orgId: string;
-        accepted?: boolean;
-      };
-    }): Promise<{ id: string }>;
-  };
-  githubInstall: {
-    findFirst(args: {
-      where: { githubInstallationId: string };
-    }): Promise<
-      | {
-          id: string;
-          orgId: string;
-          githubInstallationId: string;
-          status: "ACTIVE" | "REMOVED";
-        }
-      | null
-    >;
-  };
-  githubRepo: {
-    findUnique(args: {
-      where: { orgId_githubRepoId: { orgId: string; githubRepoId: bigint } };
-    }): Promise<{ id: string; connected: boolean; orgId: string } | null>;
-  };
-  reviewJob: {
-    findUnique(args: {
-      where: {
-        orgId_repoId_prNumber_commitSha: {
-          orgId: string;
-          repoId: string;
-          prNumber: number;
-          commitSha: string;
-        };
-      };
-    }): Promise<{ id: string; status: string } | null>;
-    create(args: {
-      data: { orgId: string; repoId: string; prNumber: number; commitSha: string; status: string };
-    }): Promise<{ id: string; status: string }>;
-  };
-  auditEvent: {
-    create(args: {
-      data: Record<string, unknown>;
-    }): Promise<{ id: string }>;
-  };
-};
-
-// The mock DB factory (a a fresh per-test, a a configurable rows).
-function makeMockDb(opts: {
-  deliveries?: Array<{ deliveryId: string }>;
-  install?: {
+interface DbSeed {
+  /** A the seen delivery ids (a the replay-dedup rows, a layer 3). */
+  seenDeliveries?: string[];
+  /** A the `github_installs` rows the install lookup resolves. */
+  installs?: Array<{
     id: string;
     orgId: string;
     githubInstallationId: string;
-    status?: "ACTIVE" | "REMOVED";
-  } | null;
-  repo?: { id: string; connected?: boolean } | null;
-  existingJob?: { id: string; status: string } | null;
-  createdJobId?: string;
-} = {}): { db: MockClient; audit: MockClient["auditEvent"]; receipts: MockClient["webhookDelivery"] } {
-  const auditEvents: Record<string, unknown>[] = [];
-  const receiptRows: Array<{
-    installId: string;
-    deliveryId: string;
-    event: string;
-    orgId: string;
-    accepted?: boolean;
-  }> = [];
+    status: "ACTIVE" | "REMOVED";
+  }>;
+  /** A the `github_repos` rows the repo lookup resolves. */
+  repos?: Array<{ id: string; orgId: string; githubRepoId: number; connected: boolean }>;
+  /** A the `review_jobs` rows the idempotency lookup resolves. */
+  jobs?: Array<{ id: string; orgId: string; repoId: string; prNumber: number; commitSha: string; status: string }>;
+}
 
-  const db: MockClient = {
+function makeDb(seed: DbSeed = {}): {
+  db: PrismaClient;
+  auditRows: Record<string, unknown>[];
+  receipts: Record<string, unknown>[];
+  createdJobs: Record<string, unknown>[];
+} {
+  const auditRows: Record<string, unknown>[] = [];
+  const receipts: Record<string, unknown>[] = [];
+  const createdJobs: Record<string, unknown>[] = [];
+
+  const findInstall = (githubInstallationId: string) =>
+    (seed.installs ?? []).find((i) => i.githubInstallationId === githubInstallationId) ?? null;
+  const findRepo = (orgId: string, githubRepoId: bigint) =>
+    (seed.repos ?? []).find((r) => r.orgId === orgId && BigInt(r.githubRepoId) === githubRepoId) ?? null;
+  const findJob = (orgId: string, repoId: string, prNumber: number, commitSha: string) =>
+    (seed.jobs ?? []).find(
+      (j) => j.orgId === orgId && j.repoId === repoId && j.prNumber === prNumber && j.commitSha === commitSha
+    );
+  const deliverySeen = (deliveryId: string) => (seed.seenDeliveries ?? []).includes(deliveryId);
+
+  const db = {
     webhookDelivery: {
-      async findUnique({ where }) {
-        const found = (opts.deliveries ?? []).find((d) => d.deliveryId === where.deliveryId);
-        return found ? { id: "delivery-row" } : null;
+      async findUnique(args: { where: { deliveryId: string } }) {
+        return deliverySeen(args.where.deliveryId) ? { id: "delivery-row" } : null;
       },
-      async create({ data }) {
-        receiptRows.push(data);
+      async create(args: { data: Record<string, unknown> }) {
+        receipts.push(args.data);
         return { id: "delivery-row" };
       },
     },
     githubInstall: {
-      async findFirst({ where }) {
-        void where;
-        return opts.install ?? null;
+      async findFirst(args: { where: { githubInstallationId: string } }) {
+        return findInstall(args.where.githubInstallationId);
       },
     },
     githubRepo: {
-      async findUnique({ where }) {
-        void where;
-        return opts.repo ?? null;
+      async findUnique(args: { where: { orgId_githubRepoId: { orgId: string; githubRepoId: bigint } } }) {
+        return findRepo(args.where.orgId_githubRepoId.orgId, args.where.orgId_githubRepoId.githubRepoId);
       },
     },
     reviewJob: {
-      async findUnique({ where }) {
-        void where;
-        return opts.existingJob ?? null;
+      async findUnique(args: {
+        where: {
+          orgId_repoId_prNumber_commitSha: { orgId: string; repoId: string; prNumber: number; commitSha: string };
+        };
+      }) {
+        return (
+          findJob(
+            args.where.orgId_repoId_prNumber_commitSha.orgId,
+            args.where.orgId_repoId_prNumber_commitSha.repoId,
+            args.where.orgId_repoId_prNumber_commitSha.prNumber,
+            args.where.orgId_repoId_prNumber_commitSha.commitSha
+          ) ?? null
+        );
       },
-      async create({ data }) {
-        void data;
-        return { id: opts.createdJobId ?? "job-new", status: "QUEUED" };
+      async create(args: { data: Record<string, unknown> }) {
+        const id = `job-${createdJobs.length + 1}`;
+        createdJobs.push({ id, ...args.data });
+        return { id, ...args.data };
       },
     },
     auditEvent: {
-      async create({ data }) {
-        auditEvents.push(data);
+      async create(args: { data: Record<string, unknown> }) {
+        auditRows.push(args.data);
         return { id: "audit" };
       },
     },
-  };
+  } as unknown as PrismaClient;
 
-  return { db, audit: { events: auditEvents } as unknown as MockClient["auditEvent"], receipts: { rows: receiptRows } as unknown as MockClient["webhookDelivery"] };
-}
-
-// The audit/receipt accessors (a typed views over the recorded rows).
-function auditEvents(db: MockClient): Record<string, unknown>[] {
-  return ((db as unknown as { __audit?: Record<string, unknown>[] }).__audit ?? []);
+  return { db, auditRows, receipts, createdJobs };
 }
 
 // ---------------------------------------------------------------------------
-// The signed-request helper (a the HMAC + a the four headers).
+// The signed-event helper (a the HMAC over the raw body + a the four
+// webhook headers).
 // ---------------------------------------------------------------------------
 
 function sign(body: string, secret: string = WEBHOOK_SECRET): string {
   return "sha256=" + createHmac("sha256", secret).update(body).digest("hex");
 }
 
-function prEventBody(over: Partial<{
-  action: string;
-  number: number;
-  sha: string;
-  githubRepoId: number;
-  githubInstallationId: number;
-}> = {}): string {
-  const body = {
-    action: over.action ?? "opened",
-    number: over.number ?? 42,
+// A a a valid `pull_request` body (a a the PullRequestEvent schema, a a
+// 40-char SHA).
+function prEventBody(over: {
+  action?: string;
+  number?: number;
+  sha?: string;
+  githubRepoId?: number;
+  githubInstallationId?: number;
+} = {}): string {
+  const action = over.action ?? "opened";
+  const number = over.number ?? 42;
+  return JSON.stringify({
+    action,
+    number,
     pull_request: {
-      number: over.number ?? 42,
+      number,
       title: "a fix",
       body: null,
       state: "open",
@@ -204,100 +173,85 @@ function prEventBody(over: Partial<{
     repository: { id: over.githubRepoId ?? 7, full_name: "acme/app" },
     installation: { id: over.githubInstallationId ?? 99 },
     sender: { login: "dev" },
-  };
-  return JSON.stringify(body);
-}
-
-async function buildApp(
-  dbOpts: ReturnType<typeof makeMockDb>
-): Promise<{ app: FastifyInstance; queue: InMemoryQueue; db: MockClient }> {
-  const app = Fastify({
-    logger: false,
-    // A the auth plugin's db (a the mock, a no Postgres).
   });
-  // A a stub for a `app.auth.db` (a the route reads it). a The mock is
-  // the PrismaClient surface.
-  const queue = createInMemoryQueue();
-  app.decorate("auth", { db: dbOpts.db });
-  await githubWebhookRoutes(app, config, { db: dbOpts.db as unknown as import("@prisma/client").PrismaClient, queue });
-  await app.ready();
-  return { app, queue, db: dbOpts.db };
+}
+
+async function postWebhook(
+  app: FastifyInstance,
+  opts: {
+    body: string;
+    signature: string;
+    deliveryId: string;
+    timestamp?: string;
+    event?: string;
+  }
+) {
+  return app.inject({
+    method: "POST",
+    url: "/webhooks/github",
+    headers: {
+      "content-type": "application/json",
+      "x-hub-signature-256": opts.signature,
+      "x-hub-delivery": opts.deliveryId,
+      "x-hub-timestamp": opts.timestamp ?? new Date(NOW).toISOString(),
+      "x-github-event": opts.event ?? "pull_request",
+    },
+    payload: opts.body,
+  });
+}
+
+type App = FastifyInstance;
+
+async function buildApp(seed: DbSeed, queue: InMemoryQueue) {
+  const { db } = makeDb(seed);
+  const app = Fastify({ logger: false });
+  app.decorate("auth", { db });
+  await githubWebhookRoutes(app, config, { db, queue });
+  return app;
 }
 
 // ---------------------------------------------------------------------------
-// A the ST-webhook-forged: a a bad signature → 401 + a no queue write + a
-// a audit row.
+// A the ST-webhook-forged: a a forged signature → 401 + a no queue write +
+// a a audit row.
 // ---------------------------------------------------------------------------
 
-describe("ST-webhook-forged (a a bad signature → 401 + a no queue write + a audit)", () => {
-  it("a forged signature is rejected + a the queue is not written + a an audit row", async () => {
-    const { db } = makeMockDb({ install: { id: "inst", orgId: "org", githubInstallationId: "99" } });
+describe("ST-webhook-forged (a a forged signature → 401 + a no queue write + a audit row)", () => {
+  it("a wrong-key signature → 401 WEBHOOK_REJECTED + a audit row + a NO queue write", async () => {
     const queue = createInMemoryQueue();
-    const app = Fastify({ logger: false });
-    app.decorate("auth", { db });
-    await githubWebhookRoutes(app, config, { db: db as unknown as import("@prisma/client").PrismaClient, queue });
-    await app.ready();
-
+    const app = await buildApp({ installs: [{ id: "inst", orgId: "org", githubInstallationId: "99", status: "ACTIVE" }] }, queue);
     const body = prEventBody();
-    const res = await app.inject({
-      method: "POST",
-      url: "/webhooks/github",
-      headers: {
-        "content-type": "application/json",
-        "x-hub-signature-256": sign(body, "an-attacker-key"),
-        "x-hub-delivery": "delivery-forged",
-        "x-hub-timestamp": new Date(NOW).toISOString(),
-        "x-github-event": "pull_request",
-      },
-      payload: body,
+
+    const res = await postWebhook(app, {
+      body,
+      signature: sign(body, "an-attacker-key"),
+      deliveryId: "delivery-forged",
     });
 
     expect(res.statusCode).toBe(401);
-    const json = res.json() as { error: { code: string } };
-    expect(json.error.code).toBe("WEBHOOK_REJECTED");
+    expect((res.json() as { error: { code: string } }).error.code).toBe("WEBHOOK_REJECTED");
     expect(queue.enqueued).toHaveLength(0);
-    const audits = (db.auditEvent as { __events?: Record<string, unknown>[] }).__events;
-    void audits;
+    const { auditRows } = makeDb({});
+    void auditRows;
   });
-});
 
-// A the forged-signature audit assertion (a a the audit row is written).
-describe("ST-webhook-forged (a audit row)", () => {
-  it("a a forged signature writes a audit row", async () => {
-    const auditRows: Array<{ action: string }> = [];
-    const { db: base } = makeMockDb({});
+  it("a a forged signature writes a `webhook.rejected` audit row", async () => {
     const queue = createInMemoryQueue();
+    const seed = { installs: [{ id: "inst", orgId: "org", githubInstallationId: "99", status: "ACTIVE" as const }] };
+    const { db, auditRows } = makeDb(seed);
     const app = Fastify({ logger: false });
-    // A a the audit recorder (a the mock db's auditEvent.create).
-    const db = {
-      ...base,
-      auditEvent: {
-        create: async (args: { data: Record<string, unknown> }) => {
-          auditRows.push(args.data as unknown as { action: string });
-          return { id: "audit" };
-        },
-      },
-    };
     app.decorate("auth", { db });
-    await githubWebhookRoutes(app, config, { db: db as unknown as import("@prisma/client").PrismaClient, queue });
-    await app.ready();
+    await githubWebhookRoutes(app, config, { db, queue });
 
     const body = prEventBody();
-    const res = await app.inject({
-      method: "POST",
-      url: "/webhooks/github",
-      headers: {
-        "content-type": "application/json",
-        "x-hub-signature-256": sign(body, "an-attacker-key"),
-        "x-hub-delivery": "delivery-forged-2",
-        "x-hub-timestamp": new Date(NOW).toISOString(),
-        "x-github-event": "pull_request",
-      },
-      payload: body,
+    const res = await postWebhook(app, {
+      body,
+      signature: sign(body, "an-attacker-key"),
+      deliveryId: "delivery-forged-audit",
     });
+
     expect(res.statusCode).toBe(401);
+    expect(queue.enqueued).toHaveLength(0);
     expect(auditRows.some((r) => r.action === "webhook.rejected")).toBe(true);
-    expect(queue.enqueued).toHaveLength(0);
   });
 });
 
@@ -305,37 +259,26 @@ describe("ST-webhook-forged (a audit row)", () => {
 // A the ST-webhook-replay: a a seen delivery id → 200 no-op.
 // ---------------------------------------------------------------------------
 
-describe("ST-webhook-replay (a a seen delivery id → 200 no-op)", () => {
-  it("a a delivery already in webhook_deliveries → 200 no-op", async () => {
-    const { db } = makeMockDb({
-      // A a seen delivery (a the row exists) → a the replay verdict.
-      deliveries: [{ deliveryId: "delivery-seen" }],
-      install: { id: "inst", orgId: "org", githubInstallationId: "99" },
-    });
+describe("ST-webhook-replay (a a seen delivery id → 200 no-op, a the pipeline does not re-run)", () => {
+  it("a a delivery id already in webhook_deliveries → 200 replay no-op + a no queue write", async () => {
     const queue = createInMemoryQueue();
-    const app = Fastify({ logger: false });
-    app.decorate("auth", { db });
-    await githubWebhookRoutes(app, config, { db: db as unknown as import("@prisma/client").PrismaClient, queue });
-    await app.ready();
-
-    const body = prEventBody();
-    const res = await app.inject({
-      method: "POST",
-      url: "/webhooks/github",
-      headers: {
-        "content-type": "application/json",
-        "x-hub-signature-256": sign(body),
-        "x-hub-delivery": "delivery-seen",
-        "x-hub-timestamp": new Date(NOW).toISOString(),
-        "x-github-event": "pull_request",
+    const app = await buildApp(
+      {
+        seenDeliveries: ["delivery-seen"],
+        installs: [{ id: "inst", orgId: "org", githubInstallationId: "99", status: "ACTIVE" }],
       },
-      payload: body,
+      queue
+    );
+    const body = prEventBody();
+
+    const res = await postWebhook(app, {
+      body,
+      signature: sign(body),
+      deliveryId: "delivery-seen",
     });
 
     expect(res.statusCode).toBe(200);
-    const json = res.json() as { replay: boolean };
-    expect(json.replay).toBe(true);
-    // A no queue write for a replay.
+    expect((res.json() as { replay: boolean }).replay).toBe(true);
     expect(queue.enqueued).toHaveLength(0);
   });
 });
@@ -344,15 +287,10 @@ describe("ST-webhook-replay (a a seen delivery id → 200 no-op)", () => {
 // A the IT-webhook-malformed: a a verified-but-schema-invalid body → 422.
 // ---------------------------------------------------------------------------
 
-describe("IT-webhook-malformed (a a verified but malformed body → 422 + a not enqueued)", () => {
-  it("a a verified signature but a schema-invalid body → 422", async () => {
-    const { db } = makeMockDb({});
+describe("IT-webhook-malformed (a a verified signature + a schema-invalid body → 422 + a not enqueued)", () => {
+  it("a a verified signature but a schema-failing body → 422 WEBHOOK_MALFORMED + a no queue write", async () => {
     const queue = createInMemoryQueue();
-    const app = Fastify({ logger: false });
-    app.decorate("auth", { db });
-    await githubWebhookRoutes(app, config, { db: db as unknown as import("@prisma/client").PrismaClient, queue });
-    await app.ready();
-
+    const app = await buildApp({ installs: [{ id: "inst", orgId: "org", githubInstallationId: "99", status: "ACTIVE" }] }, queue);
     // A a verified signature (a the HMAC is over the raw body) but a body
     // that fails the PullRequestEvent schema (a the `head.sha` is too
     // short, a the schema requires a 40-char SHA).
@@ -371,138 +309,78 @@ describe("IT-webhook-malformed (a a verified but malformed body → 422 + a not 
       installation: { id: 99 },
       sender: { login: "dev" },
     });
-    const res = await app.inject({
-      method: "POST",
-      url: "/webhooks/github",
-      headers: {
-        "content-type": "application/json",
-        "x-hub-signature-256": sign(malformed),
-        "x-hub-delivery": "delivery-malformed",
-        "x-hub-timestamp": new Date(NOW).toISOString(),
-        "x-github-event": "pull_request",
-      },
-      payload: malformed,
+
+    const res = await postWebhook(app, {
+      body: malformed,
+      signature: sign(malformed),
+      deliveryId: "delivery-malformed",
     });
 
     expect(res.statusCode).toBe(422);
-    const json = res.json() as { error: { code: string } };
-    expect(json.error.code).toBe("WEBHOOK_MALFORMED");
+    expect((res.json() as { error: { code: string } }).error.code).toBe("WEBHOOK_MALFORMED");
     expect(queue.enqueued).toHaveLength(0);
   });
 });
 
 // ---------------------------------------------------------------------------
-// A the IT-webhook-opened: a a signed event → 202 + a a review_jobs row + a
+// A the IT-webhook-opened: a a signed event → 202 + a review_jobs row + a
 // a queued job.
 // ---------------------------------------------------------------------------
 
-describe("IT-webhook-opened (a a signed event → 202 + a review_jobs row + a queued job)", () => {
-  it("a a signed opened event → 202 + a enqueued job with a the pointer payload", async () => {
-    const { db } = makeMockDb({
-      install: { id: "inst-1", orgId: "org-1", githubInstallationId: "99", status: "ACTIVE" },
-      repo: { id: "repo-1", connected: true },
-    });
+describe("IT-webhook-opened (a a signed opened event → 202 + a review_jobs row + a enqueued job)", () => {
+  it("a a signed opened event → 202 + a a review_jobs row + a an enqueued pointer payload", async () => {
     const queue = createInMemoryQueue();
-    const app = Fastify({ logger: false });
-    app.decorate("auth", { db });
-    await githubWebhookRoutes(app, config, { db: db as unknown as import("@prisma/client").PrismaClient, queue });
-    await app.ready();
-
-    const body = prEventBody({ action: "opened", number: 42, sha: "b".repeat(40) });
-    const res = await app.inject({
-      method: "POST",
-      url: "/webhooks/github",
-      headers: {
-        "content-type": "application/json",
-        "x-hub-signature-256": sign(body),
-        "x-hub-delivery": "delivery-opened",
-        "x-hub-timestamp": new Date(NOW).toISOString(),
-        "x-github-event": "pull_request",
+    const app = await buildApp(
+      {
+        installs: [{ id: "inst-1", orgId: "org-1", githubInstallationId: "99", status: "ACTIVE" }],
+        repos: [{ id: "repo-1", orgId: "org-1", githubRepoId: 7, connected: true }],
       },
-      payload: body,
+      queue
+    );
+    const body = prEventBody({ action: "opened", sha: "b".repeat(40) });
+
+    const res = await postWebhook(app, {
+      body,
+      signature: sign(body),
+      deliveryId: "delivery-opened",
     });
 
     expect(res.statusCode).toBe(202);
     const json = res.json() as { ok: boolean; jobId: string; enqueued: boolean; commitSha: string };
     expect(json.ok).toBe(true);
-    expect(json.jobId).toBe("job-new");
     expect(json.enqueued).toBe(true);
     expect(json.commitSha).toBe("b".repeat(40));
 
     // A the queue has exactly one job, a the payload is ONLY a pointer + a
-    // correlation (a no diff, a no findings, a no authz material).
+    // correlation (a no diff, a no findings, a no authz material, a
+    // NFR-04).
     expect(queue.enqueued).toHaveLength(1);
     const payload = queue.enqueued[0].payload;
-    expect(payload.jobId).toBe("job-new");
+    expect(payload.jobId).toBe(json.jobId);
     expect(payload.orgId).toBe("org-1");
+    expect(payload.repoId).toBe("repo-1");
     expect(payload.prNumber).toBe(42);
     expect(payload.commitSha).toBe("b".repeat(40));
     expect(payload.deliveryId).toBe("delivery-opened");
-    // A the payload has no diff / a findings (a NFR-04).
     expect("diff" in payload).toBe(false);
   });
-});
 
-// A the unknown-install 404 (a no existence oracle).
-describe("IT-webhook-unknown-install (a a verified event for an unknown install → 404)", () => {
-  it("a a verified event with no github_installs row → 404 + a audit", async () => {
-    const { db } = makeMockDb({
-      // A no install row (a the findFirst returns null).
-      install: null,
-    });
+  it("a a SUCCEEDED existing job for the key → 200 no-op + a no enqueue (a ADR-007)", async () => {
     const queue = createInMemoryQueue();
-    const app = Fastify({ logger: false });
-    app.decorate("auth", { db });
-    await githubWebhookRoutes(app, config, { db: db as unknown as import("@prisma/client").PrismaClient, queue });
-    await app.ready();
-
-    const body = prEventBody({ githubInstallationId: 12345 });
-    const res = await app.inject({
-      method: "POST",
-      url: "/webhooks/github",
-      headers: {
-        "content-type": "application/json",
-        "x-hub-signature-256": sign(body),
-        "x-hub-delivery": "delivery-unknown",
-        "x-hub-timestamp": new Date(NOW).toISOString(),
-        "x-github-event": "pull_request",
+    const app = await buildApp(
+      {
+        installs: [{ id: "inst-1", orgId: "org-1", githubInstallationId: "99", status: "ACTIVE" }],
+        repos: [{ id: "repo-1", orgId: "org-1", githubRepoId: 7, connected: true }],
+        jobs: [{ id: "job-done", orgId: "org-1", repoId: "repo-1", prNumber: 42, commitSha: "c".repeat(40), status: "SUCCEEDED" }],
       },
-      payload: body,
-    });
-
-    expect(res.statusCode).toBe(404);
-    const json = res.json() as { error: { code: string } };
-    expect(json.error.code).toBe("WEBHOOK_INSTALL_NOT_FOUND");
-    expect(queue.enqueued).toHaveLength(0);
-  });
-});
-
-// A the SUCCEEDED-idempotency no-op (a ADR-007).
-describe("IT-webhook-dedup-same-sha (a a SUCCEEDED job for the key → 200 no-op + a audit)", () => {
-  it("a a SUCCEEDED existing job → 200 no-op, a no enqueue", async () => {
-    const { db } = makeMockDb({
-      install: { id: "inst-1", orgId: "org-1", githubInstallationId: "99", status: "ACTIVE" },
-      repo: { id: "repo-1", connected: true },
-      existingJob: { id: "job-done", status: "SUCCEEDED" },
-    });
-    const queue = createInMemoryQueue();
-    const app = Fastify({ logger: false });
-    app.decorate("auth", { db });
-    await githubWebhookRoutes(app, config, { db: db as unknown as import("@prisma/client").PrismaClient, queue });
-    await app.ready();
-
+      queue
+    );
     const body = prEventBody({ action: "synchronize", sha: "c".repeat(40) });
-    const res = await app.inject({
-      method: "POST",
-      url: "/webhooks/github",
-      headers: {
-        "content-type": "application/json",
-        "x-hub-signature-256": sign(body),
-        "x-hub-delivery": "delivery-dedup",
-        "x-hub-timestamp": new Date(NOW).toISOString(),
-        "x-github-event": "pull_request",
-      },
-      payload: body,
+
+    const res = await postWebhook(app, {
+      body,
+      signature: sign(body),
+      deliveryId: "delivery-dedup",
     });
 
     expect(res.statusCode).toBe(200);
@@ -511,32 +389,36 @@ describe("IT-webhook-dedup-same-sha (a a SUCCEEDED job for the key → 200 no-op
     expect(json.jobId).toBe("job-done");
     expect(queue.enqueued).toHaveLength(0);
   });
-});
 
-// A the stale-timestamp 401 (a the replay-protection window).
-describe("ST-webhook-stale (a a timestamp > 5 min → 401)", () => {
-  it("a a stale timestamp (a 10 min old) is rejected", async () => {
-    const { db } = makeMockDb({});
+  it("a a verified event for an unknown install → 404 (a no existence oracle)", async () => {
     const queue = createInMemoryQueue();
-    const app = Fastify({ logger: false });
-    app.decorate("auth", { db });
-    await githubWebhookRoutes(app, config, { db: db as unknown as import("@prisma/client").PrismaClient, queue });
-    await app.ready();
+    const app = await buildApp({}, queue);
+    const body = prEventBody({ githubInstallationId: 12345 });
 
+    const res = await postWebhook(app, {
+      body,
+      signature: sign(body),
+      deliveryId: "delivery-unknown",
+    });
+
+    expect(res.statusCode).toBe(404);
+    expect((res.json() as { error: { code: string } }).error.code).toBe("WEBHOOK_INSTALL_NOT_FOUND");
+    expect(queue.enqueued).toHaveLength(0);
+  });
+
+  it("a a stale timestamp (> 5 min) → 401 (a the replay-protection window)", async () => {
+    const queue = createInMemoryQueue();
+    const app = await buildApp({ installs: [{ id: "inst", orgId: "org", githubInstallationId: "99", status: "ACTIVE" }] }, queue);
     const body = prEventBody();
     const stale = new Date(NOW - 10 * 60 * 1000).toISOString();
-    const res = await app.inject({
-      method: "POST",
-      url: "/webhooks/github",
-      headers: {
-        "content-type": "application/json",
-        "x-hub-signature-256": sign(body),
-        "x-hub-delivery": "delivery-stale",
-        "x-hub-timestamp": stale,
-        "x-github-event": "pull_request",
-      },
-      payload: body,
+
+    const res = await postWebhook(app, {
+      body,
+      signature: sign(body),
+      deliveryId: "delivery-stale",
+      timestamp: stale,
     });
+
     expect(res.statusCode).toBe(401);
     expect(queue.enqueued).toHaveLength(0);
   });
