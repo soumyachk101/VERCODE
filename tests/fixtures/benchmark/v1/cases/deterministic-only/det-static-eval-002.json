@@ -1,0 +1,22 @@
+{
+  "id": "deterministic-only-static-eval-002",
+  "class": "deterministic-only",
+  "language": "typescript",
+  "repo": "fixture-app",
+  "diff": "diff --git a/src/exec/d.ts b/src/exec/d.ts\nindex 7a7a7a7..8b8b8b8 100644\n--- a/src/exec/d.ts\n+++ b/src/exec/d.ts\n@@ -1 +1,4 @@\n export const m = 4;\n+export function run(expr: string) {\n+  return eval(expr);\n+}\n",
+  "headContext": "A the static-analysis `eval-usage` rule already catches this (a the deterministic stage). A the case proves the provider-down path: a the critical deterministic finding is present even when the AI is mocked down (AC-301).",
+  "groundTruth": [
+    {
+      "file": "src/exec/d.ts",
+      "line": 3,
+      "severity": "critical",
+      "category": "security",
+      "kind": "eval-usage",
+      "note": "A the static-analysis `eval-usage` rule fires: `eval()` on a dynamic string. A the deterministic finding publishes even with the AI provider mocked down."
+    }
+  ],
+  "cleanAssertions": [
+    { "file": "src/exec/d.ts", "note": "The `m = 4` line is clean." }
+  ],
+  "expectedVerdict": "high_risk"
+}
