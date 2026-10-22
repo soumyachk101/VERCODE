@@ -4,8 +4,6 @@
 
 **AI-powered code review for GitHub pull requests — evidence-backed findings, deterministic-first pipeline, multi-tenant SaaS.**
 
-[![Build Status](https://img.shields.io/badge/build-passing-green)]()
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript&logoColor=white)]()
 [![Next.js](https://img.shields.io/badge/Next.js-15-black)]()
 [![Fastify](https://img.shields.io/badge/Fastify-5.0-ff6224)]()
 [![Node](https://img.shields.io/badge/Node.js-22+--3C3D41?logo=node.js&logoColor=white)]()
@@ -14,7 +12,6 @@
 [![Docker](https://img.shields.io/badge/Docker-Multi--2496ED?logo=docker&logoColor=white)]()
 [![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI--238636?logo=github&logoColor=white)]()
 [![Docs](https://img.shields.io/badge/docs-full-555555)]()
-[![License: MIT](https://img.shields.io/badge/license-MIT-orange?style=plastic)]()
 
 **A SaaS system that reads a pull request the way a careful senior engineer would, and posts an evidence-backed review — inline findings, a summary verdict, and actionable fixes — into the PR, backed by a first-class dashboard.**
 
@@ -22,7 +19,7 @@
 
 | Overview | PR Review Detail | Security Rollup | Usage + Quota |
 | --- | --- | --- | --- |
-| <!-- placeholder: docs/assets/screenshots/overview-1440.png --> | <!-- placeholder: docs/assets/screenshots/review-detail-1440.png --> | <!-- placeholder: docs/assets/screenshots/security-rollup-1440.png --> | <!-- placeholder: docs/assets/screenshots/usage-1440.png --> |
+| _screenshot placeholder — lands in `docs/assets/screenshots/overview-1440.png`_ | _screenshot placeholder — lands in `docs/assets/screenshots/review-detail-1440.png`_ | _screenshot placeholder — lands in `docs/assets/screenshots/security-rollup-1440.png`_ | _screenshot placeholder — lands in `docs/assets/screenshots/usage-1440.png`_ |
 
 </div>
 

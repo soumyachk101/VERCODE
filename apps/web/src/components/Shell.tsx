@@ -24,10 +24,18 @@ export interface ShellUser {
   email: string;
 }
 
+export interface OrgOption {
+  id: string;
+  name: string;
+  plan?: string;
+}
+
 export function Shell({
   orgName,
   orgPlan,
   onSwitchOrg,
+  orgOptions = [],
+  activeOrgId,
   items,
   active,
   bottomItems = [],
@@ -40,6 +48,9 @@ export function Shell({
   orgName: string;
   orgPlan?: string;
   onSwitchOrg?: (orgId: string) => void;
+  /** the user's other orgs — a switcher shows "switch" only when >1 (IA §2) */
+  orgOptions?: OrgOption[];
+  activeOrgId?: string;
   items: NavItem[];
   active: string;
   bottomItems?: NavItem[];
@@ -82,7 +93,13 @@ export function Shell({
           boxSizing: "border-box",
         }}
       >
-        <SidebarHeader orgName={orgName} orgPlan={orgPlan} onSwitchOrg={onSwitchOrg} />
+        <SidebarHeader
+          orgName={orgName}
+          orgPlan={orgPlan}
+          onSwitchOrg={onSwitchOrg}
+          orgOptions={orgOptions}
+          activeOrgId={activeOrgId}
+        />
         <div style={{ marginTop: 20 }}>
           <GroupLabel>Work</GroupLabel>
           {items.map((it) => (
