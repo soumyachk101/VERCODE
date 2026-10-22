@@ -42,7 +42,6 @@ export function DataBlock({
     return <Skeleton lines={3} />;
   }
   if (result.isError) {
-    // eslint-disable-next-line no-next-line
     return (
       <ErrorState
         block={block}

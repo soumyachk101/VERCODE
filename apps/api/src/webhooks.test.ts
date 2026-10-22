@@ -421,12 +421,9 @@ describe("POST /webhooks/github (M3 T3.2)", () => {
   let app: FastifyInstance;
   let queue: InMemoryQueue;
   let state: Awaited<ReturnType<typeof buildGithubApp>>["state"];
-  let db: PrismaClient;
-  let seed: Record<string, unknown> = {};
 
   beforeEach(async () => {
-    seed = {};
-    ({ app, db, queue, state } = await buildGithubApp(seed));
+    ({ app, queue, state } = await buildGithubApp());
   });
 
   it("ST-webhook-forged: a forged signature → 401 + a no queue write + a audit row", async () => {
@@ -552,8 +549,12 @@ describe("POST /webhooks/github (M3 T3.2)", () => {
     expect(p.commitSha).toBe(PR_SHA);
     // A no secret / no LLM material in the payload.
     expect(Object.keys(p).sort()).toEqual(["commitSha", "jobId", "orgId", "prNumber", "repoId"]);
-    void db;
-    void state;
+
+    // A the receipt row (a the `webhook_deliveries` row, a the replay-dedup
+    // key, a NFR-06 — a written with the real install + a org id).
+    expect(
+      rebuilt.state.deliveries.some((d) => d.deliveryId === "delivery-1")
+    ).toBe(true);
   });
 
   it("a re-push to a SUCCEEDED job's SHA → 200 no-op + a audit (a IT-idempotency-01, a ADR-007)", async () => {
