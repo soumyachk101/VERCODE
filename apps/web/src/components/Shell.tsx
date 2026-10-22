@@ -435,12 +435,10 @@ function initialsOf(name: string): string {
 }
 
 function Header() {
-  // a role="status" aria-live region that announces new findings + quota
-  // changes on this shell (ACCESSIBILITY §3). Pages push a message via the
-  // window-level announcer hook (useAnnounce).
-  return (
-    <div aria-live="polite" role="status" className="sr-only" data-testid="shell-live-region" />
-  );
+  // (the shell's live region is mounted by the OrgShell wrapper — a
+  // role="status" region that announces new findings + quota changes,
+  // ACCESSIBILITY §3; pages push messages via useAnnounce())
+  return null;
 }
 
 /** A mobile top bar + sheet (transform/opacity only; the keyboard-toggle

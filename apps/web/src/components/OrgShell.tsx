@@ -86,6 +86,8 @@ export function OrgShell({ children }: { children: ReactNode }) {
       orgName={s.orgName}
       orgPlan={s.orgPlan}
       onSwitchOrg={s.switchOrg}
+      orgOptions={s.orgs.map((o) => ({ id: o.id, name: o.name, plan: o.plan }))}
+      activeOrgId={s.active?.id}
       items={s.items}
       bottomItems={s.bottom}
       active={s.activeKey}
