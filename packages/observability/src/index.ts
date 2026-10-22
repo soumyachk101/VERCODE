@@ -249,9 +249,15 @@ function nextId(prefix: string, n: number): string {
  * OTLP exporter is a a later seam — a the shape is the OTel's
  * `Tracer.startSpan` / `span.end()` API).
  */
-export function tracer(): Tracer {
+export function tracer(otelEndpoint?: string): Tracer {
   const traces: Trace[] = [];
   let traceCounter = 0;
+  // The exporter (a the no-op if no OTLP endpoint — a the in-memory spans
+  // array is the queryable surface; a the OTLP send is a later seam, a the
+  // "a no OTLP endpoint → no-op exporter" rule, OBSERVABILITY.md §2).
+  const exportSpan = (span: Span): void => {
+    if (otelEndpoint) void otelEndpoint; // a the real OTLP send is a later seam
+  };
 
   return {
     traces,
@@ -288,6 +294,7 @@ export function tracer(): Tracer {
             end(outcome) {
               span.endTime = new Date().toISOString();
               if (outcome) span.outcome = outcome;
+              exportSpan(span);
             },
           };
         },

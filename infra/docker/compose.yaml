@@ -49,8 +49,13 @@ x-app-env: &app-env
   DATABASE_URL: postgresql://vercode:vercode@postgres:5432/vercode
   REDIS_URL: redis://redis:6379
   SESSION_SIGNING_KEY: dev-stack-session-signing-key-not-a-real-secret-0000
-  API_BASE_URL: http://api:4000
-  WEB_BASE_URL: http://web:3000
+  # A the public origins: a the api + web use the host-mapped URLs (a the
+  # browser-side web fetches http://localhost:4000; a the api's webhook
+  # redirects + a the smoke target use the in-network names, a separate env
+  # var, not these two). A a deploy that sets a the public origin in a
+  # prod env uses the platform's real public URLs.
+  API_BASE_URL: http://localhost:4000
+  WEB_BASE_URL: http://localhost:3000
   # The GitHub App (a the dev placeholders — a the mock GitHub is the
   # actual integration in this stack; a the App's install-token + a the
   # webhook's HMAC are the mock's, not a real App's).

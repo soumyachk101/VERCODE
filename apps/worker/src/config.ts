@@ -20,6 +20,8 @@ import type {
 import type { DbClient } from "@vercode/database";
 import type { GithubDiffClient } from "@vercode/github";
 
+export type { OrgContext };
+
 // ---------------------------------------------------------------------------
 // The queue names (TRD.md §7; the api's enqueue side uses the same strings).
 // ---------------------------------------------------------------------------
@@ -126,8 +128,6 @@ export interface WorkerDeps {
    * (ADR-005, ERROR_HANDLING.md §5).
    */
   aiProviders: Partial<Record<ReviewTask, AIProvider>>;
-  /** The org's routing context (the plan tier + a optional model overrides). */
-  orgContext?: OrgContext;
   /** The GitHub publisher (a mock records publishes in dev). */
   publisher: GithubPublisher;
   /**
@@ -136,6 +136,10 @@ export interface WorkerDeps {
    * re-read per run — the worker never trusts the payload for it).
    */
   confidenceFloor: number;
+  /** The per-review file budget (a degrade, not a skip; NFR-19). */
+  maxFiles: number;
+  /** The per-review changed-line budget (a degrade, not a skip; NFR-19). */
+  maxLines: number;
   /** A prompt-version label recorded on findings + the usage event. */
   promptVersion: string;
 }
