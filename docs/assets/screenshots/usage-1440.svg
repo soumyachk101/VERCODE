@@ -1,0 +1,127 @@
+<svg viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Usage and billing mockup">
+  <defs>
+    <style>
+      .h1   { font: 700 24px 'Inter', 'Segoe UI', sans-serif; fill: #1a2b3c; }
+      .sub  { font: 400 13px 'Inter', sans-serif; fill: #64748b; }
+      .cell { font: 400 13px 'Inter', sans-serif; fill: #374151; }
+      .card-title { font: 600 13px 'Inter', sans-serif; fill: #374151; }
+      .gray { font: 400 12px 'Inter', sans-serif; fill: #94a3b8; }
+      .money { font: 700 34px 'Inter', sans-serif; fill: #1a2b3c; }
+      .pill { font: 500 11px 'Inter', sans-serif; }
+    </style>
+  </defs>
+
+  <rect width="1440" height="900" fill="#f8fafc"/>
+  <rect x="0" y="0" width="240" height="900" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="24" y="38" font-size="15" font-weight="800" fill="#1a2b3c" font-family="Inter">VERCODE</text>
+  <rect x="16" y="58" width="208" height="34" rx="7" fill="#f1f5f9"/>
+  <text x="28" y="80" font-size="12" fill="#475569" font-family="Inter">Acme Corp ▾</text>
+  <g font-family="Inter" font-size="13" fill="#475569">
+    <text x="28" y="163">Overview</text>
+    <text x="28" y="191">Repositories</text>
+    <text x="28" y="219">Reviews</text>
+    <text x="28" y="247">Security</text>
+    <rect x="16" y="256" width="208" height="32" rx="6" fill="#eff6ff"/>
+    <text x="28" y="278" font-weight="600" fill="#1a2b3c">Usage &amp; Billing</text>
+    <text x="28" y="307">Settings</text>
+  </g>
+
+  <text x="280" y="44" class="h1">Usage &amp; Billing</text>
+  <text x="280" y="70" class="sub">Cost falling is good — 8¢ cheaper per review than the prior 30 days.</text>
+
+  <!-- Cost/PR blended -->
+  <rect x="280" y="96" width="336" height="160" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="304" y="128" class="card-title">Cost per review · blended</text>
+  <text x="304" y="176" class="money">$0.14</text>
+  <text x="304" y="204" class="sub">down 8¢ vs prior 30 days</text>
+  <text x="304" y="228" class="gray">22,400 tokens · $312 total · 30 d</text>
+
+  <!-- Reviews/day + cost/day -->
+  <rect x="640" y="96" width="744" height="160" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="664" y="128" class="card-title">Reviews per day</text>
+  <rect x="1200" y="112" width="110" height="24" rx="12" fill="#f1f5f9"/>
+  <text x="1255" y="128" font-size="11" font-weight="500" fill="#1a2b3c" text-anchor="middle" font-family="Inter">30 days</text>
+  <line x1="680" y1="232" x2="1360" y2="232" stroke="#e2e8f0"/>
+  <polyline points="680,216 760,208 820,224 880,196 940,206 1000,184 1060,196 1120,214 1180,232 1240,176 1300,200 1360,208"
+            fill="none" stroke="#2563eb" stroke-width="2.5"/>
+  <circle cx="1240" cy="176" r="4" fill="#2563eb"/>
+  <line x1="1240" y1="170" x2="1240" y2="146" stroke="#94a3b8"/>
+  <text x="1248" y="142" class="gray">PR #412 · 200-file migration · +40 reviews</text>
+  <text x="664" y="252" class="gray">Jan 23</text>
+  <text x="1360" y="252" class="gray" text-anchor="end">Feb 22</text>
+
+  <!-- By-provider breakdown (barList) -->
+  <rect x="280" y="280" width="336" height="220" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="304" y="310" class="card-title">Reviews by provider</text>
+  <g font-family="Inter" font-size="12">
+    <text x="304" y="342" fill="#374151">gpt-4o-mini</text>
+    <rect x="400" y="332" width="180" height="12" rx="3" fill="#2563eb"/>
+    <text x="592" y="342" fill="#94a3b8">1,408</text>
+
+    <text x="304" y="376" fill="#374151">gpt-4o</text>
+    <rect x="400" y="366" width="112" height="12" rx="3" fill="#cbd5e1"/>
+    <text x="520" y="376" fill="#94a3b8">872</text>
+
+    <text x="304" y="410" fill="#374151">claude-sonnet</text>
+    <rect x="400" y="400" width="70" height="12" rx="3" fill="#cbd5e1"/>
+    <text x="478" y="410" fill="#94a3b8">544</text>
+
+    <text x="304" y="444" fill="#374151">ollama · local</text>
+    <rect x="400" y="434" width="34" height="12" rx="3" fill="#cbd5e1"/>
+    <text x="442" y="444" fill="#94a3b8">260</text>
+  </g>
+
+  <!-- Quota track -->
+  <rect x="640" y="280" width="744" height="220" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="664" y="310" class="card-title">Plan quota · Developer · resets in 22 days</text>
+  <!-- 80% warning strip -->
+  <rect x="664" y="324" width="700" height="24" rx="5" fill="#fef3c7"/>
+  <text x="676" y="340" font-size="12" fill="#92400e" font-family="Inter">Quota 80% — you've used 4,000 of 5,000 reviews this month</text>
+  <rect x="664" y="372" width="700" height="12" rx="6" fill="#f1f5f9"/>
+  <rect x="664" y="372" width="560" height="12" rx="6" fill="#2563eb"/>
+  <rect x="1224" y="372" width="40" height="12" rx="6" fill="#bfdbfe"/>
+  <rect x="1264" y="372" width="24" height="12" rx="6" fill="#fecaca"/>
+  <text x="664" y="408" class="gray">0</text>
+  <text x="1364" y="408" class="gray" text-anchor="end">5,000 reviews</text>
+  <text x="920" y="408" class="gray" text-anchor="middle">4,000 used · 180 committed · 84 over budget</text>
+
+  <!-- Invoices -->
+  <rect x="280" y="524" width="1104" height="230" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="304" y="556" class="card-title">Invoices</text>
+  <text x="304" y="586" class="gray">Date</text>
+  <text x="480" y="586" class="gray">Period</text>
+  <text x="760" y="586" class="gray">Amount</text>
+  <text x="960" y="586" class="gray">Status</text>
+  <text x="1360" y="586" class="gray" text-anchor="end">Action</text>
+  <line x1="304" y1="600" x2="1360" y2="600" stroke="#e2e8f0"/>
+
+  <g font-family="Inter" font-size="13">
+    <text x="304" y="630" fill="#374151">Feb 01, 2026</text>
+    <text x="480" y="630" fill="#374151">Jan 2026</text>
+    <text x="760" y="630" fill="#1a2b3c">$48.00</text>
+    <rect x="960" y="618" width="54" height="20" rx="10" fill="#ecfdf5"/>
+    <text x="987" y="632" font-size="11" font-weight="500" fill="#047857" text-anchor="middle">paid</text>
+    <text x="1360" y="630" fill="#2563eb" text-anchor="end">Download</text>
+    <line x1="304" y1="646" x2="1360" y2="646" stroke="#f1f5f9"/>
+
+    <text x="304" y="672" fill="#374151">Jan 01, 2026</text>
+    <text x="480" y="672" fill="#374151">Dec 2025</text>
+    <text x="760" y="672" fill="#1a2b3c">$48.00</text>
+    <rect x="960" y="660" width="54" height="20" rx="10" fill="#ecfdf5"/>
+    <text x="987" y="674" font-size="11" font-weight="500" fill="#047857" text-anchor="middle">paid</text>
+    <text x="1360" y="672" fill="#2563eb" text-anchor="end">Download</text>
+    <line x1="304" y1="688" x2="1360" y2="688" stroke="#f1f5f9"/>
+
+    <text x="304" y="714" fill="#374151">Mar 01, 2026</text>
+    <text x="480" y="714" fill="#374151">Mar 2026</text>
+    <text x="760" y="714" fill="#1a2b3c">$48.00</text>
+    <rect x="960" y="702" width="70" height="20" rx="10" fill="#fef3c7"/>
+    <text x="995" y="716" font-size="11" font-weight="500" fill="#92400e" text-anchor="middle">upcoming</text>
+    <text x="1360" y="714" fill="#94a3b8" text-anchor="end">—</text>
+  </g>
+
+  <!-- Upgrade note -->
+  <rect x="280" y="776" width="1104" height="64" rx="12" fill="#eff6ff" stroke="#bfdbfe"/>
+  <text x="304" y="804" class="cell" font-weight="500" fill="#1e3a8a">Upgrading to Team — confirmed at next invoice. Your plan change is applied when the provider's verified webhook arrives.</text>
+  <text x="304" y="826" class="gray">The current plan remains in force until then.</text>
+</svg>
