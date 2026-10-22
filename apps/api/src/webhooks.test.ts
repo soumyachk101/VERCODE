@@ -492,15 +492,14 @@ describe("POST /webhooks/github (M3 T3.2)", () => {
   });
 
   it("a malformed body (a a valid signature, a a shape fail) → 422 + a not enqueued", async () => {
-    seed = { delivery: { id: "delivery-row-1", deliveryId: "delivery-malformed", event: "pull_request", orgId: "org-1", installId: "install-1" } };
-    const { app: appM, queue: queueM, state: stM } = await buildGithubApp(seed);
-    // A a body that passes the signature check (a a valid signature over
-    // the body) but fails the `pull_request` schema (a the required
-    // `pull_request.head.sha` is missing). a The "a verified but malformed"
-    // case (a the signature proves origin, a the schema proves shape).
+    // A fresh delivery id (a no pre-seeded row, a the malformed event is a
+    // NEW delivery that passes layer 1–2 but fails the schema). A the body
+    // passes the signature check (a valid signature over the body) but
+    // fails the `pull_request` schema (a the required
+    // `pull_request.head.sha` is missing).
     const malformed = { action: "opened", number: 42, repository: { id: 1, full_name: "acme/app" }, installation: { id: 99 } };
     const raw = JSON.stringify(malformed);
-    const res = await appM.inject({
+    const res = await app.inject({
       method: "POST",
       url: "/webhooks/github",
       headers: {
@@ -514,8 +513,8 @@ describe("POST /webhooks/github (M3 T3.2)", () => {
     });
     expect(res.statusCode).toBe(422);
     expect(res.json().error.code).toBe("WEBHOOK_MALFORMED");
-    expect(queueM.enqueued.length).toBe(0);
-    expect(stM.audits.some((a) => a.action === "webhook.malformed")).toBe(true);
+    expect(queue.enqueued.length).toBe(0);
+    expect(state.audits.some((a) => a.action === "webhook.malformed")).toBe(true);
   });
 
   it("a opened event → 202 + a review_jobs row + a enqueued pointer payload", async () => {
