@@ -1,0 +1,36 @@
+{
+  "name": "@vercode/worker",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@vercode/config": "workspace:*",
+    "@vercode/contracts": "workspace:*",
+    "@vercode/database": "workspace:*",
+    "@vercode/github": "workspace:*",
+    "@prisma/client": "^5.22.0",
+    "bullmq": "^5.54.0",
+    "ioredis": "^5.6.0",
+    "zod": "^3.23.8"
+    // TODO(T5.1): the M4 packages land in parallel with this task. When merged,
+    // uncomment + rewire (the local adapters in src/adapters/local.ts
+    // implement exactly these interfaces, so the swap is import-line-only):
+    //   "@vercode/diff-engine": "workspace:*",
+    //   "@vercode/static-analysis": "workspace:*",
+    //   "@vercode/ai-providers": "workspace:*",
+    //   "@vercode/review-engine": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.0"
+  }
+}
