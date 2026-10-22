@@ -2,6 +2,7 @@
   "name": "vercode",
   "version": "0.0.1",
   "private": true,
+  "license": "MIT",
   "description": "VERCODE — AI-powered code-review SaaS (monorepo root)",
   "type": "module",
   "packageManager": "pnpm@9",
