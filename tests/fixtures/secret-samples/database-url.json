@@ -1,0 +1,8 @@
+{
+  "id": "secret-database-url",
+  "shape": "database-url",
+  "secret": "postgresql://vercode_admin:SuperSecretFixturePassword99@db.internal:5432/vercode",
+  "masked": "postgresql://vercode_admin:***@db.internal:5432/vercode",
+  "note": "A DATABASE_URL string with embedded credentials. A fixture value — the host/user are fixture names, the password is a test string, NFR-31.",
+  "redactIn": ["log", "finding-payload", "provider-prompt"]
+}

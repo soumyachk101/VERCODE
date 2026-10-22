@@ -1,0 +1,8 @@
+{
+  "id": "secret-openai-api-key",
+  "shape": "openai-api-key",
+  "secret": "sk-proj-vtest_9f3a2b4c5d6e7f8a0b1c2d3e4f5a6b7c8d9e",
+  "masked": "sk-proj-…6b7c",
+  "note": "An OpenAI API key (a `sk-` shape). A fixture value — not a real key.",
+  "redactIn": ["log", "finding-payload", "provider-prompt"]
+}
