@@ -4,11 +4,6 @@
 // the rules (the confidence floor, the suppression, the dedup key, the
 // policy resolution); the worker owns the I/O (re-reading the durable rows,
 // orgId-scoped, SERVICE_BOUNDARIES.md "never trust the payload for authz").
-//
-// The package's `applyPolicy` works on the generic
-// `{ source, category, confidence, severity }` shape, so the worker maps its
-// canonical findings onto that and filters the survivors back — the rule
-// lives in one place.
 
 import {
   applyPolicy as applyPolicyRules,
@@ -18,6 +13,7 @@ import {
   type RepoRuleLike,
   type ReviewPolicy,
 } from "@vercode/policy-engine";
+import type { PolicyState } from "../config.js";
 import type { CanonicalFinding } from "./review.js";
 
 export type { ReviewPolicy, OrgSettingsLike, RepoRuleLike };
@@ -29,11 +25,20 @@ export type { ReviewPolicy, OrgSettingsLike, RepoRuleLike };
  * default).
  */
 export function resolveWorkerPolicy(input: {
-  defaults: { confidenceFloor: number; maxFiles: number; maxLines: number };
+  defaults: PolicyState;
   orgSettings?: OrgSettingsLike | null;
   repoRules?: RepoRuleLike[];
 }): ReviewPolicy {
-  return resolvePolicy(input);
+  return resolvePolicy({
+    defaults: {
+      confidenceFloor: input.defaults.confidenceFloor,
+      maxFiles: input.defaults.maxFiles,
+      maxLines: input.defaults.maxLines,
+      suppressCategories: input.defaults.suppressCategories as ReviewPolicy["suppressCategories"],
+    },
+    orgSettings: input.orgSettings,
+    repoRules: input.repoRules,
+  });
 }
 
 /**
@@ -73,30 +78,37 @@ export interface PolicyOutcome {
 /**
  * Policy (stage [11]): the confidence floor (the static findings exempt,
  * ADR-005) + the per-repo / per-org suppression (FR-308).
+ *
+ * `repoRules` carries the durable repo_rules rows (suppressCategories + the
+ * confidenceFloorOverride). The resolved policy merges the org defaults with
+ * the per-repo overrides (the floor only goes UP).
  */
 export function applyPolicy(
   findings: CanonicalFinding[],
-  policy: ReviewPolicy,
+  policy: PolicyState,
   repoRules: RepoRuleLike[] = []
 ): PolicyOutcome {
-  const resolved = resolvePolicy({
+  const resolved = resolveWorkerPolicy({
     defaults: {
       confidenceFloor: policy.confidenceFloor,
       maxFiles: policy.maxFiles,
       maxLines: policy.maxLines,
+      suppressCategories: policy.suppressCategories,
     },
     repoRules,
   });
-  const out = applyPolicyRules(
-    findings.map((f) => ({
-      source: f.source,
-      category: f.category,
-      confidence: f.confidence,
-      severity: f.severity,
-    })),
-    resolved
-  );
-  const keep = new Set(out.published);
+
+  // The package's applyPolicy works on the generic shape; the findings map
+  // onto it and the survivors map back (the rule lives in one place).
+  const mapped = findings.map((f) => ({
+    ref: f,
+    source: f.source,
+    category: f.category,
+    confidence: f.confidence,
+    severity: f.severity,
+  }));
+  const out = applyPolicyRules(mapped, resolved);
+  const keep = new Set(out.published.map((m) => m.ref));
   const published = findings.filter((f) => keep.has(f));
   return {
     published,
