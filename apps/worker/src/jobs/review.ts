@@ -28,10 +28,6 @@
 //     ERROR_HANDLING.md §6)
 //   → publish to GitHub (summary + inline comments; the published review id
 //     is stored on the job — a retried publish no-ops, NFR-13)
-//
-// The observability seam (OBSERVABILITY.md §2 "the review is a single trace
-// with a span per stage"; the trace id = the job_id) is M7's surface — the
-// M5 handler is clean; a later leaf wires the tracer + the redaction gate.
 
 import { z } from "zod";
 import type {
