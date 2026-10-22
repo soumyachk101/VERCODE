@@ -113,7 +113,7 @@ export async function githubRoutes(app: FastifyInstance, queue?: Enqueueable) {
       });
 
       if (queue) {
-        await queue.add("review", {
+        await queue.enqueue({
           jobId: job.id,
           orgId: id,
           repoId: repo.id,
