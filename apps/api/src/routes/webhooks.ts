@@ -172,34 +172,17 @@ export function githubWebhookRoutes(
         return;
       }
 
-      // Layer 3: the delivery receipt (a fresh delivery writes the
-      // idempotency row, NFR-06). A unique-constraint hit means a
-      // concurrent replay won the race → treat it as a replay no-op.
-      const receipt = await db.webhookDelivery
-        .create({
-          data: {
-            deliveryId: headers.deliveryId,
-            event: headers.event,
-            orgId: "pending",
-            installId: "pending",
-          },
-        })
-        .catch((err: unknown) => {
-          const code = (err as { code?: string }).code;
-          if (code === "P2002") return null;
-          throw err;
-        });
-      if (receipt === null) {
-        await audit(reply, {
-          action: "webhook.replay",
-          targetId: headers.deliveryId,
-          meta: { event: headers.event, deliveryId: headers.deliveryId },
-        });
-        reply.code(200).send({ ok: true, replay: true, deliveryId: headers.deliveryId });
-        return;
-      }
+      // A the delivery receipt (a the `webhook_deliveries` row, a the
+      // replay-dedup key, a NFR-06 "a 100% rejection of forged/replayed
+      // webhooks (a the delivery-dedup table)"). A the receipt is written
+      // AFTER the install resolution (a the FK needs a real install, a
+      // the "pending" placeholder is a not-a-FK, a the schema's
+      // `install_id` is a non-nullable FK to `github_installs.id`); a the
+      // replay-dedup for the ingress is the layer-3 read above (a a
+      // `webhookDelivery.findUnique` for the delivery id, a a seen row →
+      // the "replay" verdict, a a 200 no-op).
 
-      // The body schema (WEBHOOK_SPECIFICATION §1.3 "a verified but
+      // A the body schema (WEBHOOK_SPECIFICATION §1.3 "a verified but
       // malformed body → 422 + audit + not enqueued"). The signature proves
       // origin; the schema proves shape — both are required.
       const { ok, data } = validateEventBody(headers.event, req.body);
@@ -243,6 +226,34 @@ export function githubWebhookRoutes(
 // no-op for the MVP — the terminal-marking of in-flight jobs is the M4 path,
 // INTEGRATION_DESIGN §1.4 "pull_request closed → mark job terminal").
 // ---------------------------------------------------------------------------
+
+// The receipt write (the `webhook_deliveries` row, the replay-dedup key,
+// NFR-06 "a 100% rejection of forged/replayed webhooks (the delivery-
+// dedup table)"). Written AFTER the install resolution with real install
+// + org ids (the `install_id` FK is non-nullable — a "pending"
+// placeholder would violate the FK in a real DB). A duplicate delivery
+// id (a concurrent replay) → the unique key rejects; we swallow that
+// (the receipt is already durable, not an error).
+async function writeReceipt(
+  db: PrismaClient,
+  opts: { installId: string; deliveryId: string; event: string; orgId: string; accepted?: boolean }
+): Promise<void> {
+  if (!opts.deliveryId) return;
+  await db.webhookDelivery
+    .create({
+      data: {
+        installId: opts.installId,
+        deliveryId: opts.deliveryId,
+        event: opts.event,
+        orgId: opts.orgId,
+        accepted: opts.accepted ?? true,
+      },
+    })
+    .catch(() => {
+      /* a duplicate delivery id (a replay) — the row already exists; the
+         receipt is durable, not an error. */
+    });
+}
 
 async function handlePullRequest(
   db: PrismaClient,
