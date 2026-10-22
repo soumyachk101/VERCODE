@@ -1,0 +1,107 @@
+<svg viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Overview screen mockup">
+  <defs>
+    <style>
+      .h1   { font: 700 24px 'Inter', 'Segoe UI', sans-serif; fill: #1a2b3c; }
+      .sub  { font: 400 13px 'Inter', sans-serif; fill: #64748b; }
+      .big  { font: 700 32px 'Inter', sans-serif; fill: #dc2626; }
+      .vword { font: 700 24px 'Inter', sans-serif; fill: #1a2b3c; }
+      .card-title { font: 600 13px 'Inter', sans-serif; fill: #374151; }
+      .cell { font: 400 13px 'Inter', sans-serif; fill: #374151; }
+      .num  { font: 600 13px 'Inter', sans-serif; fill: #1a2b3c; text-anchor: end; }
+      .pill { font: 500 11px 'Inter', sans-serif; }
+      .side { font: 500 13px 'Inter', sans-serif; fill: #475569; }
+      .side-active { font: 600 13px 'Inter', sans-serif; fill: #1a2b3c; }
+      .mark { font: 500 11px 'Inter', sans-serif; fill: #94a3b8; }
+    </style>
+  </defs>
+
+  <rect width="1440" height="900" fill="#f8fafc"/>
+
+  <!-- Sidebar -->
+  <rect x="0" y="0" width="240" height="900" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="24" y="38" font-size="15" font-weight="800" fill="#1a2b3c" font-family="Inter">VERCODE</text>
+  <rect x="16" y="58" width="208" height="34" rx="7" fill="#f1f5f9"/>
+  <text x="28" y="80" font-size="12" fill="#475569" font-family="Inter">Acme Corp ▾</text>
+
+  <g font-family="Inter">
+    <rect x="16" y="112" width="208" height="32" rx="6" fill="#eff6ff"/>
+    <text x="28" y="133" class="side-active">Overview</text>
+    <text x="28" y="163" class="side">Repositories</text>
+    <text x="28" y="191" class="side">Reviews</text>
+    <text x="28" y="219" class="side">Security</text>
+    <text x="28" y="247" class="side">Usage &amp; Billing</text>
+    <text x="28" y="275" class="side">Settings</text>
+    <text x="28" y="303" class="side">Audit Log</text>
+  </g>
+  <text x="24" y="860" font-size="11" fill="#94a3b8" font-family="Inter">v0.0.1 · org: acme-corp</text>
+
+  <!-- Top bar -->
+  <text x="280" y="44" class="h1">Overview</text>
+  <text x="280" y="70" class="sub">The last failed review was a quota skip — 4 reviews are queued behind your cap.</text>
+  <text x="1408" y="44" class="sub" text-anchor="end">Updated 2 min ago</text>
+
+  <!-- Verdict-lead figure -->
+  <rect x="280" y="96" width="360" height="150" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="304" y="128" class="card-title">Risk posture · last 24 h</text>
+  <text x="304" y="176" class="big">4 high, 2 critical</text>
+  <text x="304" y="208" class="vword">Needs attention</text>
+  <rect x="560" y="130" width="8" height="8" rx="1" fill="#dc2626"/>
+  <rect x="574" y="130" width="8" height="8" rx="1" fill="#ea580c"/>
+  <rect x="588" y="130" width="8" height="8" rx="1" fill="#ea580c"/>
+  <text x="620" y="140" class="mark">4 high</text>
+
+  <!-- Attention queues -->
+  <rect x="664" y="96" width="348" height="150" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="688" y="128" class="card-title">Security — top unactioned</text>
+  <line x1="688" y1="140" x2="988" y2="140" stroke="#f1f5f9"/>
+  <rect x="688" y="152" width="8" height="8" rx="1" fill="#dc2626"/>
+  <text x="706" y="161" class="cell">SQL injection in payments.ts:84 · api-server · PR #412</text>
+  <text x="988" y="161" class="mark" text-anchor="end">View</text>
+  <rect x="688" y="176" width="8" height="8" rx="1" fill="#ea580c"/>
+  <text x="706" y="185" class="cell">Unvalidated file path in importer.ts:41 · · PR #398</text>
+  <text x="988" y="185" class="mark" text-anchor="end">View</text>
+  <rect x="688" y="200" width="8" height="8" rx="1" fill="#ea580c"/>
+  <text x="706" y="209" class="cell">Hardcoded API key in config.ts · · PR #377</text>
+  <text x="988" y="209" class="mark" text-anchor="end">View</text>
+  <text x="688" y="236" class="mark">3 of 8 tracks · View all →</text>
+
+  <rect x="1036" y="96" width="348" height="150" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="1060" y="128" class="card-title">Failed reviews</text>
+  <line x1="1060" y1="140" x2="1360" y2="140" stroke="#f1f5f9"/>
+  <text x="1060" y="161" class="cell">PR #401 · skip — quota reached</text>
+  <text x="1060" y="185" class="cell">PR #399 · skip — GitHub rate-limited</text>
+  <text x="1060" y="209" class="cell">PR #395 · failed — AI stage degraded</text>
+  <text x="1060" y="236" class="mark">4 of 11 tracks · View all →</text>
+
+  <!-- Quota strip -->
+  <rect x="280" y="270" width="1104" height="70" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="304" y="296" class="card-title">Plan quota — Developer · resets 22 days from now</text>
+  <rect x="304" y="308" width="900" height="10" rx="5" fill="#f1f5f9"/>
+  <rect x="304" y="308" width="720" height="10" rx="5" fill="#2563eb"/>
+  <rect x="1024" y="308" width="40" height="10" rx="5" fill="#bfdbfe"/>
+  <text x="304" y="332" class="mark">0</text>
+  <text x="1204" y="332" class="mark" text-anchor="end">5,000 reviews</text>
+  <text x="704" y="332" class="mark" text-anchor="middle">1,240 used · 240 committed</text>
+
+  <!-- Cost / usage mini -->
+  <rect x="280" y="364" width="720" height="220" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="304" y="392" class="card-title">Reviews per day · last 30 days</text>
+  <!-- axes -->
+  <line x1="340" y1="540" x2="940" y2="540" stroke="#e2e8f0"/>
+  <!-- sparkline-ish area -->
+  <polyline points="340,520 420,510 470,528 520,500 560,512 610,488 660,505 700,540 740,470 800,500 850,515 940,510"
+            fill="none" stroke="#2563eb" stroke-width="2.5"/>
+  <!-- spike annotation -->
+  <circle cx="740" cy="470" r="4" fill="#2563eb"/>
+  <line x1="740" y1="462" x2="740" y2="438" stroke="#94a3b8" stroke-width="1"/>
+  <text x="748" y="432" class="mark">PR #412: 200-file migration</text>
+  <text x="304" y="566" class="mark">Jan 23</text>
+  <text x="940" y="566" class="mark" text-anchor="end">Feb 22</text>
+
+  <!-- Cost/PR blended figure -->
+  <rect x="1036" y="364" width="348" height="220" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="1060" y="392" class="card-title">Cost per review · blended</text>
+  <text x="1060" y="440" font-size="34" font-weight="700" fill="#1a2b3c" font-family="Inter">$0.14</text>
+  <text x="1060" y="464" class="sub">down 8¢ vs prior 30 days</text>
+  <text x="1060" y="500" class="mark">22,400 tokens · $312 total · 30 d</text>
+</svg>
