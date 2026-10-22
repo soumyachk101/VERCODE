@@ -228,7 +228,8 @@ export async function runReviewJob(
   // persist-then-publish invariant, ERROR_HANDLING.md §6).
   const jobStatus: JobStatus = ai.ok ? "SUCCEEDED" : "PARTIAL";
   await txFactory(async (tx) => {
-    const job = await upsertJob(tx, payload, jobStatus, {
+    const t = tx as DbClient;
+    const job = await upsertJob(t, payload, jobStatus, {
       usage: {
         inputTokens: ai.usage.inputTokens,
         outputTokens: ai.usage.outputTokens,
@@ -238,7 +239,7 @@ export async function runReviewJob(
       },
     });
     for (const f of published) {
-      await tx.reviewFinding.create({
+      await t.reviewFinding.create({
         data: {
           jobId: job.id,
           source: mapSourceToPrisma(f.source),
@@ -251,12 +252,12 @@ export async function runReviewJob(
           suggestedFix: f.suggestedFix,
           confidence: f.confidence,
           anchorStatus: f.anchorStatus === "inline" ? "INLINE" : "ANCHOR_FAILED",
-          payload: JSON.parse(JSON.stringify(f)),
+          payload: JSON.parse(JSON.stringify(f)) as Prisma.InputJsonValue,
         },
       });
     }
     // A the usage event — a one row per job, attributed to the org.
-    await tx.usageEvent.create({
+    await t.usageEvent.create({
       data: {
         orgId: payload.orgId,
         jobId: job.id,
@@ -656,13 +657,15 @@ async function upsertJob(
     usage: { inputTokens: number; outputTokens: number; estUsdCost: number; model: string; promptVersion: string };
   }
 ) {
-  const key = {
-    orgId: payload.orgId,
-    repoId: payload.repoId,
-    prNumber: payload.prNumber,
-    commitSha: payload.commitSha,
+  const whereUnique = {
+    orgId_repoId_prNumber_commitSha: {
+      orgId: payload.orgId,
+      repoId: payload.repoId,
+      prNumber: payload.prNumber,
+      commitSha: payload.commitSha,
+    },
   };
-  const existing = await tx.reviewJob.findUnique({ where: key });
+  const existing = await tx.reviewJob.findUnique({ where: whereUnique });
   const data = {
     status,
     skipReason: extra.skipReason ?? null,
@@ -675,9 +678,17 @@ async function upsertJob(
   };
   if (existing) {
     const updated = await tx.reviewJob.update({ where: { id: existing.id }, data });
-    return { id: existing.id, ...updated } as { id: string };
+    return { id: existing.id, ...(updated as object) } as { id: string };
   }
-  return await tx.reviewJob.create({ data: { ...key, ...data } });
+  return await tx.reviewJob.create({
+    data: {
+      orgId: payload.orgId,
+      repoId: payload.repoId,
+      prNumber: payload.prNumber,
+      commitSha: payload.commitSha,
+      ...data,
+    },
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -695,12 +706,12 @@ async function finishSkipped(
   // A persist the skip (a the "never silent" rule, NFR-18): a the skip is a
   // terminal, recorded state. A the same transaction shape as the success
   // path (a persist-then-publish).
-  await db.$transaction(async (tx: DbClient) => {
-    await upsertJob(tx, payload, "SKIPPED", {
+  await db.$transaction((tx) =>
+    upsertJob(tx, payload, "SKIPPED", {
       skipReason,
       usage: { inputTokens: 0, outputTokens: 0, estUsdCost: 0, model: "", promptVersion: "" },
-    });
-  });
+    })
+  );
   // A the skip notice (a NFR-18 "never silent" — a posted notice on the PR).
   try {
     await publishGithub(deps, payload, {
