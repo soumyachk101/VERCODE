@@ -15,7 +15,7 @@
 // No secret ever reaches a log line (SECRETS_MANAGEMENT §5 / a the redaction
 // gate): a log carries the `jobId` + a correlation ids only.
 
-import Redis from "ioredis";
+import { Redis } from "ioredis";
 import type { RedisOptions } from "ioredis";
 import { Queue, type Job } from "bullmq";
 
