@@ -232,6 +232,10 @@ The **live external suite** (a real GitHub App + a real AI provider + real Strip
 
 ## Security
 
+### The Trust Model
+
+![VERCODE — Trust Model](docs/assets/trust-model.svg)
+
 VERCODE has **three trust domains** and two ingress points. The core invariant: **repository content is *input*, never *authority*.**
 
 ```
