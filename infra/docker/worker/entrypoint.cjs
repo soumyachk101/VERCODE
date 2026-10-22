@@ -60,7 +60,10 @@ process.env.VERCODE_MOCK_PR_HEAD_SHAS = JSON.stringify(MOCK_PR_HEAD_SHAS);
 // (a the NFR-15 drain, the compose `stop_grace_period: 70s`).
 const child = spawn(
   process.execPath,
-  [path.join(REPO_ROOT, "node_modules/.bin/tsx"), path.join(REPO_ROOT, "apps/worker/src/index.ts")],
+  [
+    path.join(REPO_ROOT, "node_modules/.bin/tsx"),
+    path.join(REPO_ROOT, "apps/worker/src/index.ts"),
+  ],
   {
     stdio: "inherit",
     env: process.env,
