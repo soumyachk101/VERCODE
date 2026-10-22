@@ -279,8 +279,8 @@ export function createOpenAIAdapter(apiKey: string, baseUrl = "https://api.opena
     (model, req) => ({
       model,
       messages: req.messages.map((m) => ({ role: m.role, content: m.content })),
-      response_format: { type: "json_schema", json_schema: { name: "result", schema: req.schema === undefined ? {} : (req.schema as unknown) } },
       max_tokens: req.maxTokens,
+      temperature: 0,
     }),
     (json) => {
       const j = json as {
