@@ -65,6 +65,12 @@ export interface NormalizedJob {
   costUsd?: number;
   findingsCount?: number;
   verdict?: string;
+  summary?: {
+    verdict?: string;
+    highSeverityCount?: number;
+    topRisks?: string[];
+    overallConfidence?: number;
+  } | null;
 }
 
 export interface NormalizedReviews {
