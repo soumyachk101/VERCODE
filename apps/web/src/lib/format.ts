@@ -59,6 +59,12 @@ export function openFindingsLead(open: { high: number; critical: number }): stri
   return parts.length ? parts.join(", ") : "0 open above the floor";
 }
 
+/** Thousands-separated integer (tabular figures, right-aligned numbers). */
+export function formatNumber(n: number | null | undefined): string {
+  if (n == null || Number.isNaN(n)) return "—";
+  return new Intl.NumberFormat("en-US").format(Math.trunc(n));
+}
+
 export function initials(name: string): string {
   const parts = name.split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";

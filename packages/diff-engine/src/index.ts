@@ -206,56 +206,55 @@ export interface Classification {
   inAiScope: boolean;
 }
 
-// The patterns are written as a plain strings + `new RegExp` so a stray
-// compile-time regex quirk can't silently zero a whole list (the
-// matchAny gate above already guards against it, but a source-level string
-// is the stronger guarantee).
+// The patterns are compiled via rx() so the source text is a plain string
+// with explicit flags (the safe form — no stray literal suffix can be a
+// live compile-time defect).
 
 function rx(source: string, flags = "i"): RegExp {
   return new RegExp(source, flags);
 }
 
 const SECURITY_PATTERNS: RegExp[] = [
-  rx(/(^|\/)(auth|authentication|authorization|security|crypto|cipher|token|session|password|credential|jwt|oauth|keys?)([\/\-.])/i.source),
-  rx(/\.(pem|crt|cer|key|p12)$/.source),
-  rx(/\bsecret\b/.source),
-  rx(/\b(api[-_]?key|apikey)\b/.source),
+  rx("(^|/)(auth|authentication|authorization|security|crypto|cipher|token|session|password|credential|jwt|oauth|keys?)([/\\-.])"),
+  rx("\\.(pem|crt|cer|key|p12)$"),
+  rx("\\bsecret\\b"),
+  rx("\\b(api[-_]?key|apikey)\\b"),
 ];
 
 const DB_PATTERNS: RegExp[] = [
-  rx(/(^|\/)(db|database|databases|sql|repository|repositories|models?|migrations?|prisma)([\/\-.])?$/i.source),
-  rx(/\.(sql)$/.source),
-  rx(/prisma([\/]|\.schema)/i.source),
-  rx(/\b(migrate|migration)\b/i.source),
+  rx("(^|/)(db|database|databases|sql|repository|repositories|models?|migrations?|prisma)([/\\-.])?$"),
+  rx("\\.(sql)$"),
+  rx("prisma(/|\\.schema)"),
+  rx("\\b(migrate|migration)\\b"),
 ];
 
 const GENERATED_PATTERNS: RegExp[] = [
-  rx(/\.(min\.js|map|lock|snap|d\.ts|css|scss\.min)$/.source),
-  rx(/(^|\/)(dist|build|out|target|coverage|node_modules|vendor|generated|gen|\.next|\.nuxt)(\/|$)/i.source),
-  rx(/(^|\/)(pnpm-lock|package-lock|yarn|bun|cargo|go|Gemfile)\.?(lock|sum)(\.lock)?$/i.source),
-  rx(/(^|\/)(poetry|uv)\.lock$/i.source),
-  rx(/^go\.mod$/),
-  rx(/(\.pb\.|\.gen\.|_generated\.)/i.source),
+  rx("\\.(min\\.js|map|lock|snap|d\\.ts|css|scss\\.min)$"),
+  rx("(^|/)(dist|build|out|target|coverage|node_modules|vendor|generated|gen|\\.next|\\.nuxt)(/|$)"),
+  rx("(^|/)(pnpm-lock|package-lock|yarn|bun|cargo|go|Gemfile)\\.?(lock|sum)(\\.lock)?$"),
+  rx("(^|/)(poetry|uv)\\.lock$"),
+  rx("^go\\.mod$"),
+  rx("([^/]\\.pb\\.|\\.gen\\.|_generated\\.)"),
 ];
 
 const TEST_PATTERNS: RegExp[] = [
-  rx(/\.(test|spec)\.[a-z]+$/i.source),
-  rx(/^test_[^/]+$/.source),
-  rx(/(^|\/)__tests__\//.source),
-  rx(/(^|\/)tests?\//i.source),
-  rx(/_test\.go$/.source),
+  rx("\\.(test|spec)\\.[a-z]+$"),
+  rx("^test_[^/]+$"),
+  rx("(^|/)__tests__/"),
+  rx("(^|/)tests?/"),
+  rx("_test\\.go$"),
 ];
 
 const MANIFEST_PATTERNS: RegExp[] = [
-  rx(/^package\.json$/),
-  rx(/^composer\.json$/),
-  rx(/^requirements\.txt$/),
-  rx(/^pyproject\.toml$/),
-  rx(/^setup\.(py|cfg)$/.source),
-  rx(/^gemfile$/i),
-  rx(/^cargo\.toml$/i),
-  rx(/^go\.mod$/),
-  rx(/^gradle\.properties$/i),
+  rx("^package\\.json$"),
+  rx("^composer\\.json$"),
+  rx("^requirements\\.txt$"),
+  rx("^pyproject\\.toml$"),
+  rx("^setup\\.(py|cfg)$"),
+  rx("^gemfile$"),
+  rx("^cargo\\.toml$"),
+  rx("^go\\.mod$"),
+  rx("^gradle\\.properties$"),
 ];
 
 function basename(path: string): string {

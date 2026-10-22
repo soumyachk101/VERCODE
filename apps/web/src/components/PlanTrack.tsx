@@ -29,18 +29,21 @@ export function computePlanTrack(
   const overflow = Math.max(0, used - safeLimit);
   const committedClamped = Math.min(Math.max(0, committed), safeLimit - spent);
   const frac = (n: number) => (safeLimit === 0 ? 0 : n / safeLimit);
-  return {
+  const m: PlanTrackModel & {
+    spentFrac: number;
+    committedFrac: number;
+    overflowFrac: number;
+  } = {
     used,
     limit: safeLimit,
     committed: committedClamped,
     overflow,
     unit: "reviews",
-    ...( {
-      spentFrac: frac(spent),
-      committedFrac: frac(committedClamped),
-      overflowFrac: safeLimit === 0 ? (used > 0 ? 1 : 0) : frac(overflow),
-    } as Partial<PlanTrackModel> as PlanTrackModel),
+    spentFrac: frac(spent),
+    committedFrac: frac(committedClamped),
+    overflowFrac: safeLimit === 0 ? (used > 0 ? 1 : 0) : frac(overflow),
   };
+  return m;
 }
 
 export function PlanTrack({

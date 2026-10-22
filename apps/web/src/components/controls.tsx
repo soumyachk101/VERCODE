@@ -193,7 +193,7 @@ export function VcTabs({
               fontWeight: 500,
               color: on ? "var(--text)" : "var(--muted)",
               borderBottom: on ? "2px solid var(--accent)" : "2px solid transparent",
-              margin-bottom: -1,
+              margin: "0 0 -1px",
             }}
           >
             {t.label}
