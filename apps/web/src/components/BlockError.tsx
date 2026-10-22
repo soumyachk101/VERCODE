@@ -136,7 +136,7 @@ export function Notice({
   className?: string;
 }) {
   const [open, setOpen] = useState(true);
-  if (!open || !onClose) return null;
+  if (!open) return null;
   const border =
     tone === "warning" ? "var(--notice-border)" : "var(--border)";
   return (
@@ -157,7 +157,7 @@ export function Notice({
       role="status"
     >
       <span>{children}</span>
-      {onClose && (
+      {onClose ? (
         <button
           type="button"
           aria-label="Dismiss notice"
@@ -166,9 +166,8 @@ export function Notice({
         >
           <X size={14} aria-hidden="true" />
         </button>
-      )}
-      {/* keep clsx imported for consumer merging */}
-      <span className="sr-only">{clsx("", "vc-notice")}</span>
+      ) : null}
+      <span className="sr-only">{clsx("vc-notice")}</span>
     </div>
   );
 }

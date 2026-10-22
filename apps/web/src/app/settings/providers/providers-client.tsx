@@ -71,7 +71,7 @@ function ProvidersBody() {
                   {rows.map((r, i) => {
                     const gated = r.tierGate != null && r.available === false;
                     return (
-                      <TRow key={i} className={gated ? "vc-gated-row" : undefined}>
+                      <TRow key={i}>
                         <TCell>
                           <span aria-disabled={gated} style={{ opacity: gated ? 0.7 : 1, fontWeight: 500 }}>
                             {r.task}

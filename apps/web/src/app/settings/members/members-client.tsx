@@ -187,11 +187,13 @@ function MembersBody() {
                         ) : (
                           <Pill tone="neutral">{m.role}</Pill>
                         )}
-                        {changeRole.isSuccess && changeRole.data && changeRole.data.userId === m.id && (
-                          <span className="meta" role="status">
-                            saved
-                          </span>
-                        )}
+                        {changeRole.isSuccess &&
+                          changeRole.data != null &&
+                          changeRole.data.userId === m.id && (
+                            <span className="meta" role="status">
+                              saved
+                            </span>
+                          )}
                       </TCell>
                       <TCell>
                         <span className="meta">{m.lastActiveAt ? relativeTime(m.lastActiveAt) : "—"}</span>
@@ -248,7 +250,10 @@ function MembersBody() {
         confirmLabel="Remove member"
         onConfirm={() => {
           if (removeTarget) {
-            void remove.mutate(removeTarget.id).finally(() => setRemoveTarget(null));
+            void remove
+              .mutate(removeTarget.id)
+              .then(() => setRemoveTarget(null))
+              .catch(() => setRemoveTarget(null));
           }
         }}
         confirming={remove.isPending}
