@@ -21,7 +21,7 @@ export async function authRoutes(app: FastifyInstance) {
 
     // Argon2id (AUTHENTICATION.md §1 "passwords: Argon2id, memory 64 MiB,
     // iterations 3, parallelism 4").
-    const passwordHash = await app.auth.Argon2id.hash(password, {
+    const passwordHash = await argon2.hash(password, {
       memoryCost: 65536,
       timeCost: 3,
       parallelism: 4,
@@ -65,7 +65,7 @@ export async function authRoutes(app: FastifyInstance) {
       return;
     }
 
-    const valid = user && (await app.auth.Argon2id.verify(user.passwordHash, password));
+    const valid = user && (await argon2.verify(user.passwordHash, password));
     if (!valid) {
       failures.count += 1;
       if (now - failures.windowStart >= 15 * 60 * 1000) {

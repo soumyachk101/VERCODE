@@ -10,7 +10,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { createHash, randomBytes } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
-import { Argon2id } from "argon2";
+import argon2 from "argon2";
 import type { AppConfig } from "@vercode/config";
 
 export interface AuthContext {
@@ -47,7 +47,7 @@ export function buildAuthPlugin(config: AppConfig) {
       // session check. The webhook routes are a separate (public + HMAC)
       // ingress (WEBHOOK_SPECIFICATION.md §1 "the two public, non-session
       // ingress routes").
-      const isPublic = (req.context.config as { public?: boolean }).public === true;
+      const isPublic = (req.routeConfig as { public?: boolean }).public === true;
       if (isPublic) {
         // Even public routes resolve the session (a "me" on a public page).
         const token = req.cookies[SESSION_COOKIE];
@@ -102,7 +102,7 @@ export function buildAuthPlugin(config: AppConfig) {
     app.decorate("auth", {
       db,
       hashToken,
-      Argon2id,
+      argon2,
       config,
       newSessionToken(): string {
         return randomBytes(32).toString("hex");
@@ -116,7 +116,7 @@ declare module "fastify" {
     auth: {
       db: PrismaClient;
       hashToken(t: string): string;
-      Argon2id: typeof Argon2id;
+      argon2: typeof argon2;
       config: AppConfig;
       newSessionToken(): string;
     };
