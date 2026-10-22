@@ -91,39 +91,7 @@ import { logger, tracer, capture, redact, type StructuredLogger, type Tracer, ty
  * captured-errors array — a terminal failure is captured with a the
  * correlation id (a the job_id), not a returned to the client.
  */
-export interface JobObservability {
-  /** A the trace handle (a the "one trace per pipeline" surface). */
-  trace: TraceHandle;
-  /** A the structured logger (a the correlation id = a the job_id). */
-  log: StructuredLogger;
-  /** A the Sentry-style PII-scrubbed capture (a the OBSERVABILITY.md §4). */
-  cap: ReturnType<typeof capture>;
-  /** A the PII + a the secret scrub (a SECRETS_MANAGEMENT §3 gate). */
-  scrub: (text: string) => string;
-}
-
-function makeJobObservability(
-  deps: WorkerDeps,
-  payload: ReviewJobPayload,
-): {
-  trace: TraceHandle;
-  log: StructuredLogger;
-  startSpan: (s: string, attrs?: Record<string, unknown>) => SpanHandle;
-  endSpan: (h: SpanHandle, outcome: string, attrs?: Record<string, unknown>) => void;
-  obs: JobObservability;
-} {
-  const trace = tracer();
-  const traceHandle = trace.startTrace(payload.jobId, "review.pipeline");
-  const log = logger({ correlationId: payload.jobId, orgId: payload.orgId });
-  const cap = capture();
-  const scrub = (t: string): string => redact(t).text;
-  const startSpan = (s: string, attrs?: Record<string, unknown>) => traceHandle.startSpan(s, attrs);
-  const endSpan = (h: SpanHandle, outcome: string, attrs?: Record<string, unknown>) => {
-    if (attrs) for (const [k, v] of Object.entries(attrs)) h.setAttribute(k, v);
-    h.end(outcome);
-  };
-  return { trace: traceHandle, log, startSpan, endSpan, obs: { trace: traceHandle, log, cap, scrub } };
-}
+export 
 import {
   logger,
   tracer,
