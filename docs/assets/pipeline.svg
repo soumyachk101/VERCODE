@@ -56,7 +56,7 @@
   <text x="487" y="213" text-anchor="middle" class="stage-title" fill="#ea580c">Static Stage</text>
   <text x="487" y="230" text-anchor="middle" class="stage-sub">ESLint + Semgrep</text>
   <text x="487" y="245" text-anchor="middle" class="stage-sub">deterministic findings</text>
-  <text x="487" y="260" text-anchor="middle" class="stage-sub">resource-capped sub-process</text>
+  <text x="487" y="258" text-anchor="middle" class="stage-sub" style="font-size:8px">resource-capped sub-process</text>
 
   <line x1="545" y1="167" x2="505" y2="188" class="arrow" stroke="#ea580c" marker-end="url(#mO)"/>
 
@@ -64,7 +64,7 @@
   <text x="622" y="213" text-anchor="middle" class="stage-title" fill="#2563eb">AI Stage</text>
   <text x="622" y="230" text-anchor="middle" class="stage-sub">OpenAI (task-routed)</text>
   <text x="622" y="245" text-anchor="middle" class="stage-sub">Zod-validated output</text>
-  <text x="622" y="260" text-anchor="middle" class="stage-sub">no tool-calling path</text>
+  <text x="622" y="258" text-anchor="middle" class="stage-sub" style="font-size:8px">no tool-calling path</text>
 
   <line x1="565" y1="167" x2="605" y2="188" class="arrow" stroke="#2563eb" marker-end="url(#mB)"/>
 
