@@ -161,5 +161,3 @@ export function PlanTrack({
     </div>
   );
 }
-
-export type { PlanTrackModel };

@@ -176,13 +176,15 @@ export function VcTabs({
                 const next = tabs[(idx + 1) % tabs.length];
                 onChange(next.id);
                 requestAnimationFrame(() => {
-                  document.querySelector(`[role="tab"][aria-selected="true"]`)?.focus();
+                  const el = document.querySelector(`[role="tab"][aria-selected="true"]`);
+                  (el as HTMLButtonElement | null)?.focus();
                 });
               } else if (e.key === "ArrowLeft") {
                 const prev = tabs[(idx - 1 + tabs.length) % tabs.length];
                 onChange(prev.id);
                 requestAnimationFrame(() => {
-                  document.querySelector(`[role="tab"][aria-selected="true"]`)?.focus();
+                  const el = document.querySelector(`[role="tab"][aria-selected="true"]`);
+                  (el as HTMLButtonElement | null)?.focus();
                 });
               }
             }}
