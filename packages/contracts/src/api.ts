@@ -5,7 +5,7 @@ import {
   ReviewJobSchema,
   ReviewRequestPayloadSchema,
 } from "./findings.js";
-import { PlanSchema, PlanQuota, planQuota, FREE_QUOTA, DEVELOPER_QUOTA, TEAM_QUOTA, ENTERPRISE_QUOTA } from "./plans.js";
+import { PlanSchema, type PlanQuota, planQuota, FREE_QUOTA, DEVELOPER_QUOTA, TEAM_QUOTA, ENTERPRISE_QUOTA } from "./plans.js";
 
 // The shared request/response payload schemas for the dashboard REST API
 // (API_SPECIFICATION.md "schemas are the shared Zod types in packages/contracts
@@ -41,7 +41,9 @@ export type Role = z.infer<typeof RoleSchema>;
 
 export const CreateInvitationRequestSchema = z.object({
   email: z.string().email(),
-  role: RoleSchema.exclude("owner"), // an invite can't create a second owner (AUTHORIZATION §2)
+  // an invite can't create a second owner (AUTHORIZATION §2 "exactly one owner");
+  // the role is restricted to the non-owner roles.
+  role: z.enum(["admin", "developer", "viewer"]),
 });
 export type CreateInvitationRequest = z.infer<typeof CreateInvitationRequestSchema>;
 
@@ -151,7 +153,6 @@ export type ListAuditQuery = z.infer<typeof ListAuditQuerySchema>;
 // (contracts/src/index.ts "re-export plan helpers (single import surface)").
 export {
   PlanSchema,
-  PlanQuota,
   planQuota,
   FREE_QUOTA,
   DEVELOPER_QUOTA,
@@ -162,3 +163,5 @@ export {
   ReviewJobSchema,
   ReviewRequestPayloadSchema,
 };
+export type { PlanQuota };
+
