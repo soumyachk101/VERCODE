@@ -50,4 +50,13 @@ for f in "$MIGRATIONS_DIR"/*.sql; do
      ON CONFLICT (migration_name) DO UPDATE SET finished_at = now(), rolled_back_at = NULL"
 done
 
+# A the dev-stack seed (a the smoke target's tenant bootstrap — the org +
+# install + repo rows the mock PR's webhook resolves against, seed.sql).
+# A `psql -f` without ON_ERROR_STOP=1: a the seed's `ON CONFLICT DO NOTHING`
+# makes re-runs no-ops; a partial failure here should not block the boot.
+if [ -f "$MIGRATIONS_DIR/seed.sql" ]; then
+  echo "seeding the dev-stack tenant (seed.sql)..."
+  psql "$DATABASE_URL" -f "$MIGRATIONS_DIR/seed.sql" || echo "seed step reported an error (a re-run against a seeded DB is expected)"
+fi
+
 echo "all migrations applied — schema ready"
