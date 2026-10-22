@@ -337,15 +337,24 @@ export async function runReviewJob(
   );
   const summaryBody = renderSummary(summary, ai.ok);
 
-  // [PERSIST] — the findings + the job state + the usage in ONE
-  // transaction (the persist-then-publish invariant, ERROR_HANDLING §6).
+  // [PERSIST] — a the findings + a the job state + a the usage in ONE
+  // transaction (a the persist-then-publish invariant, ERROR_HANDLING §6).
   const jobStatus: JobStatus = ai.ok ? "SUCCEEDED" : "PARTIAL";
+  const persistSpan = startSpan("findings.persist");
   await txFactory(async (tx) => {
     const t = tx as unknown as DbClient;
     const job = await upsertJob(t, payload, jobStatus, {
       usage: aiUsage(ai, deps.promptVersion),
     });
     for (const f of published) {
+      // A the redaction gate (SECRETS_MANAGEMENT §3 "a every stored finding
+      // payload is scrubbed before it's persisted"): a the finding's text
+      // fields are masked before they hit a the DB — a a secret in a the
+      // code sample the PR added is treated as untrusted data (a the §3
+      // "a a secret that reaches a log is a released secret" invariant,
+      // extended to a the finding payload).
+      const scrubbed = obs.scrub(JSON.stringify(f));
+      const scrubbedFinding = JSON.parse(scrubbed) as typeof f;
       await t.reviewFinding.create({
         data: {
           jobId: job.id,
@@ -354,12 +363,12 @@ export async function runReviewJob(
           line: f.line,
           severity: mapSeverityToPrisma(f.severity),
           category: mapCategoryToPrisma(f.category),
-          title: f.title,
-          description: f.description,
-          suggestedFix: f.suggestedFix,
+          title: scrubbedFinding.title,
+          description: scrubbedFinding.description,
+          suggestedFix: scrubbedFinding.suggestedFix,
           confidence: f.confidence,
           anchorStatus: f.anchorStatus === "inline" ? "INLINE" : "ANCHOR_FAILED",
-          payload: JSON.parse(JSON.stringify(f)) as Prisma.InputJsonValue,
+          payload: JSON.parse(scrubbed) as Prisma.InputJsonValue,
         },
       });
     }
