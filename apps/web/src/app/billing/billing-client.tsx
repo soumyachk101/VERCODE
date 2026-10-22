@@ -118,8 +118,7 @@ function BillingBody() {
           <div style={{ marginTop: 16, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
             {ALL_PLANS.map((p) => (
               <PlanChoice key={p} current={b?.plan} plan={p} onPick={(pl) => subscribe.mutate({ plan: pl })} />
-            ))}
-            <Button
+            ))}            <Button
               variant={subscribe.isPending ? "secondary" : "default"}
               disabled={subscribe.isPending || b?.status === "upgrading"}
               onClick={() => {}}
@@ -240,9 +239,17 @@ function PlanChoice({
         fontSize: 13,
         fontWeight: 500,
         textTransform: "capitalize",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
       }}
     >
       {plan}
+      {!on && (
+        <span className="meta" style={{ fontWeight: 400 }}>
+          {PLAN_QUOTA[plan as keyof typeof PLAN_QUOTA]?.reviewsPerMonth ?? 0}/mo
+        </span>
+      )}
     </button>
   );
 }
