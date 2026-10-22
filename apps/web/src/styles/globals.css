@@ -1,0 +1,251 @@
+@import "tailwindcss";
+
+/* VERCODE design tokens (DESIGN_SYSTEM.md §4). Light + dark themes, the tight
+   radius family (4–8px), a single data hue (saturated blue-teal) outside the
+   severity palette, severity ramp critical→low + positive green.
+   No gradients, no tinted tiles, 1px borders only, flat surfaces. */
+
+:root {
+  /* ground / surfaces (4.2) */
+  --ground: #f9fafb;
+  --surface: #ffffff;
+  --raised: #f9f9f9;
+  --active: #eeeeee;
+  --border: #e8e8e8;
+  --rule: #f2f2f2;
+  --control: #d1d5db;
+  --text: #111111;
+  --muted: #5f6368; /* 4.5:1 on white */
+  --faint: #6b6b6b; /* the lightest grey that holds on white */
+  --primary: #1d1f20;
+  --primary-ink: #ffffff;
+  /* the single data hue (plan-spend / verdict data element / primary):
+     a strong blue-teal, deliberately outside the severity ramp */
+  --accent: #0e7490;
+  --grid: #e5e5e5;
+  /* severity ramp (4.1) */
+  --sev-critical: #c4242a;
+  --sev-high: #d97706;
+  --sev-medium: #2563eb;
+  --sev-low: #6b7280;
+  --sev-positive: #247b50;
+  /* the good/bad pair for deltas (colour says good-or-bad, not up-or-down) */
+  --positive: #247b50;
+  --negative: #c4242a;
+  /* status pill pairs (pale tint + dark same-hue ink, 4.2) */
+  --pill-positive-bg: #dcfae5;
+  --pill-positive-ink: #04250e;
+  --pill-negative-bg: #ffedea;
+  --pill-negative-ink: #831c1e;
+  --pill-warning-bg: #fffbeb;
+  --pill-warning-ink: #92400e;
+  --notice-border: #fde68a;
+  /* radii (tight family 4–8px) */
+  --radius-card: 8px;
+  --radius-control: 6px;
+  --radius-chip: 4px;
+  /* spacing (4px base) */
+  --gap: 16px;
+  --card-pad: 20px;
+  --pad: 24px;
+  --nav-row: 34px;
+  --control-height: 32px;
+  --row-height: 48px;
+  /* motion (DESIGN_SYSTEM §8, emil-design-eng) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --font: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+:root[data-theme="dark"] {
+  /* true neutral (4.3): black + lightness steps, no navy tint */
+  --ground: #000000;
+  --surface: #111111;
+  --raised: #222222;
+  --active: #222222;
+  --border: #1a1a1a;
+  --rule: #161616;
+  --control: #444444;
+  --text: #ffffff;
+  --muted: #b4b4b4;
+  --faint: #949494;
+  --primary: #ffffff;
+  --primary-ink: #000000;
+  --accent: #2dd4bf;
+  --grid: #2b2b2b;
+  --sev-critical: #e5566f;
+  --sev-high: #f59e0b;
+  --sev-medium: #3b82f6;
+  --sev-low: #9ca3af;
+  --sev-positive: #3fc07a;
+  --positive: #3fc07a;
+  --negative: #e5566f;
+  --pill-positive-bg: #0b2c1a;
+  --pill-positive-ink: #6ee7a0;
+  --pill-negative-bg: #2c1a20;
+  --pill-negative-ink: #e5566f;
+  --pill-warning-bg: #2a2410;
+  --pill-warning-ink: #f5c563;
+  --notice-border: #8a6d1a;
+}
+
+html {
+  color-scheme: light;
+  font-family: var(--font);
+  font-size: 14px; /* body base (DESIGN_SYSTEM §2) */
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- type tiers (DESIGN_SYSTEM §2) ---------------------------------- */
+.h1 {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text);
+}
+.finding-line {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+.meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+.label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+.mono {
+  font-family: var(--font-mono);
+}
+
+/* ---- focus ring (ACCESSIBILITY.md §2: visible on every focusable) --- */
+:focus-visible {
+  outline: 2px solid var(--control);
+  outline-offset: 1px;
+  border-radius: 2px;
+}
+
+/* ---- press feedback (DESIGN_SYSTEM §8: :active scale(0.97), 160ms) -- */
+.pressable {
+  transition: transform 160ms var(--ease-out);
+}
+.pressable:active {
+  transform: scale(0.97);
+}
+
+/* ---- enter from starting style (menu/panel open, Emil rules) -------- */
+.popover-enter {
+  transform-origin: var(--popover-origin, top left);
+  animation: vc-popover-in 150ms var(--ease-out);
+  animation-fill-mode: backwards;
+}
+@keyframes vc-popover-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* mobile nav sheet (transform/opacity only, no layout shift) */
+.nav-sheet {
+  transition: transform 240ms var(--ease-drawer);
+}
+.nav-sheet[hidden] {
+  display: none;
+}
+
+/* ---- reduced motion: opacity-only, no travel (NFR-25) --------------- */
+@media (prefers-reduced-motion: reduce) {
+  .pressable,
+  .nav-sheet {
+    transition: opacity 150ms linear;
+  }
+  .pressable:active {
+    transform: none;
+  }
+  .popover-enter {
+    animation: vc-reduced-in 150ms linear;
+    animation-fill-mode: backwards;
+  }
+  @keyframes vc-reduced-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* hover is gated behind fine pointers (Emil: no false hover on touch) */
+@media (hover: hover) and (pointer: fine) {
+  .hover-lift:hover {
+    background: var(--active);
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The skeleton loading bar: flat grey at real size, no shimmer (6.6) */
+.skeleton {
+  background: var(--raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-chip);
+  height: 12px;
+}
+
+/* 1px dashed empty-state box (~38px, radius 8) */
+.empty-box {
+  border: 1px dashed var(--control);
+  border-radius: var(--radius-card);
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  color: var(--muted);
+  font-size: 14px;
+}
