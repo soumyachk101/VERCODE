@@ -1,0 +1,8 @@
+{
+  "id": "secret-pem-private-key",
+  "shape": "pem-private-key",
+  "secret": "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA7fixturevalue9f3a2b4c5d6e7f8a0b1c2d3e4f5a6b7c\nEXAMPLEPEMBLOCKNOTAREALKEY0000000000000000000000000000000000\n-----END RSA PRIVATE KEY-----",
+  "masked": "-----BEGIN RSA PRIVATE KEY-----…(masked)",
+  "note": "A PEM private-key block. A fixture value — the BEGIN/END markers are the redaction trigger; the body is never stored.",
+  "redactIn": ["log", "finding-payload", "provider-prompt", "db-byok-column"]
+}

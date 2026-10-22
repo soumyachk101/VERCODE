@@ -1,0 +1,8 @@
+{
+  "id": "secret-github-token",
+  "shape": "github-pat",
+  "secret": "ghp_ABCD1234efgh5678IJKL9012mnop3456QRST",
+  "masked": "ghp_…QRST",
+  "note": "A GitHub personal-access token (`ghp_` shape). A fixture value.",
+  "redactIn": ["log", "finding-payload", "provider-prompt"]
+}

@@ -1,0 +1,8 @@
+{
+  "id": "secret-stripe-publishable",
+  "shape": "stripe-publishable-key",
+  "secret": "pk_live_51HxTestVercodeFixtureKey0000000000000000000000000",
+  "masked": "pk_live_…0000",
+  "note": "A Stripe publishable key (`pk_live_` shape) + a the matching secret key shape (a `sk_live_`). A fixture value.",
+  "redactIn": ["log", "finding-payload", "provider-prompt"]
+}

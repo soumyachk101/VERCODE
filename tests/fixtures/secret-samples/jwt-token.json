@@ -1,0 +1,8 @@
+{
+  "id": "secret-jwt-token",
+  "shape": "jwt",
+  "secret": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmaXh0dXJlIiwib3JnSWQiOiJvcmctMSIsImlhdCI6MTczNTY4OTYwMH0.fixtureSignaturePart",
+  "masked": "eyJhbGci…fixtureSignaturePart (masked)",
+  "note": "A JWT (a three-dot base64url blob: header.payload.signature). A fixture value — the header is a real JWT header shape, the payload + signature are fixture parts.",
+  "redactIn": ["log", "finding-payload", "provider-prompt"]
+}
