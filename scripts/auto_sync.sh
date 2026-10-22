@@ -4,10 +4,15 @@ set -e
 REPO_DIR="/Users/soumyachakraborty/Documents/VERCODE"
 cd "$REPO_DIR"
 
-# Check if current branch is main. If on another branch, skip to avoid disturbing work.
+# If previous run was interrupted while on an update branch, return cleanly to main
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 if [[ "$CURRENT_BRANCH" != "main" ]]; then
-    exit 0
+    echo "[$(date)] Currently on branch '$CURRENT_BRANCH'. Attempting clean recovery to main..."
+    # If the current branch is an update branch and has already been merged or abandoned
+    git stash -u -m "auto-recovery-$(date +%s)" || true
+    git checkout main || git switch -f main
+    git pull origin main || true
+    git stash pop || true
 fi
 
 # Check if there are any git changes (untracked, modified, staged, or deleted)
@@ -24,8 +29,9 @@ if [[ -n "$STATUS_OUTPUT" ]]; then
 
     # Detect package / area
     AREA="core"
-    if echo "$CHANGED_FILES" | grep -q "packages/contracts"; then
-        AREA="contracts"
+    if echo "$CHANGED_FILES" | grep -q "apps/"; then
+        APP_NAME=$(echo "$CHANGED_FILES" | grep "apps/" | head -n 1 | cut -d'/' -f2)
+        AREA="app-$APP_NAME"
     elif echo "$CHANGED_FILES" | grep -q "packages/"; then
         PKG_NAME=$(echo "$CHANGED_FILES" | grep "packages/" | head -n 1 | cut -d'/' -f2)
         AREA="$PKG_NAME"
@@ -58,8 +64,6 @@ if [[ -n "$STATUS_OUTPUT" ]]; then
     PR_TITLE="$TYPE($AREA): update $SUMMARY_FILES"
     COMMIT_MSG="$PR_TITLE"
 
-    # Construct rich PR Body
-    FILE_DIFF_STAT=$(git diff --stat 2>/dev/null || true)
     PR_BODY=$(cat <<EOF
 ### Summary of Changes
 - **Category:** \`$TYPE($AREA)\`
@@ -87,14 +91,14 @@ EOF
     PR_URL=$(gh pr create --base main --head "$BRANCH_NAME" --title "$PR_TITLE" --body "$PR_BODY")
     echo "[$(date)] PR created: $PR_URL"
 
-    # Auto merge PR into main cleanly
+    # Auto merge PR into main
     echo "[$(date)] Merging PR..."
     gh pr merge "$BRANCH_NAME" --merge --delete-branch
     echo "[$(date)] PR merged and branch deleted successfully."
 
     # Return to main and fetch latest
     git checkout main
-    git pull origin main
+    git pull origin main || true
     echo "[$(date)] Main synchronized."
 else
     echo "[$(date)] No changes detected."
