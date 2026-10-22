@@ -31,6 +31,20 @@
 
 import { createHmac } from "node:crypto";
 
+// The dev-stack's dashboard REST surface is incomplete at M8: the api's
+// session-scoped routes (the `/orgs/:id/reviews` list + the review detail)
+// are not wired yet — the dashboard *pages* read real API data, but the
+// review-list route lands with M6's API work. The smoke therefore reads the
+// durable review_jobs row directly from Postgres (a the DB is the source
+// of truth, BACKUP_RESTORE §1 "a queue loss is a re-drain from the DB")
+// instead of through the dashboard API. This is *the same assertion the
+// E2E "a DB-backed assertions" rule makes* (E2E_TEST_PLAN §3 "a UI number
+// matches the DB row") — the smoke just skips the UI step.
+//
+// The mock-github service's *recorded publishes* are the pipeline's terminal
+// observable (a the worker's `GithubPublisher` seam writes there in the
+// dev-stack; the smoke reads it back to prove the review actually posted).
+
 const API_BASE = process.env.API_BASE ?? "http://api:4000";
 const WEB_BASE = process.env.WEB_BASE ?? "http://web:3000";
 const MOCK_GITHUB_BASE = process.env.MOCK_GITHUB_BASE ?? "http://mock-github:8091";

@@ -209,7 +209,7 @@ export function redact(input: string): RedactResult {
     count += 1;
     // A the `name=value` env-var form keeps the `=***` mask; a the bare
     // token is masked to `...last-4`.
-    const eq = match.match(/^([\w]+)=(.*)$/);
+    const eq = match.match(/^([A-Za-z][A-Za-z0-9_]*)(=.*)$/);
     if (eq && eq[2].length >= ENTROPY_MIN_LEN) {
       return park(`${eq[1]}=***`);
     }
