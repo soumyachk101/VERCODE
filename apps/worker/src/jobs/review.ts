@@ -196,8 +196,33 @@ export async function runReviewJob(
     ((fn: (tx: unknown) => Promise<unknown>) =>
       db.$transaction((tx) => fn(tx) as Promise<unknown>));
 
+  // [M7 observability] — a the trace (a the id = a the job_id) + a the
+  // structured logger (a the correlation id = a the job_id, OBSERVABILITY
+  // §1–§2 "the review pipeline = one trace with a span per stage"). A the
+  // redaction gate runs on every record (a the SECRETS_MANAGEMENT §3 "the
+  // redactor runs on *every* record before it's written") — a the logger's
+  // transport applies it; a the capture's payload is scrubbed (a the
+  // OBSERVABILITY §4 "a Sentry event that carries a secret is a leak").
+  const { trace, log } = makeReviewJobObservability(payload);
+  const startSpan = (stage: string, attrs?: Record<string, unknown>) => {
+    const h = trace.startSpan(stage, attrs);
+    log.debug(stage, `stage start: ${stage}`);
+    return h;
+  };
+  const endSpan = (
+    h: ReturnType<TraceHandle["startSpan"]>,
+    outcome: string,
+    attrs?: Record<string, unknown>
+  ) => {
+    if (attrs) for (const [k, v] of Object.entries(attrs)) h.setAttribute(k, v);
+    h.end(outcome);
+  };
+
   // [load a the durable state] — a the payload is a pointer.
+  const stateSpan = startSpan("state.load");
   const { org, settings, repoRules } = await loadDurableState(db, payload);
+  endSpan(stateSpan, "succeeded");
+  log.info("state.load", "Loaded the durable state", { plan: org.plan });
 
   // [the policy] — a the floor + a the budget + a the suppression, a the
   // durable rows (org_settings + repo_rules) resolve over a the platform
@@ -219,6 +244,13 @@ export async function runReviewJob(
   const month = new Date().toISOString().slice(0, 7); // YYYY-MM
   const quota = await checkQuotaPlan(db, payload.orgId, org.plan, month);
   if (quota.over) {
+    // A skip is a log record, not a an absence (a the NFR-18 "never silent"
+    // rule, OBSERVABILITY.md §1 "a skip is a log record, not a an
+    // absence"): a the structured record with a the skip_reason.
+    log.warn("quota.gate", "The quota gate skipped the review", {
+      skip_reason: "quota_exceeded",
+      detail: quota.detail,
+    });
     return finishSkipped(deps, payload, "quota_exceeded", {
       summaryBody: `Review skipped — org quota reached for ${month} (${quota.detail}). Upgrade or reduce review volume.`,
     });
