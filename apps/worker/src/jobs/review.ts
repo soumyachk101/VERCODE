@@ -69,7 +69,27 @@ import {
   resolveWorkerPolicy,
   type ReviewPolicy,
 } from "./policy.js";
-import { logger, tracer } from "@vercode/observability";
+import { logger, tracer, type StructuredLogger, type TraceHandle, type SpanHandle } from "@vercode/observability";
+
+/**
+ * Build the per-job observability context (a the OBSERVABILITY.md §2 "a the
+ * review is a single trace with a span per stage"). The trace id = the
+ * job_id (a the correlation key). A no-OTLP-endpoint tracer (a the
+ * in-memory spans array — a the queryable surface; a the OTel exporter is a
+ * later seam).
+ */
+function makeJobObservability(
+  deps: WorkerDeps,
+  payload: ReviewJobPayload,
+): { trace: TraceHandle; log: StructuredLogger; startSpan: (s: string) => SpanHandle; endSpan: (h: SpanHandle, outcome: string, attrs?: Record<string, unknown>) => void } {
+  const trace = tracer();
+  const traceHandle = trace.startTrace(payload.jobId);
+  const log = logger({ correlationId: payload.jobId, orgId: payload.orgId });
+  const startSpan = (s: string) => traceHandle.startSpan(s);
+  const endSpan = (h: SpanHandle, outcome: string, attrs?: Record<string, unknown>) =>
+    traceHandle.endSpan(h, outcome, attrs);
+  return { trace: traceHandle, log, startSpan, endSpan };
+}
 
 // ---------------------------------------------------------------------------
 // The canonical finding (post-pipeline, pre-persist). Mirrors the contracts
