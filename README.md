@@ -44,49 +44,15 @@ VERCODE positions at the intersection of **deterministic precision**, **evidence
 
 ## Architecture at a Glance
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                     VERCODE — Component Map                          │
-└──────────────────────────────────────────────────────────────────────┘
+### Component Map
 
- Browser (stateless, no DB / no GitHub access)
- ┌───────────────────┐
- │  Next.js 15       │
- │  Dashboard        │  ──▶ REST + session cookie
- │  (apps/web)       │       (stateless frontend)
- └────────┬──────────┘
-          │
-          ▼
-┌──────────────────────────────────────────────────────────────────┐
-│  Fastify API (apps/api) — the HTTP boundary                     │
-│  • Auth (sessions, Argon2id)        • Dashboard REST            │
-│  • Webhook ingress (GitHub)         • Billing webhooks          │
-│  • Rate limits                      • Health endpoints          │
-│                                                                            │
-│  Never runs the review pipeline.                                        │
-└────────┬──────────────────────┬────────────────────────────────┘
-         │ (verify + enqueue)   │ (persist)
-         ▼                      ▼
-┌─────────────────┐   ┌────────────────────────────┐
-│  Redis 7        │   │  PostgreSQL 16             │
-│  sessions,      │   │  reviews, findings, orgs,  │
-│  BullMQ queue,  │   │  usage, audit, billing     │
-│  diff cache     │   │  (the single source of     │
-└────────┬────────┘   │  truth)                    │
-         │            └────────────────────────────┘
-         ▼ (review-queue)
-┌──────────────────────────────────────────────────────────────────┐
-│  BullMQ Worker (apps/worker) — the pipeline                     │
-│  dequeue → fetch diff → static analysis (ESLint+Semgrep)        │
-│  → AI review (OpenAI, task-routed) → validate → dedup          │
-│  → policy (floor, suppression, quota) → summary → publish       │
-│                                                                            │
-│  Static analysis runs as a *worker sub-process* in MVP;          │
-│  becomes a separate sandboxed runner in Phase 2.                 │
-└──────────────────────────────────────────────────────────────────┘
-```
+![VERCODE — System Architecture](docs/assets/architecture.svg)
 
-### The hot path — Webhook → Review
+### The Review Pipeline (Hot Path)
+
+![VERCODE — Review Pipeline](docs/assets/pipeline.svg)
+
+### The hot path — Webhook → Review (step-by-step)
 
 1. **GitHub** → `POST /webhooks/github` (signed)
 2. **API** verifies HMAC-SHA256 + 5-min timestamp window + 24 h delivery-id dedup

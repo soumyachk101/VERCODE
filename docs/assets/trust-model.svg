@@ -1,0 +1,72 @@
+<svg viewBox="0 0 1000 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="VERCODE trust model">
+  <defs>
+    <style>
+      .t-title { font-family: 'SF Pro Display', 'Segoe UI', -apple-system, sans-serif; font-size: 13px; font-weight: 700; }
+      .t-sub   { font-family: 'SF Pro Text', 'Segoe UI', -apple-system, sans-serif; font-size: 9.5px; }
+      .flow    { font-family: 'SF Pro Text', 'Segoe UI', -apple-system, sans-serif; font-size: 9px; fill: #4a5a6a; }
+    </style>
+    <marker id="tA" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#94a3b8"/></marker>
+  </defs>
+
+  <rect width="1000" height="320" fill="#f8faff"/>
+  <text x="500" y="32" text-anchor="middle" class="t-title" fill="#1a2b3c" style="font-size:19px">Trust Model — Three Domains, Two Ingress Points</text>
+  <text x="500" y="50" text-anchor="middle" class="t-sub" fill="#5a6b7c">Core invariant: repository content is <tspan font-weight="700" fill="#991b1b">input</tspan>, never <tspan font-weight="700" fill="#166534">authority</tspan></text>
+
+  <!-- Domain 1 -->
+  <rect x="40" y="80" width="280" height="200" rx="12" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="180" y="106" text-anchor="middle" class="t-title" fill="#991b1b">UNTRUSTED</text>
+  <text x="180" y="124" text-anchor="middle" class="t-sub" fill="#7f1d1d">External, adversarial, or unverified</text>
+  <rect x="60" y="140" width="240" height="28" rx="5" fill="white" stroke="#fecaca"/>
+  <text x="180" y="158" text-anchor="middle" class="t-sub" fill="#374151">Repository content · diffs · file comments</text>
+  <rect x="60" y="174" width="240" height="28" rx="5" fill="white" stroke="#fecaca"/>
+  <text x="180" y="192" text-anchor="middle" class="t-sub" fill="#374151">PR bodies · titles · README (injection surface)</text>
+  <rect x="60" y="208" width="240" height="28" rx="5" fill="white" stroke="#fecaca"/>
+  <text x="180" y="226" text-anchor="middle" class="t-sub" fill="#374151">Third-party forks · webhook payloads</text>
+  <rect x="60" y="242" width="240" height="28" rx="5" fill="white" stroke="#fecaca"/>
+  <text x="180" y="260" text-anchor="middle" class="t-sub" fill="#374151">AI provider output (untrusted until validated)</text>
+
+  <!-- Arrow 1 -->
+  <line x1="325" y1="140" x2="360" y2="140" stroke="#94a3b8" stroke-width="2" marker-end="url(#tA)"/>
+  <text x="342" y="130" text-anchor="middle" class="flow">ingress</text>
+
+  <!-- Ingress box -->
+  <rect x="365" y="100" width="110" height="80" rx="8" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="420" y="120" text-anchor="middle" class="t-title" fill="#854d0e" style="font-size:11px">INGRESS</text>
+  <text x="420" y="137" text-anchor="middle" class="t-sub" fill="#713f12">GitHub webhook</text>
+  <text x="420" y="151" text-anchor="middle" class="t-sub" fill="#713f12">HMAC + window</text>
+  <text x="420" y="165" text-anchor="middle" class="t-sub" fill="#713f12">+ dedup</text>
+
+  <!-- Arrow 2 -->
+  <line x1="480" y1="140" x2="515" y2="140" stroke="#94a3b8" stroke-width="2" marker-end="url(#tA)"/>
+  <text x="497" y="130" text-anchor="middle" class="flow">verified</text>
+
+  <!-- Domain 2 -->
+  <rect x="520" y="80" width="280" height="200" rx="12" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="660" y="106" text-anchor="middle" class="t-title" fill="#1e40af">PLATFORM</text>
+  <text x="660" y="124" text-anchor="middle" class="t-sub" fill="#1e3a8a">The trusted core</text>
+  <rect x="540" y="140" width="240" height="28" rx="5" fill="white" stroke="#bfdbfe"/>
+  <text x="660" y="158" text-anchor="middle" class="t-sub" fill="#374151">API — auth, dashboard REST, webhooks</text>
+  <rect x="540" y="174" width="240" height="28" rx="5" fill="white" stroke="#bfdbfe"/>
+  <text x="660" y="192" text-anchor="middle" class="t-sub" fill="#374151">Worker — review pipeline (no secrets in payload)</text>
+  <rect x="540" y="208" width="240" height="28" rx="5" fill="white" stroke="#bfdbfe"/>
+  <text x="660" y="226" text-anchor="middle" class="t-sub" fill="#374151">Postgres 16 · Redis 7 (session, queue, cache)</text>
+  <rect x="540" y="242" width="240" height="28" rx="5" fill="white" stroke="#bfdbfe"/>
+  <text x="660" y="260" text-anchor="middle" class="t-sub" fill="#374151">KMS — App key, BYOK master, signing key</text>
+
+  <!-- Arrow 3 -->
+  <line x1="805" y1="140" x2="840" y2="140" stroke="#94a3b8" stroke-width="2" marker-end="url(#tA)"/>
+  <text x="822" y="130" text-anchor="middle" class="flow">scoped</text>
+
+  <!-- Domain 3 -->
+  <rect x="845" y="80" width="120" height="200" rx="12" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="905" y="106" text-anchor="middle" class="t-title" fill="#166534">TENANT</text>
+  <text x="905" y="124" text-anchor="middle" class="t-sub" fill="#14532d">One org's data</text>
+  <rect x="858" y="140" width="94" height="60" rx="5" fill="white" stroke="#bbf7d0"/>
+  <text x="905" y="160" text-anchor="middle" class="t-sub" fill="#374151">org_id</text>
+  <text x="905" y="174" text-anchor="middle" class="t-sub" fill="#374151">binding</text>
+  <text x="905" y="190" text-anchor="middle" class="t-sub" fill="#374151">enforced</text>
+
+  <!-- Bottom rules -->
+  <rect x="40" y="292" width="925" height="22" rx="4" fill="white" stroke="#e2e8f0"/>
+  <text x="52" y="307" class="t-sub" fill="#334155">Cross-org access → <tspan font-weight="700" fill="#991b1b">404</tspan> (no existence oracle)  ·  a plan state moves only on a verified provider webhook  ·  a skip is never silent  ·  the redactor gates every log record and stored finding</text>
+</svg>
