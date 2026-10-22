@@ -12,38 +12,21 @@
 //          (a the HMAC against GITHUB_WEBHOOK_SECRET, a the fixture
 //          secret). The mock-github service's canned diff is what the
 //          worker's GithubDiffClient seam reads.
-//        - poll the api's dashboard review list for the job to reach a
-//          terminal status (SUCCEEDED / PARTIAL / SKIPPED / FAILED).
-//        - read the mock-github's recorded publishes + the mock-ai's
-//          call log (a the pipeline's terminal step is "a the GitHub
-//          review was posted", not just "the job succeeded").
+//        - poll the worker's recorded publish (a the pipeline's terminal
+//          step is "a the GitHub review was posted", not just "the job
+//          succeeded").
+//        - read the mock-ai's call log + the mock-billing's signature
+//          source.
 //   3. the exit code: 0 when all three steps pass, 1 otherwise.
 //
 // THE tenant seed (a the webhook resolves the PR's `installation.id`
 // against a *known* org + install + repo, WEBHOOK_SPECIFICATION §1.2 "an
 // unknown install → 404 + audit"): the dev-stack is seeded by the
-// compose `postgres` service's `POSTGRES_INITDB` hooks — the seed.sql
-// creates the org `smoke-demo` + a github install + a github repo row,
-// and sets the install's `accountLogin` to match the webhook event. A
-// smoke run against an unseeded DB would 404 (a the "unknown install"
-// path, a valid rejection) — the smoke target includes the seed step
-// so a from-scratch boot works end-to-end.
+// migrate service's seed.sql — it creates the org `smoke-demo` + a
+// github install + a github repo row so a smoke run against a fresh DB
+// works end-to-end.
 
 import { createHmac } from "node:crypto";
-
-// The dev-stack's dashboard REST surface is incomplete at M8: the api's
-// session-scoped routes (the `/orgs/:id/reviews` list + the review detail)
-// are not wired yet — the dashboard *pages* read real API data, but the
-// review-list route lands with M6's API work. The smoke therefore reads the
-// durable review_jobs row directly from Postgres (a the DB is the source
-// of truth, BACKUP_RESTORE §1 "a queue loss is a re-drain from the DB")
-// instead of through the dashboard API. This is *the same assertion the
-// E2E "a DB-backed assertions" rule makes* (E2E_TEST_PLAN §3 "a UI number
-// matches the DB row") — the smoke just skips the UI step.
-//
-// The mock-github service's *recorded publishes* are the pipeline's terminal
-// observable (a the worker's `GithubPublisher` seam writes there in the
-// dev-stack; the smoke reads it back to prove the review actually posted).
 
 const API_BASE = process.env.API_BASE ?? "http://api:4000";
 const WEB_BASE = process.env.WEB_BASE ?? "http://web:3000";
@@ -61,24 +44,23 @@ const timestamp = new Date().toISOString();
 // The mock PR event (a a `pull_request.opened`, the schema in
 // @vercode/github's PullRequestEventSchema). The `installation.id`
 // + the `repository.id` are the seeded values in seed.sql.
-const MOCK_ORG_SLUG = "smoke-demo";
 const MOCK_INSTALLATION_ID = 1; // a the seed's githubInstallationId
 const MOCK_GITHUB_REPO_ID = 424242; // a the seed's githubRepoId
 const MOCK_PR_NUMBER = 42;
 const MOCK_HEAD_SHA = "f".repeat(40); // a valid 40-hex-char commit SHA
 
-function log(msg: string) {
+function log(msg) {
   process.stdout.write(`\x1b[1;34m[smoke]\x1b[0m ${msg}\n`);
 }
-function fail(msg: string) {
+function fail(msg) {
   process.stdout.write(`\x1b[1;31m[smoke] FAILED: ${msg}\x1b[0m\n`);
   process.exit(1);
 }
 
-async function getJson(url: string): Promise<unknown> {
+async function getJson(url) {
   const res = await fetch(url, { method: "GET" });
   const text = await res.text();
-  let body= null;
+  let body = null;
   try {
     body = text ? JSON.parse(text) : null;
   } catch {
@@ -90,16 +72,16 @@ async function getJson(url: string): Promise<unknown> {
 
 // A the GitHub webhook HMAC (a X-Hub-Signature-256, WEBHOOK_SPECIFICATION
 // §1.1 layer 1): `sha256=` + the hex digest of HMAC-SHA256(secret, rawBody).
-function githubSignature(rawBody: string, secret: string) {
+function githubSignature(rawBody, secret) {
   return "sha256=" + createHmac("sha256", secret).update(rawBody).digest("hex");
 }
 
-async function main(): Promise<void> {
+async function main() {
   // -----------------------------------------------------------------------
   // 1. the health endpoints.
   // -----------------------------------------------------------------------
   log("step 1: the health endpoints");
-  const healths= [
+  const healths = [
     ["web", `${WEB_BASE}/`],
     ["api /healthz", `${API_BASE}/healthz`],
     ["mock-github", `${MOCK_GITHUB_BASE}/healthz`],
@@ -117,10 +99,12 @@ async function main(): Promise<void> {
   }
 
   // A the readiness (a the DB reachable from the api, NFR-23).
-  const ready = await getJson(`${API_BASE}/readyz`).catch((err: unknown) =>
-    fail(`api /readyz → ${String(err)}`)
-  );
-  log(`api /readyz → ${JSON.stringify(ready)}`);
+  try {
+    const ready = await getJson(`${API_BASE}/readyz`);
+    log(`api /readyz → ${JSON.stringify(ready)}`);
+  } catch (err) {
+    fail(`api /readyz → ${String(err)}`);
+  }
 
   // -----------------------------------------------------------------------
   // 2. the mock PR through the pipeline.
@@ -156,9 +140,7 @@ async function main(): Promise<void> {
     },
     body: rawBody,
   });
-  const webhookJson = (await webhookRes.json().catch(() => null)) as
-    | { ok?: boolean; jobId?: string; enqueued?: boolean; dropped?: string; dedup?: boolean; error?: unknown }
-    | null;
+  const webhookJson = await webhookRes.json().catch(() => null);
   log(`POST /webhooks/github → ${webhookRes.status} ${JSON.stringify(webhookJson)}`);
 
   // A a 404 is the "unknown install" path (a the seed.sql didn't run) —
@@ -184,9 +166,7 @@ async function main(): Promise<void> {
   let published = false;
   let lastCount = -1;
   while (Date.now() < deadline) {
-    const publishes = (await getJson(`${MOCK_GITHUB_BASE}/recorded-publishes`)) as {
-      count?: number;
-    };
+    const publishes = await getJson(`${MOCK_GITHUB_BASE}/recorded-publishes`);
     lastCount = publishes.count ?? 0;
     if (lastCount > 0) {
       published = true;
@@ -199,17 +179,15 @@ async function main(): Promise<void> {
   }
   log(`review published (a the mock-github recorded ${lastCount} publish(es))`);
 
-  const calls = (await getJson(`${MOCK_AI_BASE}/calls`)) as { count?: number };
+  const calls = await getJson(`${MOCK_AI_BASE}/calls`);
   log(`mock-ai call log: count=${calls.count ?? 0}`);
 
-  const billingEvent = (await getJson(`${MOCK_BILLING_BASE}/event`)) as {
-    signature?: string;
-  };
+  const billingEvent = await getJson(`${MOCK_BILLING_BASE}/event`);
   log(`mock-billing event signature present: ${billingEvent.signature ? "yes" : "no"}`);
 
   log("SMOKE PASSED (a the health + a mock PR through the pipeline)");
 }
 
-void main().catch((err: unknown) => {
+void main().catch((err) => {
   fail(String(err));
 });
