@@ -1,0 +1,15 @@
+{
+  "id": "webhook-github-stale-001",
+  "kind": "stale",
+  "expectedVerdict": "rejected_timestamp",
+  "headers": {
+    "x-hub-signature-256": "sha256=d69d53620c3ba771d04452b2429038083b8b649a63eafcba7f65cba9534c8e3a",
+    "x-hub-delivery": "gh-delivery-stale-001",
+    "x-hub-timestamp": "2025-12-31T23:50:00.000Z",
+    "x-github-event": "pull_request"
+  },
+  "rawBody": "{\"action\":\"opened\",\"number\":42,\"pull_request\":{\"number\":42,\"title\":\"Add login flow\",\"body\":null,\"state\":\"open\",\"head\":{\"sha\":\"ffffffffffffffffffffffffffffffffffffffff\",\"ref\":\"feature/login\"},\"base\":{\"ref\":\"main\"}},\"repository\":{\"id\":424242,\"full_name\":\"vercode/mock-pr\"},\"installation\":{\"id\":1},\"sender\":{\"login\":\"smoke-bot\"}}",
+  "timestamp": "2025-12-31T23:50:00.000Z",
+  "nowMs": 1767225600000,
+  "note": "A valid signature + a X-Hub-Timestamp older than a the 5-min window → 401, a audited."
+}

@@ -1,0 +1,14 @@
+{
+  "id": "webhook-github-malformed-001",
+  "kind": "malformed",
+  "expectedVerdict": "rejected_malformed",
+  "headers": {
+    "x-hub-signature-256": "sha256=9bba268ceb276a62f7bdf94254ae12e4507e3763369b2c010163d681d417888c",
+    "x-hub-delivery": "gh-delivery-malformed-001",
+    "x-hub-timestamp": "2026-01-01T00:00:00.000Z",
+    "x-github-event": "pull_request"
+  },
+  "rawBody": "{\"action\":\"opened\",\"number\":42}",
+  "timestamp": "2026-01-01T00:00:00.000Z",
+  "note": "A valid HMAC + a body that fails a the PullRequestEventSchema → 422 WEBHOOK_MALFORMED, a not enqueued, a audited."
+}

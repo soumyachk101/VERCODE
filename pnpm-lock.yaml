@@ -202,6 +202,9 @@ importers:
       '@vercode/github':
         specifier: workspace:*
         version: link:../../packages/github
+      '@vercode/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@vercode/policy-engine':
         specifier: workspace:*
         version: link:../../packages/policy-engine

@@ -69,6 +69,7 @@ import {
   resolveWorkerPolicy,
   type ReviewPolicy,
 } from "./policy.js";
+import { logger, tracer } from "@vercode/observability";
 
 // ---------------------------------------------------------------------------
 // The canonical finding (post-pipeline, pre-persist). Mirrors the contracts
