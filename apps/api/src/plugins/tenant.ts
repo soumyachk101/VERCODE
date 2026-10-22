@@ -4,7 +4,7 @@
 // existence oracle, AC-902); an in-tenant capability denial → 403.
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import type { Role } from "@prisma/client";
 
 export interface TenantContext {
@@ -77,8 +77,6 @@ export function buildTenantPlugin() {
         reply.code(404).send({ error: { code: "NOT_FOUND", message: "Org not found." } });
         return;
       }
-
-      const membership = await db.membership.findFirst({
         where: { orgId, userId },
       });
       const org = await db.organization.findFirst({
