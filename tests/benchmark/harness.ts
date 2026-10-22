@@ -503,7 +503,7 @@ export function loadBaseline(fixturesDir: string): BenchmarkReport | null {
 
 export async function main(argv: string[] = process.argv.slice(2)): Promise<void> {
   const flags = new Set(argv);
-  const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), "..");
+  const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures");
   const saveBaselineFlag = flags.has("--save-baseline");
 
   const cases = loadCases(fixturesDir);
