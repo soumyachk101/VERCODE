@@ -77,7 +77,7 @@ export function ByokField({
           )}
         </div>
       )}
-      {(revealKey || onRotate) && (
+      {onRotate && (
         <div>
           <Label htmlFor="byok-new">New key</Label>
           <Input
@@ -90,7 +90,7 @@ export function ByokField({
             style={{ maxWidth: 320, display: "block" }}
           />
           {newKey && onRotate && (
-            <Button size="sm" className="mt-2" onClick={() => (onRotate as (v: string) => void)(newKey)}>
+            <Button size="sm" className="mt-2" onClick={() => onRotate()}>
               Save new key
             </Button>
           )}
