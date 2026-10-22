@@ -219,6 +219,12 @@ export async function runReviewJob(
     ((fn: (tx: unknown) => Promise<unknown>) =>
       db.$transaction((tx) => fn(tx) as Promise<unknown>));
 
+  // The per-job observability context (OBSERVABILITY.md §2: a trace = a
+  // single job; a span per stage; the trace id = the job_id). The no-OTLP
+  // case (the dev stack) keeps the spans in-memory (a the queryable
+  // surface; a the OTel exporter is a later seam).
+  const { trace: traceCtx, log, startSpan, endSpan } = makeJobObservability(deps, payload);
+
   // [load a the durable state] — a the payload is a pointer.
   const { org, settings, repoRules } = await loadDurableState(db, payload);
 
