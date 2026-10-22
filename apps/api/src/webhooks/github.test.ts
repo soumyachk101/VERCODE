@@ -394,15 +394,16 @@ describe("IT-webhook-opened (a a signed opened event → 202 + a review_jobs row
 
     // A the queue has exactly one job, a the payload is ONLY a pointer + a
     // correlation (a no diff, a no findings, a no authz material, a
-    // NFR-04).
+    // NFR-04; a the delivery id stays in the receipt row, a not the
+    // queue payload — a the minimal worker re-read key).
     expect(queue.enqueued).toHaveLength(1);
     const payload = queue.enqueued[0].payload;
+    expect(Object.keys(payload).sort()).toEqual(["commitSha", "jobId", "orgId", "prNumber", "repoId"]);
     expect(payload.jobId).toBe(json.jobId);
     expect(payload.orgId).toBe("org-1");
     expect(payload.repoId).toBe("repo-1");
     expect(payload.prNumber).toBe(42);
     expect(payload.commitSha).toBe("b".repeat(40));
-    expect(payload.deliveryId).toBe("delivery-opened");
     expect("diff" in payload).toBe(false);
   });
 
