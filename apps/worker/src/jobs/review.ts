@@ -86,8 +86,10 @@ function makeJobObservability(
   const traceHandle = trace.startTrace(payload.jobId);
   const log = logger({ correlationId: payload.jobId, orgId: payload.orgId });
   const startSpan = (s: string) => traceHandle.startSpan(s);
-  const endSpan = (h: SpanHandle, outcome: string, attrs?: Record<string, unknown>) =>
-    traceHandle.endSpan(h, outcome, attrs);
+  const endSpan = (h: SpanHandle, outcome: string, attrs?: Record<string, unknown>) => {
+    if (attrs) for (const [k, v] of Object.entries(attrs)) h.setAttribute(k, v);
+    h.end(outcome);
+  };
   return { trace: traceHandle, log, startSpan, endSpan };
 }
 
