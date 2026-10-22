@@ -100,7 +100,7 @@ export function buildTenantPlugin() {
 
       // The capability gate (AUTHORIZATION.md §3.1 "a route with no declared
       // capability is a bug — a lint rule flags it").
-      const required = req.context.config?.capability as Capability | undefined;
+      const required = req.routeOptions.config?.capability as Capability | undefined;
       if (required && !req.tenant.capabilities.has(required)) {
         await db.auditEvent
           .create({
