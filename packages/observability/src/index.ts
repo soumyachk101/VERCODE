@@ -125,7 +125,6 @@ export function logger(opts: LoggerOptions = {}): StructuredLogger {
         correlationId,
         orgId: orgId || undefined,
         msg,
-        ...(level === "debug" || level === "info" ? {} : {}), // a the level-specific fields
       };
       if (fields) record.fields = { ...fields };
       const merged = { ...baseFields, ...record };
