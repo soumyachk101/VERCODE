@@ -1,11 +1,16 @@
 // The worker's process config (M5 T5.1). The *env* comes from @vercode/config
 // (loadConfig is the only reader of env — ENVIRONMENT_VARIABLES.md §9); this
 // module derives the worker-specific values + carries the runtime seams (the
-// injected diff client, publisher, providers, redis) so the pipeline is testable
+// injected diff client, publisher, providers) so the pipeline is testable
 // without a live Redis/Postgres/GitHub.
+//
+// The diff parse + anchor resolution + static analysis come straight from the
+// M4 packages (@vercode/diff-engine, @vercode/static-analysis). The only
+// remaining local seam is the AI provider (src/adapters/local.ts stands in
+// for @vercode/ai-providers until it lands).
 
 import type { AppConfig } from "@vercode/config";
-import type { GithubDiffClient, PRDiff } from "@vercode/github";
+import type { ChangeSet } from "@vercode/diff-engine";
 import type { DbClient } from "@vercode/database";
 
 // ---------------------------------------------------------------------------
@@ -16,14 +21,12 @@ import type { DbClient } from "@vercode/database";
 // ---------------------------------------------------------------------------
 
 export interface ReviewJobPayload {
-  /** The BullMQ id of this delivery (correlation only — never an authz input). */
+  /** The durable review_jobs.id (correlation + the enqueue receipt). */
   jobId: string;
   orgId: string;
   repoId: string;
   prNumber: number;
   commitSha: string;
-  /** The delivery attempt (BullMQ fills it; the backoff is a function of it). */
-  attempt?: number;
 }
 
 export interface RetentionJobPayload {
@@ -40,8 +43,8 @@ export interface BillingJobPayload {
 // ---------------------------------------------------------------------------
 // The AI provider interface (the @vercode/ai-providers seam, TRD.md §9).
 // The M4 package lands the OpenAI/Anthropic/Ollama/mock adapters; this is the
-// shape they implement. A local adapter implementing it lives in
-// src/adapters/local.ts until the package is merged.
+// shape they implement. The local adapter implementing it lives in
+// src/adapters/local.ts until that package is merged.
 // ---------------------------------------------------------------------------
 
 export interface AiFinding {
@@ -57,7 +60,8 @@ export interface AiFinding {
 
 export interface AiCompleteInput {
   task: string;
-  files: Array<{ path: string; language: string; content: string }>;
+  /** The changed files in scope (bounded context, FR-401). */
+  files: Array<{ path: string; language: string }>;
   changedLines: number;
   schemaNote?: string;
 }
@@ -78,39 +82,12 @@ export interface AiProvider {
 }
 
 /**
- * A provider factory: the pipeline constructs the provider per-review with the
- * PR diff in hand (the mock provider needs it to anchor deterministic
- * findings; the real @vercode/ai-providers adapters ignore it — they route by
- * task + org context).
+ * A provider factory: the pipeline constructs the provider per-review with
+ * the parsed change set in hand (the mock provider anchors its deterministic
+ * findings to the diff's added lines; the real @vercode/ai-providers adapters
+ * route by task + org context instead).
  */
-export type AiProviderFactory = (diff: PRDiff) => AiProvider;
-
-export interface StaticAnalyzer {
-  /** Deterministic findings — authoritative, exempt from the confidence floor (ADR-005). */
-  runStatic(diff: PRDiff): Promise<
-    Array<{
-      source: "eslint" | "semgrep";
-      file: string;
-      line: number;
-      severity: "low" | "medium" | "high" | "critical";
-      category: string;
-      title: string;
-      description: string;
-      suggestedFix?: string;
-      confidence: number;
-    }>
-  >;
-}
-
-export interface DiffContext {
-  addedLineRanges: Record<string, Set<number>>;
-  files: string[];
-  totalLines: number;
-}
-
-export interface DiffEngine {
-  analyze(diff: PRDiff): DiffContext;
-}
+export type AiProviderFactory = (changeSet: ChangeSet) => AiProvider;
 
 // ---------------------------------------------------------------------------
 // The GitHub publisher (the INTEGRATION_DESIGN.md §1.6 seam). A mock records
@@ -148,15 +125,15 @@ export interface GithubPublisher {
 export interface WorkerDeps {
   db: DbClient;
   redis: import("ioredis").Redis;
-  github: GithubDiffClient;
-  staticAnalyzer: StaticAnalyzer;
+  /** The diff fetch (the GithubDiffClient seam — the mock in dev). */
+  github: import("@vercode/github").GithubDiffClient;
   /**
    * The AI provider factories, in fallback order [primary, secondary]
    * (TRD.md §9 "bounded retry, then fall back to the configured secondary
    * provider — one switch").
    */
   aiProviderFactories: AiProviderFactory[];
-  diffEngine: DiffEngine;
+  /** The GitHub publisher (a mock records publishes in dev). */
   publisher: GithubPublisher;
   /** The provider to use first (config.ai.AI_DEFAULT_PROVIDER / org_settings.provider). */
   providerPreference?: string;
@@ -179,13 +156,18 @@ export const QUEUES = {
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
 
 /** The in-flight lock key (REVIEW_ENGINE_SPEC §5 "Redis SET NX on lock:{key}"). */
-export function inFlightLockKey(orgId: string, repoId: string, prNumber: number, commitSha: string): string {
+export function inFlightLockKey(
+  orgId: string,
+  repoId: string,
+  prNumber: number,
+  commitSha: string
+): string {
   return `lock:${orgId}:${repoId}:${prNumber}:${commitSha}`;
 }
 
 export function workerOptsFromConfig(config: AppConfig): WorkerOptions {
   return {
-    // NFR-17: the per-instance concurrency is a platform default, env-overridable.
+    // NFR-17: the per-instance concurrency (default 4, env-overridable).
     concurrency: Math.max(1, Math.round(config.limits.WORKER_CONCURRENCY)),
     maxAttempts: Math.max(1, Math.round(config.limits.QUEUE_MAX_ATTEMPTS)),
     // NFR-15: the 60 s drain budget.

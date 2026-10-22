@@ -39,7 +39,16 @@ import {
   type InstallationRepositoriesEvent,
 } from "@vercode/github";
 import { Prisma, PrismaClient } from "@prisma/client";
-import type { Enqueueable, ReviewJobPayload } from "../queue.js";
+import type { Enqueueable } from "../queue.js";
+
+// The raw-body channel (a the content-type parser stashes the raw string,
+// a the route reads it — a the HMAC source of truth, a the route does not
+// re-serialize for the signature check).
+declare module "fastify" {
+  interface FastifyRequest {
+    rawBody?: string;
+  }
+}
 
 // The audit actor id (a webhook is not a user; the audit table requires
 // an actor, a fixed system actor names the ingress itself).
@@ -89,14 +98,32 @@ export function githubWebhookRoutes(
       });
   }
 
+  // A the raw-body parser (a the HMAC is computed over the *raw* bytes, a
+  // not a re-serialized object — a the same invariant as a the billing
+  // route). a Stashes the raw string on the request.
+  app.addContentTypeParser(
+    "application/json",
+    { parseAs: "buffer" },
+    (_req: FastifyRequest, payload: Buffer, done: (err: unknown, value: unknown) => void) => {
+      const raw = payload.toString("utf8");
+      (_req as unknown as { rawBody?: string }).rawBody = raw;
+      try {
+        done(null, raw.length ? JSON.parse(raw) : {});
+      } catch {
+        done(null, {});
+      }
+    }
+  );
+
   app.post(
     "/github",
     { schema: { config: { public: true } } },
     async (req: FastifyRequest, reply: FastifyReply) => {
       // A raw body: a the HMAC is computed over the *raw* bytes, a not a
       // re-serialized object (a WEBHOOK_SPECIFICATION §1.1 "the HMAC is
-      // computed over the raw request body").
-      const rawBody = req.rawBody;
+      // computed over the raw request body"). a The rawBody parser
+      // (a the billing route's `installRawBodyParser` shape) stashes it.
+      const rawBody = (req as unknown as { rawBody?: string }).rawBody;
       const raw = rawBody ?? JSON.stringify(req.body ?? {});
 
       const headers = {
@@ -595,7 +622,6 @@ async function handleInstallationRepositories(
         default_branch: r.default_branch,
       });
     }
-    void now;
     return;
   }
 
