@@ -1,3 +1,9 @@
+# Ignored local agent/config directories
+.agents/
+.aider-desk/
+.claude/
+skills-lock.json
+
 # Dependencies
 node_modules/
 
@@ -19,8 +25,10 @@ coverage/
 # Agent/skill workspaces
 .taste-skill/
 
-# Logs
+# Logs & PID
 *.log
+scripts/*.log
+scripts/*.pid
 
 # OS
 .DS_Store
