@@ -15,10 +15,19 @@
     "@vercode/contracts": "workspace:*",
     "@vercode/database": "workspace:*",
     "@vercode/github": "workspace:*",
+    // M4 (T4.1/T4.2): the diff parser + deterministic rules engine.
+    "@vercode/diff-engine": "workspace:*",
+    "@vercode/static-analysis": "workspace:*",
     "@prisma/client": "^5.22.0",
     "bullmq": "^5.54.0",
     "ioredis": "^5.6.0",
     "zod": "^3.23.8"
+    // TODO(T5.1): the remaining M4 packages (ai-providers + review-engine,
+    // T4.3/T4.4) are still in progress. When they land:
+    //   "@vercode/ai-providers": "workspace:*",
+    //   "@vercode/review-engine": "workspace:*",
+    // and delete the local adapters in src/adapters/local.ts that stand in
+    // for them (the interface seams are in src/config.ts).
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
