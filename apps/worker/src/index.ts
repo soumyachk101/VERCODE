@@ -11,6 +11,7 @@
 // USE_MOCK_AI=true, so a the pipeline is deterministic end-to-end.
 
 import IORedis from "ioredis";
+import type { Redis } from "ioredis";
 import { loadConfig, type AppConfig } from "@vercode/config";
 import { getPrismaClient } from "@vercode/database";
 import type { GithubDiffClient } from "@vercode/github";
@@ -26,7 +27,7 @@ import { workerOptsFromConfig } from "./config.js";
 export interface WorkerRuntime {
   config: AppConfig;
   started: StartedWorker;
-  redis: IORedis;
+  redis: Redis;
 }
 
 export async function createWorkerRuntime(

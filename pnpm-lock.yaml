@@ -318,6 +318,31 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
+  packages/review-engine:
+    dependencies:
+      '@vercode/ai-providers':
+        specifier: workspace:*
+        version: link:../ai-providers
+      '@vercode/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@vercode/diff-engine':
+        specifier: workspace:*
+        version: link:../diff-engine
+      '@vercode/static-analysis':
+        specifier: workspace:*
+        version: link:../static-analysis
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.20.5
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
   packages/static-analysis:
     dependencies:
       '@vercode/contracts':
