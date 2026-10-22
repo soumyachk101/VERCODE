@@ -28,13 +28,42 @@ VERCODE is an open-source AI code-review SaaS monorepo. It reads a GitHub pull r
 
 > **Current state:** this repository is at the *scaffold + design* stage. The docs, shared contracts, and workspace layout are in place; the application code is being built phase by phase (see [Roadmap](#roadmap)). The [Known Limitations](#known-limitations) section is the honest, up-to-date status.
 
+### Dashboard preview
+
+![VERCODE Dashboard Overview](docs/assets/screenshots/overview-1440.svg)
+
+<details>
+<summary><b>Explore all product views</b> (Review Details, Security Rollup, Repositories, Rules, Usage, Audit Trail)</summary>
+
+<br />
+
+#### Review Details
+![Review Detail](docs/assets/screenshots/review-detail-1440.svg)
+
+#### Security & Vulnerability Rollup
+![Security Rollup](docs/assets/screenshots/security-rollup-1440.svg)
+
+#### Connected Repositories
+![Repositories](docs/assets/screenshots/repositories-1440.svg)
+
+#### Analysis Rules & Configuration
+![Settings & Rules](docs/assets/screenshots/settings-rules-1440.svg)
+
+#### Token Usage & Cost Attribution
+![Usage & Billing](docs/assets/screenshots/usage-1440.svg)
+
+#### Compliance & Audit Trail
+![Audit Log](docs/assets/screenshots/audit-log-1440.svg)
+
+</details>
+
 ---
 
 ## Repository overview
 
 ### Architecture
 
-![System architecture](docs/diagrams/architecture.svg)
+![System architecture](docs/assets/architecture.svg)
 
 Three stateless, independently deployable units sit in front of managed Postgres and Redis:
 
@@ -46,7 +75,7 @@ Three stateless, independently deployable units sit in front of managed Postgres
 
 ### Review pipeline
 
-![Review pipeline data flow](docs/diagrams/data-flow.svg)
+![Review pipeline](docs/assets/pipeline.svg)
 
 **How it works, step by step:**
 
@@ -167,6 +196,8 @@ Per-org overrides (confidence floor, file budgets, suppressions) are **config ro
 ---
 
 ## Security
+
+![VERCODE Trust Model and Security Boundaries](docs/assets/trust-model.svg)
 
 VERCODE's core invariant: **repository content is *input*, never *authority*.** The design docs in `docs/SECURITY/` define a 16-threat STRIDE register (T-01…T-16), each mapped to a control layer and a named verification test.
 
