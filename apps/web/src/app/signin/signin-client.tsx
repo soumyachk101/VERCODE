@@ -9,7 +9,6 @@ import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { Button, TextButton } from "@/components/Button";
 import { Input, Label } from "@/components/controls";
-import { useAuthMe } from "@/lib/hooks";
 
 export function SigninClient() {
   const router = useRouter();
@@ -17,8 +16,6 @@ export function SigninClient() {
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  // a live auth check: if a session already exists, deep-link to the org
-  const me = useAuthMe();
 
   const submit = async () => {
     setErr(null);

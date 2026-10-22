@@ -504,7 +504,8 @@ async function handlePullRequest(
 async function handleInstallation(
   db: PrismaClient,
   evt: InstallationEvent,
-  reply: FastifyReply
+  reply: FastifyReply,
+  ctx: { deliveryId: string }
 ): Promise<void> {
   if (evt.action === "created") {
     // The install → org. The org is resolved by the account login (the M2
@@ -547,6 +548,10 @@ async function handleInstallation(
         status: "ACTIVE",
       },
     });
+
+    // The receipt (a the `webhook_deliveries` row, a the replay-dedup key,
+    // a NFR-06, a written with the real install + a org id).
+    await writeReceipt(db, { installId: installRow.id, deliveryId: ctx.deliveryId, event: "installation", orgId: org.id });
 
     // The repo discover (the install payload carries the repo ids when
     // `repository_selection` is "selected"; the full GitHub-API discover is
@@ -603,6 +608,8 @@ async function handleInstallation(
       status: "PENDING",
     },
   });
+  // A the receipt (a the replay-dedup key, a NFR-06) + a the audit row.
+  await writeReceipt(db, { installId: install.id, deliveryId: ctx.deliveryId, event: "installation", orgId: install.orgId });
   await db.auditEvent
     .create({
       data: {
