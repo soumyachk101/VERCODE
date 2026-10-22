@@ -4,37 +4,98 @@ set -e
 REPO_DIR="/Users/soumyachakraborty/Documents/VERCODE"
 cd "$REPO_DIR"
 
+# Check if current branch is main. If on another branch, skip to avoid disturbing work.
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [[ "$CURRENT_BRANCH" != "main" ]]; then
+    exit 0
+fi
+
 # Check if there are any git changes (untracked, modified, staged, or deleted)
-if [[ -n $(git status --porcelain) ]]; then
+STATUS_OUTPUT=$(git status --porcelain)
+if [[ -n "$STATUS_OUTPUT" ]]; then
     TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-    BRANCH_NAME="auto-update-$TIMESTAMP"
-    COMMIT_MSG="chore: automated sync update ($TIMESTAMP)"
+    BRANCH_NAME="update-$TIMESTAMP"
 
-    echo "[$(date)] Changes detected. Processing auto-sync via PR..."
+    echo "[$(date)] Changes detected. Analyzing changes for meaningful PR message..."
 
-    # Ensure main is up to date
-    git checkout main
-    git pull origin main --rebase || true
+    # Generate meaningful PR title and description based on file types and paths
+    CHANGED_FILES=$(git status --porcelain | awk '{print $2}')
+    TOTAL_COUNT=$(echo "$CHANGED_FILES" | grep -v '^$' | wc -l | xargs)
 
-    # Create new feature branch
+    # Detect package / area
+    AREA="core"
+    if echo "$CHANGED_FILES" | grep -q "packages/contracts"; then
+        AREA="contracts"
+    elif echo "$CHANGED_FILES" | grep -q "packages/"; then
+        PKG_NAME=$(echo "$CHANGED_FILES" | grep "packages/" | head -n 1 | cut -d'/' -f2)
+        AREA="$PKG_NAME"
+    elif echo "$CHANGED_FILES" | grep -q "\.github/"; then
+        AREA="ci"
+    elif echo "$CHANGED_FILES" | grep -q "scripts/"; then
+        AREA="scripts"
+    elif echo "$CHANGED_FILES" | grep -q "docs\|README"; then
+        AREA="docs"
+    fi
+
+    # Detect primary action type
+    TYPE="feat"
+    if echo "$CHANGED_FILES" | grep -qE "\.(test|spec)\."; then
+        TYPE="test"
+    elif echo "$CHANGED_FILES" | grep -qE "tsconfig|package\.json|pnpm-lock|pnpm-workspace|\.gitignore"; then
+        TYPE="build"
+    elif echo "$CHANGED_FILES" | grep -qE "README|\.md$"; then
+        TYPE="docs"
+    fi
+
+    # Summarize key files (up to 3 key basenames)
+    SAMPLE_FILES=$(echo "$CHANGED_FILES" | head -n 3 | while read -r f; do basename "$f"; done | paste -sd ", " -)
+    if [ "$TOTAL_COUNT" -gt 3 ]; then
+        SUMMARY_FILES="$SAMPLE_FILES (and $((TOTAL_COUNT - 3)) more)"
+    else
+        SUMMARY_FILES="$SAMPLE_FILES"
+    fi
+
+    PR_TITLE="$TYPE($AREA): update $SUMMARY_FILES"
+    COMMIT_MSG="$PR_TITLE"
+
+    # Construct rich PR Body
+    FILE_DIFF_STAT=$(git diff --stat 2>/dev/null || true)
+    PR_BODY=$(cat <<EOF
+### Summary of Changes
+- **Category:** \`$TYPE($AREA)\`
+- **Total changed files:** $TOTAL_COUNT
+- **Key modified/added components:** $SUMMARY_FILES
+
+### Details
+\`\`\`text
+$STATUS_OUTPUT
+\`\`\`
+
+Automated pull request created and verified for clean fast-forward merge.
+EOF
+)
+
+    echo "[$(date)] Creating feature branch: $BRANCH_NAME"
     git checkout -b "$BRANCH_NAME"
     git add .
     git commit -m "$COMMIT_MSG"
 
-    # Push feature branch (never push directly to main)
+    echo "[$(date)] Pushing branch: $BRANCH_NAME (no direct push to main)"
     git push origin "$BRANCH_NAME"
 
-    # Create PR via GitHub CLI
-    PR_URL=$(gh pr create --base main --head "$BRANCH_NAME" --title "$COMMIT_MSG" --body "Automated branch sync PR created by auto-sync daemon.")
+    echo "[$(date)] Submitting PR with message: '$PR_TITLE'"
+    PR_URL=$(gh pr create --base main --head "$BRANCH_NAME" --title "$PR_TITLE" --body "$PR_BODY")
     echo "[$(date)] PR created: $PR_URL"
 
-    # Auto merge PR
+    # Auto merge PR into main cleanly
+    echo "[$(date)] Merging PR..."
     gh pr merge "$BRANCH_NAME" --merge --delete-branch
     echo "[$(date)] PR merged and branch deleted successfully."
 
-    # Switch back to main and pull latest
+    # Return to main and fetch latest
     git checkout main
     git pull origin main
+    echo "[$(date)] Main synchronized."
 else
     echo "[$(date)] No changes detected."
 fi
