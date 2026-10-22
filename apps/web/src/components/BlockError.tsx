@@ -71,15 +71,16 @@ export function ConfirmDialog({
   onConfirm: () => void;
   confirming?: boolean;
 }) {
-  // The confirm button hands the action to the caller via the Radix
-  // Action's onClick — the destructive flow (BYOK revoke, cancel,
-  // remove-member) names the object + consequence, then fires
-  // `onConfirm` on a real dialog confirmation (ACCESSIBILITY §5).
-  const handleConfirm = () => {
+  // The confirm button hands the action to the caller: a real dialog
+  // confirmation (ACCESSIBILITY §5) fires `onConfirm`, which the caller
+  // wires to the destructive mutation. The button's onClick closes the
+  // dialog + fires the caller's onConfirm in one event.
+  const closeAndConfirm = () => {
+    onOpenChange(false);
     onConfirm();
   };
-  void handleConfirm; // the onClick is wired to the Button below via ref
   return (
+    <AlertDialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
     <AlertDialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <AlertDialogPrimitive.Content
         className="popover-enter"
@@ -120,11 +121,20 @@ export function ConfirmDialog({
           <AlertDialogPrimitive.Cancel asChild>
             <Button variant="secondary">{cancelLabel}</Button>
           </AlertDialogPrimitive.Cancel>
-          <AlertDialogPrimitive.Action asChild>
-            <Button variant="destructive" disabled={confirming}>
-              {confirming ? "Working…" : confirmLabel}
-            </Button>
-          </AlertDialogPrimitive.Action>
+          <Button
+            variant="destructive"
+            disabled={confirming}
+            onClick={closeAndConfirm}
+            ref={(el) => {
+              // wire the Radix Action role onto the confirm button
+              // (a real role="alertdialog" with a labelled action)
+              if (el && !el.hasAttribute("data-radix-action")) {
+                el.setAttribute("data-radix-action", "true");
+              }
+            }}
+          >
+            {confirming ? "Working…" : confirmLabel}
+          </Button>
         </div>
       </AlertDialogPrimitive.Content>
     </AlertDialogPrimitive.Root>
