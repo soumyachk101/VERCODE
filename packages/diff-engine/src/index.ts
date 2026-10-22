@@ -76,15 +76,6 @@ export function parseUnifiedDiff(text: string): ChangeSet {
   let binarySeen = false;
 
   const closeHunk = (): void => {
-    if (current !== null && hunkText.length > 0) {
-      current.hunks.push({
-        oldStart: parseInt(hunkText[0].match(/^@@ -(\d+)/)?.[1] ?? "0", 10) || 0,
-        oldCount: parseInt(hunkText[0].match(/^@@ -\d+,(\d+)/)?.[1] ?? "0", 10) || 0,
-        newStart: parseInt(hunkText[0].match(/^@@ \+\d+(?:,(\d+))? @@/)?.[1] ?? "0", 10) || 0,
-        newCount: parseInt(hunkText[0].match(/^@@ \+\d+,(\d+) @@/)?.[1] ?? "0", 10) || 0,
-        text: hunkText.join("\n"),
-      });
-    }
     hunkText = [];
     inHunk = false;
   };
@@ -119,8 +110,16 @@ export function parseUnifiedDiff(text: string): ChangeSet {
       closeHunk();
       inHunk = true;
       hunkText = [line];
-      newLineNo = parseInt(hunkMatch[3], 10);
-      oldLineNo = parseInt(hunkMatch[1], 10);
+      const m = hunkMatch;
+      current.hunks.push({
+        oldStart: parseInt(m[1], 10),
+        oldCount: m[2] !== undefined ? parseInt(m[2], 10) : 1,
+        newStart: parseInt(m[3], 10),
+        newCount: m[4] !== undefined ? parseInt(m[4], 10) : 1,
+        text: hunkText.join("\n"),
+      });
+      newLineNo = parseInt(m[3], 10);
+      oldLineNo = parseInt(m[1], 10);
       continue;
     }
     if (inHunk) {
