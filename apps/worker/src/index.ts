@@ -28,6 +28,8 @@ import {
 import { startWorker, type StartedWorker } from "./queues.js";
 import type { WorkerDeps } from "./config.js";
 import { workerOptsFromConfig } from "./config.js";
+import { setWorkerTracer, setWorkerCapture } from "./jobs/review.js";
+import { tracer, capture } from "@vercode/observability";
 
 export interface WorkerRuntime {
   config: AppConfig;
@@ -43,6 +45,16 @@ export async function createWorkerRuntime(
     maxRetriesPerRequest: null,
     ...({} as RedisOptions),
   });
+
+  // [M7 observability] — a the worker's global tracer + a the capture
+  // (OBSERVABILITY.md §1–§4 "one trace per pipeline" + a the PII-scrubbed
+  // captured-errors array). A the trace id = a the job_id (a the §2 "the
+  // trace id = the job_id"); a the redaction gate runs on every record
+  // (SECRETS_MANAGEMENT §3 "the redactor runs on *every* record before
+  // it's written") + a the capture's payload is scrubbed (a the §4 "a
+  // Sentry event that carries a secret is a leak").
+  setWorkerTracer(tracer(config.observability.OTEL_EXPORTER_OTLP_ENDPOINT));
+  setWorkerCapture(capture());
 
   // [the GithubDiffClient seam] — a the mock reads the diff fixtures (a no
   // network, a deterministic); a the Octokit client is a later leaf.

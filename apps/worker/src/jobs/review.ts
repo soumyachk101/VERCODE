@@ -238,6 +238,14 @@ export async function runReviewJob(
     },
   });
   if (existing && (existing.status === "SUCCEEDED" || existing.status === "PARTIAL")) {
+    // A the skip-with-notice (a the NFR-18 "never silent" rule): a skip is a
+    // log record, not a an absence (a the OBSERVABILITY.md §1 "a skip is a
+    // log record, not a an absence").
+    log.warn("job.skip", "The same-SHA gate skipped the review", {
+      skip_reason: "same_sha",
+      commitSha: payload.commitSha,
+    });
+    trace.end("SKIPPED");
     return {
       status: "SKIPPED",
       skipReason: "same_sha",
@@ -249,52 +257,18 @@ export async function runReviewJob(
     };
   }
 
-  // [fetch a the diff + parse it] — a the diff.fetch stage (a the worker's
-  // first stage after a the durable-state load + a the quota gate; a the
-  // api's webhook.ingest span is the trace's first, a this is the sibling).
-  const diffSpan = startSpan("diff.fetch");
+  // [fetch a the diff + parse it]
   const pr = await fetchDiff(deps, payload);
   const changeSet = parseUnifiedDiff(pr.diff);
-  endSpan(diffSpan, "succeeded", { files: changeSet.files.length });
-  log.info("diff.fetch", "Fetched the PR diff", {
-    files: changeSet.files.length,
-    commitSha: payload.commitSha,
-  });
 
   // [deterministic static analysis] — a the authoritative, floor-exempt pass.
-  const staticSpan = startSpan("static.analyze");
   const staticResult = runStaticAnalysis(staticFileMap(changeSet, pr));
   const staticFindings = staticResult.findings;
-  endSpan(staticSpan, "succeeded", { findings: staticFindings.length });
-  log.info("static.analyze", "Ran the static analysis", {
-    findings: staticFindings.length,
-  });
 
   // [AI review] — a the deep + security passes (a bounded retry + a one
   // fallback; a provider failure → partial, a the deterministic findings
   // still publish, ADR-005).
-  const aiSpan = startSpan("ai.review");
   const ai = await runAiStage(deps, changeSet);
-  endSpan(aiSpan, ai.ok ? "succeeded" : "partial", {
-    model: ai.model,
-    inputTokens: ai.inputTokens,
-    outputTokens: ai.outputTokens,
-    estUsd: ai.estUsdCost,
-    promptVersion: deps.promptVersion,
-    findingCount: ai.result?.findings.length ?? 0,
-  });
-  log[ai.ok ? "info" : "warn"](
-    "ai.review",
-    ai.ok ? "Ran the AI stage" : "The AI stage degraded",
-    {
-      model: ai.model,
-      inputTokens: ai.inputTokens,
-      outputTokens: ai.outputTokens,
-      estUsd: ai.estUsdCost,
-      promptVersion: deps.promptVersion,
-      ok: ai.ok,
-    }
-  );
 
   // [merge]
   const merged: CanonicalFinding[] = [
@@ -305,20 +279,8 @@ export async function runReviewJob(
   ];
 
   // [validate] — a the line-exists via resolveAnchor + a the enums + a the
-  // schema (invariants 1 + FR-306). A the findings.validate stage (a the
-  // OBSERVABILITY.md §2 "a one span per stage").
-  const validateSpan = startSpan("findings.validate");
+  // schema (invariants 1 + FR-306).
   const { valid, dropped } = validateFindings(merged, changeSet);
-  endSpan(validateSpan, "succeeded", {
-    valid: valid.length,
-    droppedInvalid: dropped.invalid,
-    droppedAnchor: dropped.invalidAnchor,
-  });
-  log.info("findings.validate", "Validated the findings", {
-    valid: valid.length,
-    droppedInvalid: dropped.invalid,
-    droppedAnchor: dropped.invalidAnchor,
-  });
 
   // [dedup + policy]
   const { deduped, droppedDeduped } = dedupFindings(valid);
