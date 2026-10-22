@@ -47,7 +47,7 @@ export function buildAuthPlugin(config: AppConfig) {
       // session check. The webhook routes are a separate (public + HMAC)
       // ingress (WEBHOOK_SPECIFICATION.md §1 "the two public, non-session
       // ingress routes").
-      const isPublic = (req.routeConfig as { public?: boolean }).public === true;
+      const isPublic = (req.routeOptions.config as { public?: boolean }).public === true;
       if (isPublic) {
         // Even public routes resolve the session (a "me" on a public page).
         const token = req.cookies[SESSION_COOKIE];
