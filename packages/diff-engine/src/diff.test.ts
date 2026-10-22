@@ -208,10 +208,9 @@ describe("UT-diff-ranges-02 1-based line numbering matches GitHub", () => {
   it("a mid-file addition starts at the hunk's new start", () => {
     const cs = parseOf(MULTI_FILE_DIFF);
     const auth = cs.files[0];
-    // Hunk @@ -10,6 +10,9 @@, first new line number 10. The '+' lines in the
-    // hunk are lines 11,12,13,14 (context line 10 counts, then + lines).
-    expect(auth.addedLines).toEqual([11, 12, 13, 14]);
-    expect(auth.removedLines).toEqual([11]);
+    // Hunk @@ -10,6 +10,9 @@: new lines 10..18, first + line is at new 12.
+    expect(auth.addedLines).toEqual([12, 13, 14, 15]);
+    expect(auth.removedLines).toEqual([12]);
   });
 });
 
