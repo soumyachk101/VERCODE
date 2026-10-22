@@ -96,7 +96,6 @@ export async function loadDurableState(
   payload: ReviewJobPayload
 ): Promise<{
   org: Org;
-  repo: RepoRule | undefined; // a placeholder; the real repo row is below
   settings: OrgSettings | undefined;
   repoRules: RepoRule[];
 }> {
@@ -110,7 +109,7 @@ export async function loadDurableState(
     where: { orgId: payload.orgId, repoId: payload.repoId },
     orderBy: { version: "desc" },
   });
-  return { org, settings, repoRules, repo: undefined };
+  return { org, settings, repoRules };
 }
 
 // ---------------------------------------------------------------------------
@@ -136,13 +135,12 @@ export async function runReviewJob(
   // [load durable state] — the worker re-reads; the payload is a pointer.
   const { org, settings, repoRules } = await loadDurableState(db, payload);
 
-  // The org's confidence floor (a the org-level override, default 0.6 from config).
+  // The org's confidence floor (an org-level override row; the platform
+  // default 0.6 from the config package when unset, NFR "confidence floor
+  // 0.6 default").
+  const platformDefaultFloor = 0.6;
   const confidenceFloor =
-    settings?.confidenceFloor != null
-      ? Number(settings.confidenceFloor)
-      : deps.providerPreference
-        ? 0.6 // a platform default; the org's override is a settings row
-        : 0.6;
+    settings?.confidenceFloor != null ? Number(settings.confidenceFloor) : platformDefaultFloor;
 
   // [0] Pre-flight quota gate (NFR-18, AC-402): if the org is over its plan
   // quota (reviews-per-month from plans.ts + the usage_events monthly
@@ -208,7 +206,13 @@ export async function runReviewJob(
   const { published, suppressedBelowFloor } = applyPolicy(deduped, confidenceFloor, repoRules);
 
   // [summary]
-  const summaryBody = buildSummary(published, ai.ok ? undefined : "AI provider degraded — deterministic findings only", repoRules.length > 0 ? "repo rules applied" : undefined);
+  const summaryBody = buildSummary(
+    published,
+    ai.ok
+      ? undefined
+      : "AI provider degraded — deterministic findings only (ADR-005)",
+    repoRules.length > 0 ? "repo rules applied" : undefined
+  );
 
   // [PERSIST] — findings + job state + usage in ONE transaction (a the
   // persist-then-publish invariant, ERROR_HANDLING.md §6). The job row is
@@ -536,7 +540,8 @@ export function applyPolicy(
       : [];
     suppressSets.push(new Set(cats));
   }
-  const suppressed = new Set(cats.flatMap((c) => c)); // the union
+  const suppressed = new Set<string>();
+  for (const c of cats) suppressed.add(c);
 
   const published: CanonicalFinding[] = [];
   let suppressedBelowFloor = 0;
@@ -562,10 +567,7 @@ function normalizeCategory(c: string): string {
 }
 
 /** The summary (stage [12]) — a deterministic verdict (a the provider-down path). */
-export function buildSummary(
-  findings: CanonicalFinding[],
-  notes: string[] = []
-): string {
+export function buildSummary(findings: CanonicalFinding[], ...notes: (string | undefined)[]): string {
   const highCount = findings.filter((f) => f.severity === "high" || f.severity === "critical").length;
   const verdict =
     highCount === 0
@@ -576,7 +578,7 @@ export function buildSummary(
   const lines = [
     `## VERCODE review — ${verdict}`,
     `${findings.length} finding(s), ${highCount} high/critical.`,
-    ...notes.map((n) => `Note: ${n}`),
+    ...notes.filter((n): n is string => Boolean(n)).map((n) => `Note: ${n}`),
   ];
   return lines.join("\n");
 }

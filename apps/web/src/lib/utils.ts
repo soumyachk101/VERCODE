@@ -32,3 +32,9 @@ export const buttonVariants = cva(
 );
 
 export type ButtonVariantProps = VariantProps<typeof buttonVariants>;
+
+/** Thousands-separated integer (tabular figures, right-aligned numbers). */
+export function formatNumber(n: number | null | undefined): string {
+  if (n == null || Number.isNaN(n)) return "—";
+  return new Intl.NumberFormat("en-US").format(Math.trunc(n));
+}
