@@ -1,0 +1,22 @@
+{
+  "id": "api-contract-rename-field-001",
+  "class": "api-contract",
+  "language": "typescript",
+  "repo": "fixture-app",
+  "diff": "diff --git a/src/api/types.ts b/src/api/types.ts\nindex 1212121..3434343 100644\n--- a/src/api/types.ts\n+++ b/src/api/types.ts\n@@ -1,3 +1,4 @@\n export interface ReviewResponse {\n-  verdict: string;\n+  riskLevel: string;\n   findings: Finding[];\n }\n",
+  "headContext": "A renamed response field (`verdict` → `riskLevel`) without a backwards-compatible alias. A api-contract positive — a a consumer of the old shape breaks. A the clean negative is a the additive alias (`verdict` + `riskLevel` both present).",
+  "groundTruth": [
+    {
+      "file": "src/api/types.ts",
+      "line": 2,
+      "severity": "high",
+      "category": "api-contract",
+      "kind": "breaking-field-rename",
+      "note": "A the `verdict` field is renamed to `riskLevel` without a backwards-compatible alias — a a consumer of the old shape breaks."
+    }
+  ],
+  "cleanAssertions": [
+    { "file": "src/api/types.ts", "note": "The `findings` field is unchanged." }
+  ],
+  "expectedVerdict": "needs_changes"
+}

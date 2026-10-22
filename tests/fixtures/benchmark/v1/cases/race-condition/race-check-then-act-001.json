@@ -1,0 +1,22 @@
+{
+  "id": "race-condition-check-then-act-001",
+  "class": "race-condition",
+  "language": "typescript",
+  "repo": "fixture-app",
+  "diff": "diff --git a/src/cache/get.ts b/src/cache/get.ts\nindex bbbbbbb..ccccccc 100644\n--- a/src/cache/get.ts\n+++ b/src/cache/get.ts\n@@ -1,5 +1,9 @@\n export async function getOrLoad(key: string, loader: () => Promise<string>) {\n-  const hit = cache.get(key);\n-  if (hit) return hit;\n+  const hit = cache.get(key);\n+  if (hit !== undefined) {\n+    return hit;\n+  }\n+  const value = await loader();\n+  cache.set(key, value);\n   return loader();\n }\n",
+  "headContext": "A non-atomic read-modify-write: two concurrent callers can both miss the cache, both call `loader()`, and both set the key — a check-then-act race. A the second `return loader()` (a the old line) meant the first caller's `cache.set` was lost; a the fix is a in-flight map (a the atomic version, a the clean negative).",
+  "groundTruth": [
+    {
+      "file": "src/cache/get.ts",
+      "line": 6,
+      "severity": "medium",
+      "category": "race-condition",
+      "kind": "check-then-act",
+      "note": "The `cache.get` + `cache.set` pair is not atomic — two concurrent misses both load + both set (a the double-increment / double-load race)."
+    }
+  ],
+  "cleanAssertions": [
+    { "file": "src/cache/get.ts", "note": "The `hit !== undefined` guard itself is correct." }
+  ],
+  "expectedVerdict": "needs_changes"
+}

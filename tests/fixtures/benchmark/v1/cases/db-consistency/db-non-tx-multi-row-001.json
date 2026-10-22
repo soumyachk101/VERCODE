@@ -1,0 +1,22 @@
+{
+  "id": "db-consistency-non-transactional-001",
+  "class": "db-consistency",
+  "language": "typescript",
+  "repo": "fixture-app",
+  "diff": "diff --git a/src/db/transfer.ts b/src/db/transfer.ts\nindex 5656565..7878787 100644\n--- a/src/db/transfer.ts\n+++ b/src/db/transfer.ts\n@@ -2,5 +2,7 @@\n export async function transfer(from: string, to: string, amount: number) {\n-  await db.debit(from, amount);\n+  await db.debit(from, amount);\n+  await db.credit(to, amount);\n+  // no transaction wrapping the two writes\n   return { ok: true };\n }\n",
+  "headContext": "A non-transactional multi-row update: the `debit` + the `credit` are two separate writes with no transaction. A a crash between the two leaves the ledger inconsistent. A db-consistency positive.",
+  "groundTruth": [
+    {
+      "file": "src/db/transfer.ts",
+      "line": 3,
+      "severity": "high",
+      "category": "db-consistency",
+      "kind": "non-transactional-multi-row",
+      "note": "The `debit` + `credit` are not wrapped in a transaction — a a crash between the two leaves the ledger inconsistent."
+    }
+  ],
+  "cleanAssertions": [
+    { "file": "src/db/transfer.ts", "note": "The `return { ok: true }` is fine." }
+  ],
+  "expectedVerdict": "high_risk"
+}

@@ -1,0 +1,22 @@
+{
+  "id": "exception-handling-swallowed-catch-001",
+  "class": "exception-handling",
+  "language": "typescript",
+  "repo": "fixture-app",
+  "diff": "diff --git a/src/io/read.ts b/src/io/read.ts\nindex 9999999..aaaaaaa 100644\n--- a/src/io/read.ts\n+++ b/src/io/read.ts\n@@ -3,5 +3,8 @@\n export async function readConfig(path: string) {\n   try {\n     const raw = await fs.readFile(path, 'utf8');\n     return JSON.parse(raw);\n-  } catch (err) {\n-    return null;\n+  } catch (err) {\n+    // swallow the parse error\n+    return null;\n   }\n }\n",
+  "headContext": "The catch block swallows the error without rethrow or logging — a caller that receives `null` can't distinguish 'file not found' from 'malformed JSON'. An exception-handling positive.",
+  "groundTruth": [
+    {
+      "file": "src/io/read.ts",
+      "line": 6,
+      "severity": "medium",
+      "category": "logic-bug",
+      "kind": "swallowed-exception",
+      "note": "The catch swallows the error (a no rethrow, no log, no typed result) — the caller can't distinguish the failure modes."
+    }
+  ],
+  "cleanAssertions": [
+    { "file": "src/io/read.ts", "note": "The `readFile` call itself is fine." }
+  ],
+  "expectedVerdict": "needs_changes"
+}

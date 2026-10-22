@@ -1,0 +1,22 @@
+{
+  "id": "resource-leak-open-handle-001",
+  "class": "resource-leak",
+  "language": "typescript",
+  "repo": "fixture-app",
+  "diff": "diff --git a/src/net/fetch.ts b/src/net/fetch.ts\nindex ffffffff..00000000 100644\n--- a/src/net/fetch.ts\n+++ b/src/net/fetch.ts\n@@ -3,4 +3,7 @@\n export async function fetchJson(url: string) {\n-  const res = await fetch(url);\n+  const res = await fetch(url);\n+  // no finally / no close on error — a the stream is left open on a\n+  // non-2xx.\n   return res.json();\n }\n",
+  "headContext": "An open handle (a the response stream) that isn't closed on the error path — a the `res` is not aborted / closed when `res.json()` throws (a non-2xx body). A resource-leak positive.",
+  "groundTruth": [
+    {
+      "file": "src/net/fetch.ts",
+      "line": 5,
+      "severity": "medium",
+      "category": "resource-leak",
+      "kind": "unclosed-handle",
+      "note": "The response stream is not closed on the error path — a the non-2xx body is left open (a the `finally` is missing)."
+    }
+  ],
+  "cleanAssertions": [
+    { "file": "src/net/fetch.ts", "note": "The `fetch` call itself is fine." }
+  ],
+  "expectedVerdict": "needs_changes"
+}

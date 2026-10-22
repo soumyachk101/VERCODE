@@ -512,9 +512,16 @@ async function runAiStage(
       timeoutMs: 60_000,
     };
     try {
+      // The bounded retry (TRD.md §9 / AI_SYSTEM_DESIGN §5): primary → 2
+      // retries with exp backoff → one fallback switch. The sleep is
+      // injectable for the tests (a the provider-down test doesn't actually
+      // wait 500+2000ms of real time).
       const res: StructuredResult = await runWithRetry(pass.provider, req, {
         fallbackProvider:
           pass.task === "deep-review" ? deps.aiProviders["summary"] : undefined,
+        ...(deps.testSleep
+          ? { sleep: deps.testSleep, baseDelayMs: 1 }
+          : {}),
       });
       collect.inputTokens += res.inputTokens;
       collect.outputTokens += res.outputTokens;

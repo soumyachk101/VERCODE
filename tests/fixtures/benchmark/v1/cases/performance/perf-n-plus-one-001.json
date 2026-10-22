@@ -1,0 +1,22 @@
+{
+  "id": "performance-n-plus-one-001",
+  "class": "performance",
+  "language": "typescript",
+  "repo": "fixture-app",
+  "diff": "diff --git a/src/repo/list.ts b/src/repo/list.ts\nindex ddddddd..eeeeeee 100644\n--- a/src/repo/list.ts\n+++ b/src/repo/list.ts\n@@ -2,4 +2,8 @@\n export async function listReviews(orgId: string) {\n   const repos = await db.reposForOrg(orgId);\n-  const out: Review[] = [];\n+  const out: Review[] = [];\n   for (const r of repos) {\n+    // a per-repo query — a N+1 in a loop.\n     out.push(...await db.reviewsForRepo(r.id));\n   }\n   return out;\n }\n",
+  "headContext": "A N+1 in a loop: a per-repo `db.reviewsForRepo` inside a `for` over all the org's repos. A the batched version (a single `WHERE repo_id IN (...)`) is the clean negative. A performance positive.",
+  "groundTruth": [
+    {
+      "file": "src/repo/list.ts",
+      "line": 7,
+      "severity": "medium",
+      "category": "performance",
+      "kind": "n-plus-one",
+      "note": "A per-repo DB query inside a loop — an N+1 pattern. Batch into a single `IN (...)` query."
+    }
+  ],
+  "cleanAssertions": [
+    { "file": "src/repo/list.ts", "note": "The `reposForOrg` call is fine (a the N part of the N+1)." }
+  ],
+  "expectedVerdict": "needs_changes"
+}
