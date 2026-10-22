@@ -434,6 +434,7 @@ describe("POST /webhooks/github (M3 T3.2)", () => {
       headers: { ...prHeaders(body), "x-hub-signature-256": sign(raw, "an-attacker-secret") },
       payload: raw,
     });
+    if (res.statusCode !== 401) console.log("FORGED GITHUB BODY:", res.body, "STATUS:", res.statusCode);
     expect(res.statusCode).toBe(401);
     expect(res.json().error.code).toBe("WEBHOOK_REJECTED");
     // A NO queue write (a the rejection happens before the enqueue).

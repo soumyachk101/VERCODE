@@ -120,6 +120,14 @@ function makeDb(seed: DbSeed = {}): {
         return findRepo(args.where.orgId_githubRepoId.orgId, args.where.orgId_githubRepoId.githubRepoId);
       },
     },
+    // The org lookup (the route checks the org is not DELETED before the
+    // repo resolution, WEBHOOK_SPEC §1.2 "a removed/deleted org → dropped").
+    organization: {
+      async findFirst(args: { where: { id?: string; slug?: string } }) {
+        const orgId = args.where.id;
+        return orgId ? { id: orgId, status: "ACTIVE" } : null;
+      },
+    },
     reviewJob: {
       async findUnique(args: {
         where: {
@@ -144,6 +152,9 @@ function makeDb(seed: DbSeed = {}): {
         const id = `job-${createdJobs.length + 1}`;
         createdJobs.push({ id, ...args.data });
         return { id, ...args.data };
+      },
+      async update() {
+        return { id: "job" };
       },
     },
     auditEvent: {
@@ -435,7 +446,7 @@ describe("IT-webhook-opened (a a signed opened event → 202 + a review_jobs row
     });
 
     expect(res.statusCode).toBe(404);
-    expect((res.json() as { error: { code: string } }).error.code).toBe("WEBHOOK_INSTALL_NOT_FOUND");
+    expect((res.json() as { error: { code: string } }).error.code).toBe("WEBHOOK_UNKNOWN_INSTALL");
     expect(queue.enqueued).toHaveLength(0);
   });
 
