@@ -607,8 +607,7 @@ describe("POST /webhooks/github (M3 T3.2)", () => {
 describe("POST /webhooks/github installation events (M3 T3.3)", () => {
   it("a installation.deleted → a REMOVED install + a disconnected repos + a retention_jobs row (a AC-204)", async () => {
     const seed = openedSeed();
-    const seedDelivery = { delivery: { id: "delivery-row-1", deliveryId: "delivery-install-deleted", event: "installation", orgId: "org-1", installId: "install-1" } };
-    const { app: app_, state: st } = await buildGithubApp({ ...seed, ...seedDelivery, jobs: [] });
+    const { app: app_, state: st } = await buildGithubApp({ ...seed, jobs: [] });
     const evt = {
       action: "deleted",
       installation: {
