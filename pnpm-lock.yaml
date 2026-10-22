@@ -184,6 +184,9 @@ importers:
       '@prisma/client':
         specifier: ^5.22.0
         version: 5.22.0(prisma@5.22.0)
+      '@vercode/ai-providers':
+        specifier: workspace:*
+        version: link:../../packages/ai-providers
       '@vercode/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -199,6 +202,12 @@ importers:
       '@vercode/github':
         specifier: workspace:*
         version: link:../../packages/github
+      '@vercode/policy-engine':
+        specifier: workspace:*
+        version: link:../../packages/policy-engine
+      '@vercode/review-engine':
+        specifier: workspace:*
+        version: link:../../packages/review-engine
       '@vercode/static-analysis':
         specifier: workspace:*
         version: link:../../packages/static-analysis
