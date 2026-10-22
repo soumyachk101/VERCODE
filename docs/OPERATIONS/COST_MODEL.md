@@ -1,0 +1,74 @@
+# VERCODE — Cost Model
+
+The unit economics of an AI-review product: what a review *costs* to produce, what it *sells* for, and where the margin is (or isn't). This is the document that answers Dana's "are we getting value for the plan we're on?" (`USER_PERSONAS.md`) and the "cost control" NFR (`NFR-07`, `NFR-18`) — and it's *modeled*, not vibes (the "never claim without measured evidence" rule applies to *cost* as much as to *quality*: the `BENCHMARK_DATASET` measures cost/review, `AI_EVALUATION`'s cost gate).
+
+## 1. The cost per review (the unit)
+
+A review's cost is the **sum of its AI calls** (`REVIEW_ENGINE_SPEC §6`, the `ReviewResult.cost`), which the task decomposition (`AI_SYSTEM_DESIGN §3`) makes *controllable*:
+
+| Stage | Model tier (default routing, `MODEL_ROUTING §1`) | Cost driver |
+| --- | --- | --- |
+| risk-triage (per file, cheap) | standard (cheap) | high-volume, low-stakes → the *cheap model earns its keep* (a gate, not a finding) |
+| deep-review (only high-risk files, strong) | standard+ / strong | the *long pole*; the cheap triage is what *keeps this bounded* (only ~the high-risk files go to the strong model, `MODEL_ROUTING §2`) |
+| security-review (security-sensitive files, strong) | strong (top tier, never downgraded, `MODEL_ROUTING §2`) | the *highest-cost* + *highest-value* call; a *cost* here is a *security* investment |
+| summary (cheap) | standard (cheap) | low-stakes |
+| **static analysis (deterministic)** | — | **zero AI cost** (ESLint/Semgrep are *our* compute, a *fixed* worker cost, not a *per-token* provider cost — the *deterministic-first* design, ADR-005, is a *cost* feature: a review with zero AI findings still has a *useful* cost profile) |
+
+**The `estUsdCost` per review** is computed from the `config` rate table (`inputTokens/1e6 * inputPer1M + outputTokens/1e6 * outputPer1M`, `MODEL_ROUTING §6`), *recorded per job* (AC-306), and *aggregated* to the org's `usage_events` (the *single source of truth* for the quota gate + the dashboard, `DATA_FLOW.md`). The Ollama (self-hosted) path is a **$0** `estUsdCost` (the org's *compute* cost is out of VERCODE's accounting, `MODEL_ROUTING §6`).
+
+## 2. The cost levers (where the margin lives)
+
+1. **The cheap-triage gate** (`MODEL_ROUTING §2`): routing a PR's 40 files through the *cheap* model first and sending only the ~5 high-risk files to the *strong* model is *the* cost lever (a *40-file PR* is ~`40 × cheap + 5 × strong`, *not* `40 × strong`). This is what keeps `cost/review` *inside* the plan ceiling (`SUCCESS_METRICS` "Cost per review" target: Free/Dev ≤ $0.15, Team ≤ $0.35 at p95).
+2. **The content-hash short-circuit (P1)** (`ADR-007`): a re-push with an *identical* diff *skips the AI stage* (a *blake3* of the diff; unchanged → no re-run). This *cuts* the cost of the *common* re-push case (a branch rebase, a commit reword — the *force-push churn* that dominates PR *volume* but not *novelty*).
+3. **The deterministic-first** (ADR-005): the *static* findings are *zero-cost* (our compute, not a per-token provider bill). A review that's *mostly* deterministic (a *style/lint* PR, a *generated-code* PR) is *cheap* (a provider-down *still* yields a *useful* review at *zero* AI cost, `AI_SYSTEM_DESIGN §5`).
+4. **The per-org token-spend cap** (`NFR-18`, `RATE_LIMITING.md §5`): an *over-cap* review is *skipped* (with a *posted notice*), so a *customer's* runaway *does not* become *our* provider bill (the *platform-level* `PLATFORM_TOKEN_SPEND_CAP_USD`, `RATE_LIMITING §6`, is the *backstop* — even a *misconfigured huge plan + huge volume* can't breach the *platform's* provider budget).
+
+## 3. The *revenue* side (the plan pricing, `BUSINESS/PRICING_STRATEGY.md`)
+
+The cost model's *output* is the *plan's* cost ceiling: a plan's **quota** (reviews/month + the token-spend cap, `plans.ts`, `USAGE_QUOTAS.md`) is *set* so that the *marginal cost* of a review on that plan is *below* the plan's *per-review revenue* (the *margin*). The *plans*:
+
+| Plan | The cost profile it *serves* |
+| --- | --- |
+| **Free** | a *cheap-model* tier (standard), a *low* review quota (50/mo, `AC-401`), a *low* token cap — the *cost* of a Free review is *~$0.02–0.05* (the cheap triage + a bounded deep-review, *not* a frontier model). A Free plan *must not* be a frontier-model plan (a Free tier that runs the *strong* model on every file is a *negative-margin* plan — the *routing* is the *cost control*, `MODEL_ROUTING §4`'s tier access: Free = `standard`, not `strong`). |
+| **Developer** | a *higher* review quota (500/mo) + a *higher* token cap; the *cost/review* is *still* bounded by the *cheap-triage gate* (a Developer PR gets the *same* cost profile as a Free PR, *more* of *them*). |
+| **Team** | a *5,000/mo* quota + a *strong* model *access* (the *deep-review* + *security-review* at the strong tier, `MODEL_ROUTING §4` "Team = standard+strong"). The *cost/review* *rises* (a strong model, not just a cheap one) — the *margin* comes from the *price*, not the *cheapness* (a Team plan *sells* the *strong model*; the *cost* is *higher* but the *price* is *much* higher). |
+| **Enterprise** | *unlimited-ish* caps + the *frontier* model + *BYOK/Ollama* (the *customer's own* provider key / *self-hosted* — a *cost-shifting* play: a *BYOK* Enterprise org *pays its own* provider bill (a `$0` `estUsdCost` to *us*, `MODEL_ROUTING §6`), and an *Ollama* Enterprise org runs *on its own* infra (a *zero marginal cost* to *us*, a *residency* + a *cost* play both, `COMPLIANCE_CONSIDERATIONS.md`'s "a BYOK/Ollama path reduces the sub-processor exposure")). The *Enterprise margin* is the *highest* (a *frontier model* at a *high price*, or a *BYOK/Ollama* at a *zero marginal cost* to us). |
+
+**The *margin* rule:** a plan is *profitable* iff `plan price > (plan's review quota × the plan's per-review cost) + the plan's fixed infra cost share`. The *cost model* (this doc + the `BENCHMARK_DATASET`'s measured cost/review) is what *sets* the *quota* (a quota that's *set* above the *profitable* level is a *loss-leader*, a *documented* decision, not a *hidden* one).
+
+## 4. The *fixed* cost base (the infra, not the AI)
+
+The *per-review* cost is the *variable* cost (the *provider tokens* + the *worker compute*); the *fixed* cost base (a *monthly*, not a *per-review*) is:
+
+| Fixed cost | What it is | The cost control |
+| --- | --- | --- |
+| **Postgres + Redis** (managed) | the *DB* + the *queue* + the *cache* | a *read replica* (the dashboard reads, `PERFORMANCE_SCALABILITY §4`) + a *PgBouncer* (a bounded connection pool) — the *fixed* cost *scales* with the *org count* (a *managed* Postgres is a *near-fixed* monthly, a *Redis* is a *near-fixed* monthly; the *variable* part is the *storage* growth, the *retention* hard-delete, `DATA_RETENTION.md`, bounds it) |
+| **The worker compute** (the static analysis + the AI-orchestration *CPU*) | a *per-review* *CPU* cost (a *worker* instance's time, *not* a *token* cost — the *static analysis* is *our* CPU, the *AI* is the *provider's*) | a *worker* autoscale on *queue depth* (a *variable* that *tracks* the *review volume*, a *KEDA* scaler, `DEPLOYMENT.md §3` — a *worker* that's *idle* is *scaled-to-zero*, a *worker* that's *busy* *scales up* (a *cost* that *tracks the load*, not a *fixed* cost that's *always-on*)) |
+| **The observability** (Sentry + OTel) | a *per-event* + a *fixed* (the *collector*) | a *PITR* + a *log-retention* (the *retention* bounds the *cost*, `OBSERVABILITY §7`) |
+
+**The *key* cost insight:** the *worker* is the *main* *variable-fixed* cost (a *static analysis* that *runs on our CPU* is a *real* cost, *not* a *zero-cost deterministic stage* — the "zero AI cost" of the deterministic stage, ADR-005, is *zero *provider* cost, *not* zero *compute* cost). The *cost model* accounts for *both*: the *provider tokens* (the *variable per-review*, `estUsdCost`) + the *worker CPU* (a *per-review compute*, a *separate* cost line, a *worker-instance-time × the instance cost*). A *review* that's *static-only* is *cheap on the provider bill* but *still* has a *compute cost* (a *worker* ran the *ESLint/Semgrep*) — the *cost/review* metric (`SUCCESS_METRICS`) is the *provider* cost (the *customer-visible* cost, the *billing* cost); the *worker* compute is the *internal* cost (the *gross-margin* cost, *not* a *customer-billed* cost).
+
+## 5. The *billing* cost (the provider, `BILLING_SPECIFICATION.md`)
+
+The *billing* (Stripe / Razorpay, `ADR-009`) has its *own* cost (a *per-transaction* + a *monthly* platform fee, a *PCI* cost that's *not ours* — the *card* is *tokenized* by the provider, `PRIVACY.md §3` "VERCODE is not in PCI cardholder-data scope"). The *billing cost* is a *revenue* cost (a *percentage of the MRR*, a *Stripe fee*), *not* a *cost* of *producing a review* (a *billing* cost is a *commercial* cost, the *AI + infra* are the *production* cost). The *cost model* separates them: the *production cost* (the *provider tokens* + the *worker compute* + the *infra*) is the *COGS*; the *billing fee* is the *commercial overhead* (a *different* P&L line).
+
+## 6. The *cost-abuse* backstop (the "a customer's runaway isn't our bill", `RATE_LIMITING §6`, `THREAT_MODEL T-11`)
+
+The *two-cap* design (the *plan's* cap + the *platform's* cap) is a *cost* control *and* an *abuse* control:
+
+- **The *plan's* cap** (the *org's* review quota + the *org's* token-spend cap, `plans.ts`) — a *customer* is *bounded* to *their* plan (a *Free* org can't run *Enterprise* volume).
+- **The *platform's* cap** (`PLATFORM_TOKEN_SPEND_CAP_USD`) — even a *misconfigured* *huge* plan + a *huge* volume *can't* breach the *platform's* *provider* budget (a *cost-abuse* *backstop*: a *DoS* on the *AI budget* is *bounded* by the *platform* cap, not just the *plan* cap).
+- **The *skip-with-notice*** — an *over-cap* review is *skipped* (a *posted* notice, *not* a *silent* stop, NFR-18), so a *cost-abuse* is *observable* (a *runaway* org is *alerted* + *informed*, `RATE_LIMITING.md §6`'s "anomaly alert" — a *cost-abuse* is *surfaced*, not *hidden*).
+
+## 7. The *unit-economics* summary (the numbers a decision needs, *modeled* + *measured*)
+
+| Metric | The model (the *estimate*) | The *measured* value (the *BENCHMARK_DATASET* + the *production* `usage_events`) |
+| --- | --- | --- |
+| **cost/review** (a Free-plan PR, 10 files) | ~$0.03–0.05 (a *cheap-triage* + a *bounded* deep-review, *no* frontier model) | the *measured* `estUsdCost` (the *release-gate* number, `AI_EVALUATION §3` "cost/review" + the `SUCCESS_METRICS` "Free/Dev ≤ $0.15" target) |
+| **cost/review** (a Team-plan PR, 50 files, a strong model) | ~$0.15–0.35 (a *strong* deep + a *strong* security pass) | the *measured* `estUsdCost` (the *Team* "≤ $0.35 at p95" target, `SUCCESS_METRICS`) |
+| **cost/review** (an Enterprise BYOK/Ollama PR) | **~$0 to VERCODE** (a *BYOK* = the *customer's* bill; an *Ollama* = the *customer's* infra; a *$0* `estUsdCost`, `MODEL_ROUTING §6`) | the *measured* `estUsdCost` (a *$0*, the *cost-shifting* play) |
+| **the gross margin** (a plan) | `plan price / (plan quota × per-review cost + fixed infra share)` | the *measured* per-review cost (the *margin* is *modeled* + *verified* by the *production* `usage_events` — a *margin* that's *modeled* but *not measured* is a *projection*, not a *fact*, `AI_EVALUATION §5`'s "never claim without measurement") |
+
+## 8. The "don't claim what you can't measure" rule (the cross-doc invariant)
+
+The *cost* claims in this doc + the *pricing* claims in `PRICING_STRATEGY.md` are *modeled* (a *projection* from the *rate table* + the *quota* + the *routing*). A *release* states the *measured* cost/review (the *BENCHMARK_DATASET* + the *production* `usage_events`, `AI_EVALUATION §5`'s "a release report states the benchmark gate results… cost/review"). A *"we have a 40% gross margin"* claim is a *measured* claim (a `usage_events` *cost* vs a *billing* *revenue*, the *two* numbers, a *ratio*), *not* a *projection* (a "we *think* we have 40%"). The *model* is the *plan*; the *measurement* is the *evidence*; a *claim* cites *both* (a "modeled 40%, measured 38% as of [release], benchmark/v1" — the *model* + the *measurement* + the *version*).
