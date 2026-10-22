@@ -133,21 +133,33 @@ export function githubWebhookRoutes(
         event: (req.headers["x-github-event"] as string | undefined) ?? "",
       };
 
-      // A layer 1–2: a HMAC + a timestamp window (a `@vercode/github`). A
+      // A layer 3 lookup (a the delivery dedup): a the `webhook_deliveries`
+      // row for the delivery id (a the 24 h window, a NFR-06). A a seen id →
+      // the "replay" verdict (a the route turns it into a 200 no-op, a
+      // ST-webhook-replay, a the pipeline does NOT re-run).
+      const deliverySeen = headers.deliveryId
+        ? (await db.webhookDelivery.findUnique({ where: { deliveryId: headers.deliveryId } })) !== null
+        : false;
+
+      // A layers 1–2: a HMAC + a timestamp window (a `@vercode/github`). A
       // failure → a 401 + a audit, a no queue write (a ST-webhook-forged /
-      // -stale, a THREAT_MODEL T-01).
-      const verdict = verifyGitHubWebhook(headers, raw, secret);
+      // -stale, a THREAT_MODEL T-01 "a forged event fails layer 1").
+      const verdict = verifyGitHubWebhook(headers, raw, secret, {
+        isDeliverySeen: () => deliverySeen,
+      });
       if (!verdict.ok) {
+        // A layer 1/2 failures (a signature / a timestamp) → a 401 + a
+        // audit + NO queue write. A layer 3 (a replay) → a 200 no-op.
+        if (verdict.reason === "replay") {
+          reply.code(200).send({ ok: true, replay: true, deliveryId: headers.deliveryId });
+          return;
+        }
         await audit(reply, {
-          action: verdict.reason === "replay" ? "webhook.replay_rejected" : "webhook.rejected",
-          meta: {
-            reason: verdict.reason ?? "unknown",
-            event: headers.event,
-            deliveryId: headers.deliveryId,
-          },
+          action: "webhook.rejected",
+          meta: { reason: verdict.reason ?? "signature", event: headers.event, deliveryId: headers.deliveryId },
         });
         reply.code(401).send({
-          error: { code: "WEBHOOK_REJECTED", message: "Webhook signature or timestamp verification failed." },
+          error: { code: "WEBHOOK_REJECTED", message: "Signature or timestamp verification failed." },
         });
         return;
       }
