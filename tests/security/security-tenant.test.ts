@@ -21,34 +21,35 @@
 //   - a member with the capability → the gate passes, the handler runs.
 //
 // ---------------------------------------------------------------------------
-// WHAT THIS SPEC RUNS TODAY + KNOWN PRODUCT DEFECTS IT SURFACES:
+// WHAT THIS SPEC RUNS TODAY + THE PRODUCT DEFECTS IT SURFACES:
 //
-// The plugin is exercised where Fastify actually runs its hooks: a route
-// registered *directly on the root app* next to the plugin. That topology
-// proves the plugin's tenancy + capability decision logic (the gate itself).
+// `buildTenantPlugin` constructs its own `PrismaClient` internally, so we
+// `vi.mock("@prisma/client")` to back it with per-test in-memory rows (the
+// fake is created via a module-level factory that reads the *current* seed).
 //
-// The full-app topology (a the plugin is registered on the root, the routes
-// are registered inside `registerRoutes`'s child plugins) does NOT run the
-// gate at all — and does not even boot. See KNOWN_ISSUES.md for the two
-// P0 findings this probe established against the real source:
+// The gate is exercised on a route registered *directly on the root app*
+// next to the plugin (where Fastify actually runs the plugin's preHandler).
+// The capability is declared via the route `config` option — the path the
+// plugin actually reads (`req.routeOptions.config?.capability`).
 //
-//   1. ENCAPSULATION: a hook + a decorate registered inside a root-level
-//      plugin are NOT visible to routes registered in a *sibling* child
-//      plugin or on the root. `buildServer` registers the tenant + auth
-//      plugins at the root, but `registerRoutes` registers the orgs/github
-//      routes in a sibling plugin — so the tenancy gate never applies to a
-//      `/orgs/*` request (probed: `app.inject(GET /orgs/org-B)` → 200, no
-//      `membership`/`organization` query, `req.tenant` null).
-//   2. BOOT CRASH: `registerRoutes` reads `a.auth.db` in the `/webhooks`
-//      plugin, but the `auth` decorate is encapsulated to the auth plugin,
-//      so it is `undefined` at the root → `buildServer().ready()` throws
-//      "Cannot read properties of undefined (reading 'db')" before the app
-//      serves any request (probed against the real `buildServer`).
+// Two P0 product defects this probe established against the real source are
+// documented in KNOWN_ISSUES.md (they are what make the *full app* fail the
+// ST-isolation-oracle gate today; the spec asserts the correct behavior so
+// the suite is the gate once the wiring is fixed):
 //
-// Neither defect is fixed here (security-critical path — flagged for the
-// M7/M8 owners). The spec asserts the *correct* gate behavior so that when
-// the wiring is fixed, the suite is the release gate that catches a
-// regression.
+//   1. ENCAPSULATION: the tenant + auth plugins are registered on the root,
+//      but `registerRoutes` registers the orgs/github routes in *sibling*
+//      child plugins — so the plugin's preHandler hook + the `auth`/`tenant`
+//      decorations are NOT visible to those routes. The tenancy gate never
+//      applies to a real `/orgs/*` request (probed: GET /orgs/org-B → 200,
+//      `req.tenant` null, no membership query).
+//   2. CAPABILITY READ: the plugin reads `req.routeOptions.config?.
+//      capability`, but the app's routes declare the capability in the
+//      *schema* (`{ schema: { config: { capability } } }`), which lands on
+//      `routeOptions.schema.config` — so even where the hook does run, the
+//      capability gate sees `undefined` and is dormant (probed).
+//
+// Neither is fixed here (security-critical path — flagged for M7/M8).
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
@@ -57,54 +58,7 @@ import type { FastifyInstance } from "fastify";
 import type { PrismaClient, Organization, Membership, AuditEvent, Role } from "@prisma/client";
 
 // ---------------------------------------------------------------------------
-// The mocked Prisma seam.
-//
-// `buildTenantPlugin` constructs its own `PrismaClient` inside the plugin
-// (plugins/tenant.ts § buildTenantPlugin), so an in-memory fake passed as a
-// dependency is not possible without editing product code. Instead we
-// `vi.mock("@prisma/client")` so the plugin's `new PrismaClient()` returns a
-// fake backed by per-test in-memory state. The `PrismaClient` export is
-// replaced by a factory that reads a module-level "current seed" so each test
-// can rebuild its own rows.
-// ---------------------------------------------------------------------------
-
-let CURRENT: TenantSeed;
-let CURRENT_STATE: TenantDbState;
-
-function makeFakePrismaClient() {
-  return {
-    membership: {
-      findFirst: async ({ where }: { where: { orgId: string; userId: string } }) =>
-        CURRENT_STATE.memberships.find((m) => m.orgId === where.orgId && m.userId === where.userId) ?? null,
-    },
-    organization: {
-      findFirst: async ({ where }: { where: { id?: string; slug?: string; status?: unknown } }) =>
-        CURRENT_STATE.orgs.find((o) => o.id === where.id && o.status !== "DELETED") ?? null,
-    },
-    auditEvent: {
-      create: async ({ data }: { data: Record<string, unknown> }) => {
-        const row = { id: `audit-${CURRENT_STATE.audits.length + 1}`, createdAt: new Date(), ...data } as unknown as AuditEvent;
-        CURRENT_STATE.audits.push(row);
-        return row;
-      },
-    },
-  } as unknown as PrismaClient;
-}
-
-vi.mock("@prisma/client", async () => {
-  const actual = await vi.importActual<Record<string, unknown>>("@prisma/client");
-  return {
-    ...actual,
-    PrismaClient: makeFakePrismaClient,
-  };
-});
-
-const { buildTenantPlugin } = await import("../../apps/api/src/plugins/tenant.js");
-
-// ---------------------------------------------------------------------------
-// The mocked Prisma surface (the pattern from apps/api/src/webhooks.test.ts:
-// an in-memory fake, no Postgres). We build exactly the rows the tenant
-// plugin touches (membership, organization, auditEvent) + record the writes.
+// The in-memory Prisma rows (one set per test, swapped before each build).
 // ---------------------------------------------------------------------------
 
 interface TenantSeed {
@@ -120,51 +74,69 @@ interface TenantDbState {
   audits: AuditEvent[];
 }
 
-function mockTenantDb(seed: TenantSeed): { db: PrismaClient; state: TenantDbState } {
-  const state: TenantDbState = {
+let CURRENT_STATE: TenantDbState;
+
+function setState(seed: TenantSeed): TenantDbState {
+  CURRENT_STATE = {
     orgs: seed.orgs.map((o) => o as unknown as Organization),
     memberships: seed.memberships.map((m) => m as unknown as Membership),
     audits: [],
   };
+  return CURRENT_STATE;
+}
 
-  const db = {
-    membership: {
+// ---------------------------------------------------------------------------
+// The mocked Prisma seam.
+//
+// `buildTenantPlugin` does `new PrismaClient()` inside the plugin body, so
+// the only way to back it with in-memory rows (without editing product
+// code) is to `vi.mock("@prisma/client")` and return a fake whose methods
+// read `CURRENT_STATE` (set per-test via `setState`).
+// ---------------------------------------------------------------------------
+
+vi.mock("@prisma/client", async () => {
+  const actual = await vi.importActual<Record<string, unknown>>("@prisma/client");
+  class FakePrismaClient {
+    membership = {
       findFirst: async ({ where }: { where: { orgId: string; userId: string } }) =>
-        state.memberships.find((m) => m.orgId === where.orgId && m.userId === where.userId) ?? null,
-    },
-    organization: {
+        CURRENT_STATE.memberships.find((m) => m.orgId === where.orgId && m.userId === where.userId) ?? null,
+    };
+    organization = {
       findFirst: async ({ where }: { where: { id?: string; slug?: string; status?: unknown } }) =>
-        state.orgs.find((o) => o.id === where.id && o.status !== "DELETED") ?? null,
-    },
-    auditEvent: {
+        CURRENT_STATE.orgs.find((o) => o.id === where.id && o.status !== "DELETED") ?? null,
+    };
+    auditEvent = {
       create: async ({ data }: { data: Record<string, unknown> }) => {
-        const row = { id: `audit-${state.audits.length + 1}`, createdAt: new Date(), ...data } as unknown as AuditEvent;
-        state.audits.push(row);
+        const row = { id: `audit-${CURRENT_STATE.audits.length + 1}`, createdAt: new Date(), ...data } as unknown as AuditEvent;
+        CURRENT_STATE.audits.push(row);
         return row;
       },
-    },
-  } as unknown as PrismaClient;
+    };
+  }
+  return { ...actual, PrismaClient: FakePrismaClient };
+});
 
-  return { db, state };
-}
+// A the plugin is imported AFTER the mock is registered so its
+// `new PrismaClient()` resolves to the fake.
+const { buildTenantPlugin } = await import("../../apps/api/src/plugins/tenant.js");
 
 // ---------------------------------------------------------------------------
 // The app builder — the real tenant plugin + a route registered DIRECTLY on
 // the root app (where Fastify runs the plugin's hooks). The capability is
-// declared via the route `config` option (the path the plugin actually reads
-// — `req.routeOptions.config?.capability`; the app's routes' `schema.config`
-// declaration is a separate defect, KNOWN_ISSUES.md).
+// declared via the route `config` option (the path the plugin actually
+// reads — `req.routeOptions.config?.capability`).
 // ---------------------------------------------------------------------------
 
-async function buildTenantApp(seed: TenantSeed) {
-  const { db, state } = mockTenantDb(seed);
+async function buildTenantApp(seed: TenantSeed, capability: "read" | "org.manage" = "read") {
+  const state = setState(seed);
 
   const app: FastifyInstance = Fastify({ logger: false });
   app.register(buildTenantPlugin());
 
   // A minimal session stand-in: the tenant plugin reads `req.user.userId`
   // (the auth plugin would resolve it from the cookie; here the test seeds
-  // it directly so the tenancy gate is the unit under test).
+  // it directly so the tenancy gate is the unit under test). The hook is
+  // registered on the root so it runs before the plugin's gate.
   app.addHook("preHandler", async (req) => {
     (req as { user?: { userId: string | null } }).user = { userId: seed.actingUserId };
   });
@@ -176,8 +148,8 @@ async function buildTenantApp(seed: TenantSeed) {
   app.get(
     "/orgs/:orgId/reviews",
     {
-      schema: { config: { capability: "read" } },
-      config: { capability: "read" } as never,
+      schema: { config: { capability } },
+      config: { capability } as never,
     },
     async (req, reply) => {
       reply.send({ reached: true, orgId: req.params, tenant: (req as { tenant?: unknown }).tenant ?? null });
@@ -185,7 +157,7 @@ async function buildTenantApp(seed: TenantSeed) {
   );
 
   await app.ready();
-  return { app, state, db };
+  return { app, state };
 }
 
 // ---------------------------------------------------------------------------
@@ -197,7 +169,7 @@ const ORG_B = "org-b";
 const USER_IN_A = "user-in-a";
 const USER_IN_NEITHER = "user-in-neither";
 
-function baseSeed(over: Partial<TenantSeed> = {}) {
+function baseSeed(over: Partial<TenantSeed> = {}): TenantSeed {
   return {
     orgs: [
       { id: ORG_A, slug: "acme", status: "ACTIVE" },
@@ -209,7 +181,7 @@ function baseSeed(over: Partial<TenantSeed> = {}) {
     ],
     actingUserId: USER_IN_A,
     ...over,
-  } as TenantSeed;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -239,30 +211,22 @@ describe("ST-isolation-oracle: the 404-vs-403 split (TENANT_ISOLATION.md §2/§5
   });
 
   it("an in-tenant capability denial (a member without the required capability) → 403", async () => {
-    // A VIEWER in org-A hitting a route that requires `reviews.run`… the
-    // capability matrix (AUTHORIZATION.md §1): VIEWER has ONLY `read`, so
-    // a route needing a capability the role lacks → 403 (a capability
-    // denial, in-tenant). Here the route declares `read` + the acting
-    // member is a VIEWER (has `read`)… so to exercise a *denial* the
-    // member must lack the declared capability: use a VIEWER on a route
-    // that requires `reviews.run`? The route above declares `read`, so a
-    // VIEWER passes. Instead, flip the seed: an acting user in org-A with
-    // role VIEWER + the route declares a capability the VIEWER lacks.
-    // Simulate by having the route require `org.manage` for this case.
-    const { app, state } = await buildOrgManageApp(
-      baseSeed({
-        memberships: [{ id: "m-1", orgId: ORG_A, userId: USER_IN_A, role: "VIEWER" }],
-      })
+    // A VIEWER in org-A hitting a route that requires `org.manage`: the
+    // capability matrix (AUTHORIZATION.md §1) gives VIEWER only `read`, so
+    // the role *lacks* the declared capability → 403 (a capability
+    // denial, in-tenant — distinct from the cross-tenant 404).
+    const { app, state } = await buildTenantApp(
+      baseSeed({ memberships: [{ id: "m-1", orgId: ORG_A, userId: USER_IN_A, role: "VIEWER" }] }),
+      "org.manage"
     );
     const res = await app.inject({ method: "GET", url: "/orgs/org-a/reviews" });
 
-    // In-tenant + a capability the role lacks → 403 FORBIDDEN (this is the
-    // "distinct" denial — a capability gate, not a tenancy gate).
     expect(res.statusCode).toBe(403);
     expect(res.json().error.code).toBe("FORBIDDEN");
     const cap = state.audits.find((a) => a.action === "access.denied_capability");
     expect(cap).toBeDefined();
     expect(cap!.orgId).toBe(ORG_A);
+    expect(cap!.actorId).toBe(USER_IN_A);
   });
 
   it("an in-tenant user WITH the capability → the gate passes (the handler runs)", async () => {
@@ -295,8 +259,8 @@ describe("ST-isolation-oracle: the 404-vs-403 split (TENANT_ISOLATION.md §2/§5
 
   it("a cross-tenant 404 carries a uniform body (no org-existence signal)", async () => {
     // A no-oracle check: the 404 body for an *existing* foreign org is the
-    // SAME shape as the 404 for a *nonexistent* org (an attacker can't tell
-    // which case they hit — that's the oracle-closure).
+    // SAME as the 404 for a *nonexistent* org (an attacker can't tell which
+    // case they hit — that's the oracle-closure).
     const { app: existingApp } = await buildTenantApp(baseSeed());
     const foreign = await existingApp.inject({ method: "GET", url: "/orgs/org-b/reviews" });
 
@@ -313,27 +277,3 @@ describe("ST-isolation-oracle: the 404-vs-403 split (TENANT_ISOLATION.md §2/§5
     expect(foreign.body).toBe(unknown.body); // A byte-identical 404.
   });
 });
-
-// A the capability-denial variant: the same route shape but declaring a
-// capability a specific role lacks (so the in-tenant 403 cell is exercised
-// — the route's `config` option is the path the plugin reads).
-async function buildOrgManageApp(seed: TenantSeed) {
-  const { db, state } = mockTenantDb(seed);
-  const app: FastifyInstance = Fastify({ logger: false });
-  app.register(buildTenantPlugin());
-  app.addHook("preHandler", async (req) => {
-    (req as { user?: { userId: string | null } }).user = { userId: seed.actingUserId };
-  });
-  app.get(
-    "/orgs/:orgId/reviews",
-    {
-      schema: { config: { capability: "org.manage" } },
-      config: { capability: "org.manage" } as never,
-    },
-    async (req, reply) => {
-      reply.send({ reached: true, orgId: req.params });
-    }
-  );
-  await app.ready();
-  return { app, state, db };
-}

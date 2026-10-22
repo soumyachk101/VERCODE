@@ -874,15 +874,32 @@ async function finishSkipped(
   deps: WorkerDeps,
   payload: ReviewJobPayload,
   skipReason: NonNullable<ReviewJobOutcome["skipReason"]>,
+  month: string,
   body: { summaryBody: string }
 ): Promise<ReviewJobOutcome> {
   const { db } = deps;
-  await db.$transaction((tx) =>
-    upsertJob(tx as unknown as DbClient, payload, "SKIPPED", {
+  await db.$transaction((tx) => {
+    const t = tx as unknown as DbClient;
+    const job = upsertJob(t, payload, "SKIPPED", {
       skipReason,
       usage: emptyUsage(deps.promptVersion),
-    })
-  );
+    });
+    // A the skipped job records a zero-usage event (a no token spend is
+    // attributed to the org — a the abuse path is closed, AC-402).
+    const usageRow = t.usageEvent.create({
+      data: {
+        orgId: payload.orgId,
+        jobId: job.id,
+        month,
+        reviewCount: 1,
+        inputTokens: 0,
+        outputTokens: 0,
+        estUsdCost: "0",
+        model: null,
+      },
+    });
+    return Promise.all([job, usageRow]);
+  });
   try {
     await publishGithub(deps, payload, {
       summary: body.summaryBody,
