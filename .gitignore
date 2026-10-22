@@ -1,4 +1,21 @@
+# Ignored folders requested
 .agents/
 .aider-desk/
 .claude/
 skills-lock.json
+
+# Node & Build artifacts
+node_modules/
+dist/
+build/
+.next/
+*.tsbuildinfo
+
+# Environment & Logs
+.env
+.env.*
+!.env.example
+*.log
+scripts/*.log
+scripts/*.pid
+.DS_Store
