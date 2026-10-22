@@ -69,6 +69,58 @@ import {
   resolveWorkerPolicy,
   type ReviewPolicy,
 } from "./policy.js";
+import { logger, tracer, capture, redact, type StructuredLogger, type TraceHandle, type SpanHandle } from "@vercode/observability";
+
+// ---------------------------------------------------------------------------
+// The observability wiring (M7, OBSERVABILITY.md §1–§4 "a one trace per
+// pipeline" + a the redaction gate on every record + a the PII-scrubbed
+// capture). A the trace id = a the job_id (a the §2 "a the trace id = the
+// job_id"); a the correlation id = a the job_id (a the §1 "a the
+// correlation id (= the job_id)"). A the redaction gate (a the
+// SECRETS_MANAGEMENT §3 "a the redactor runs on *every* record before it's
+// written") is applied to the logger's records + the stored finding payload
+// + the capture's payload (a the "a secret that reaches a log is a released
+// secret" invariant).
+// ---------------------------------------------------------------------------
+
+export interface JobObservability {
+  /** A the trace handle (a the "one trace per pipeline" surface). */
+  trace: TraceHandle;
+  /** A the structured logger (a the correlation id = a the job_id). */
+  log: StructuredLogger;
+  /** A the span start (a the stage, a the OBSERVABILITY.md §2 "a a span per
+   * stage"). */
+  startSpan: (stage: string, attrs?: Record<string, unknown>) => SpanHandle;
+  /** A the span end (a the outcome + a the attributes, a the §2 "a the
+   * spans carry a the outcome" rule). */
+  endSpan: (h: SpanHandle, outcome: string, attrs?: Record<string, unknown>) => void;
+  /** A the PII + a the secret scrub (a SECRETS_MANAGEMENT §3 gate). */
+  scrub: (text: string) => string;
+  /** A the Sentry-style PII-scrubbed capture (a the OBSERVABILITY.md §4 "a a
+   * Sentry event that carries a secret is a leak"). */
+  cap: ReturnType<typeof capture>;
+}
+
+/**
+ * Build the default observability context (no OTLP endpoint, in-memory). A
+ * the trace id = a the job_id (OBSERVABILITY.md §2 "a the trace id = the
+ * job_id"); a the no-OTLP-endpoint tracer keeps a the spans in-memory (a the
+ * queryable surface; a the OTel exporter is a later seam).
+ */
+export function makeJobObservability(payload: ReviewJobPayload): JobObservability {
+  const tracerInstance = tracer();
+  const trace = tracerInstance.startTrace(payload.jobId, "review.pipeline");
+  const log = logger({ correlationId: payload.jobId, orgId: payload.orgId });
+  const cap = capture();
+  const startSpan = (stage: string, attrs?: Record<string, unknown>) =>
+    trace.startSpan(stage, attrs);
+  const endSpan = (h: SpanHandle, outcome: string, attrs?: Record<string, unknown>) => {
+    if (attrs) for (const [k, v] of Object.entries(attrs)) h.setAttribute(k, v);
+    h.end(outcome);
+  };
+  const scrub = (text: string) => redact(text).text;
+  return { trace, log, startSpan, endSpan, scrub, cap };
+}
 
 // ---------------------------------------------------------------------------
 // The canonical finding (post-pipeline, pre-persist). Mirrors the contracts
