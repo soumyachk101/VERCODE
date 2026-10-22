@@ -250,10 +250,9 @@ function MembersBody() {
         confirmLabel="Remove member"
         onConfirm={() => {
           if (removeTarget) {
-            void remove
-              .mutate(removeTarget.id)
-              .then(() => setRemoveTarget(null))
-              .catch(() => setRemoveTarget(null));
+            remove.mutate(removeTarget.id, {
+              onSettled: () => setRemoveTarget(null),
+            });
           }
         }}
         confirming={remove.isPending}

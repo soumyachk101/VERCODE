@@ -291,7 +291,10 @@ export function useChangeRole(orgId: string) {
 }
 export function useRemoveMember(orgId: string) {
   return useMutation({
-    mutationFn: (userId: string) => api.del<unknown>(`/orgs/${orgId}/members/${userId}`).then((v) => ({ ok: true as const, removed: userId, value: v })),
+    mutationFn: async (userId: string) => {
+      await api.del<unknown>(`/orgs/${orgId}/members/${userId}`);
+      return { removed: userId };
+    },
   });
 }
 export function useSignOutAll() {
