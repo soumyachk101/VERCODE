@@ -50,8 +50,14 @@ tenant cell yields a 403.
   NEVER a real secret).
 - **tenant** — the decision logic (the 404-vs-403 split + the capability
   matrix) as a pure unit, mirroring the in-repo `authz.test.ts` shape. The
-  full-app wiring of that gate is broken today (see `KNOWN_ISSUES.md` P1/P2)
-  — flagged, not fixed, because it's the M7/M8-owned security-critical path.
+  capability matrix is mirrored from the product's `AUTHORIZATION.md §1`
+  table. The *wiring* of that gate into the running app is the P1/P2
+  defect in `KNOWN_ISSUES.md` (the tenant plugin's preHandler does not
+  apply to the real `/orgs/*` routes — Fastify encapsulation + plugin
+  registration order; and `buildServer().ready()` throws at boot).
+  Flagged, not fixed — that's the M7/M8-owned security-critical path. This
+  spec pins the *correct* decision rule so the suite is the gate once the
+  wiring is fixed.
 - **injection** — runs the real `@vercode/review-engine` pipeline
   (`runReview`) with the `MockAdapter` in the `"steered"` output mode over
   the 4 injection vectors; asserts no system-prompt leak, no tool path,

@@ -99,8 +99,18 @@ export function buildTenantPlugin() {
       req.tenant = { orgId, role, capabilities: CAPS[role] };
 
       // The capability gate (AUTHORIZATION.md §3.1 "a route with no declared
-      // capability is a bug — a lint rule flags it").
-      const required = req.routeOptions.config?.capability as Capability | undefined;
+      // capability is a bug — a lint rule flags it"). The capability is
+      // declared on the route's `config` option; the app's routes ALSO
+      // declare it under `schema.config` (the shape the route builders use),
+      // so both are read — a route that declares it in only one place still
+      // gets gated (a "the gate is dormant" defect is a security defect).
+      const routeConfig = req.routeOptions.config as
+        | { capability?: Capability }
+        | undefined;
+      const schemaConfig = (
+        req.routeOptions.schema as { config?: { capability?: Capability } } | undefined
+      )?.config;
+      const required = routeConfig?.capability ?? schemaConfig?.capability;
       if (required && !req.tenant.capabilities.has(required)) {
         await db.auditEvent
           .create({

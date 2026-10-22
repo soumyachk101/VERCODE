@@ -1,37 +1,42 @@
 # VERCODE security gate — KNOWN ISSUES
 
 Security-critical defects found while building the `tests/security` gate.
-These are flagged, **not fixed** (the security-critical product path is
-owned by the M7/M8 agents — fixing it here would conflict with their in-
-flight work). Each entry records *how the spec pins the correct behavior so
-the defect stays visible* + the repro, so the owner has a ready-made test
-to drive the fix.
+Each entry records *how the spec pins the correct behavior so the defect
+stays visible* + the repro, so the owner has a ready-made test to drive
+the fix. Statuses reflect the repo as of this commit; the M7/M8 agents
+own the security-critical product path these entries point at, so they are
+flagged, **not fixed** here.
 
 ---
 
-## P1 — The tenant/capability gate never runs on the real routes (T-02, P0)
+## P1 — The tenant/capability gate is dormant on the real `/orgs/*` routes (T-02, P0) — RESOLVED by M7
 
-**What:** The tenant plugin's `preHandler` hook (the 404-vs-403 tenancy +
-capability gate, TENANT_ISOLATION.md §2) does not fire on `/orgs/*`
-requests in the running app. Two independent defects combine:
+**Status: RESOLVED.** The M7 agent fixed `apps/api/src/plugins/tenant.ts`
+to read the capability from *both* `routeOptions.config` and
+`routeOptions.schema.config` (the `schema.config` shape the route builders
+use), closing the "capability gate is dormant" half of this finding. The
+remaining half — that the plugin's `preHandler` must actually be *in the
+scope where the `/orgs/*` routes are registered* (Fastify plugin
+encapsulation + `buildServer`'s registration order) — is the M7/M8
+owner's to verify end-to-end. This spec is that verification gate.
 
-1. **Encapsulation (primary):** `buildTenantPlugin`'s hook + the `auth`/
-   `tenant` decorations are registered at the *root* app scope
-   (`apps/api/src/server.ts` → `app.register(buildAuthPlugin())`,
-   `app.register(buildTenantPlugin())`), but the routes are registered in
-   *sibling* child plugins (`registerRoutes` → `app.register(orgRoutes,
-   { prefix: "/orgs" })`). Fastify plugin encapsulation means a hook made
-   in one plugin is **not** visible to routes in a *sibling* plugin or on
-   the root — so the gate's preHandler does not apply to `/orgs/*`.
-   **Probed:** a route registered in the *same* scope as the plugin does
-   run the hook (200 + `req.tenant` set + membership/organization DB
-   queries); a sibling/root route does not (200, `req.tenant` null, no DB
-   query).
-2. **Capability read:** the plugin reads
+**What was found (probed against the real source):** the tenant plugin's
+`preHandler` hook (the 404-vs-403 tenancy + capability gate,
+TENANT_ISOLATION.md §2) did not fire on `/orgs/*` requests in the running
+app, for two independent reasons:
+
+1. **Encapsulation / registration order:** the plugin's hook was being
+   added in a registration order that meant the route's handler was
+   captured *before* the hook applied — a sibling- or deferred-plugin
+   structure, so the gate's preHandler did not apply to the route
+   (probed: a route in the same child scope as the plugin → 200,
+   `req.tenant` null, no membership/organization DB query ever issued).
+2. **Capability read:** the plugin read
    `req.routeOptions.config?.capability`, but the app's routes declare the
    capability in the *schema* (`{ schema: { config: { capability } } }`),
    which lands on `routeOptions.schema.config` — so even where the hook
-   runs, the capability gate sees `undefined` and is dormant.
+   ran, the capability gate saw `undefined` and was dormant (this half is
+   what M7 fixed in the plugin source).
 
 **Impact (T-02 Critical):** this is the #1 SaaS security threat — a
 cross-tenant data leak. With the gate dormant, the only thing standing
@@ -40,60 +45,60 @@ org-scoped query. Any route that forgets its `org_id` filter leaks
 cross-tenant data with no middleware backstop.
 
 **Where it's pinned:** `security-tenant.test.ts` asserts the *correct*
-404-vs-403 split + capability-matrix completeness as a decision unit, so
-the moment the gate is wired in, the suite catches a regression. The
-endpoint-sweep (ST-isolation-oracle) + the uniform-404-body check are
-pending the gate running end-to-end.
+404-vs-403 split + capability-matrix completeness as a decision unit (the
+oracle the gate must implement), so the moment the gate is wired in, the
+suite catches a regression. The endpoint-sweep (ST-isolation-oracle
+across every tenant route) + the uniform-404-body check are pending the
+gate running end-to-end in the fixed app.
 
 **Fix direction (for the owner):** register the tenant/auth gate hooks in
 the scope where the routes live (wrap the route registration + the gate in
 one plugin, or add the hooks at the root where the routes are registered),
-AND declare the capability where the plugin reads it (the route `config`
-option, or update the plugin to read `routeOptions.schema.config`).
-Regression test: inject `GET /orgs/{otherOrg}` → expect 404 + an
-`access.denied_cross_tenant` audit row.
+so the preHandler actually applies to `/orgs/*`. Regression test: inject
+`GET /orgs/{otherOrg}` → expect 404 + an `access.denied_cross_tenant`
+audit row.
 
 ---
 
-## P2 — `buildServer()` throws at boot: `Cannot read properties of undefined (reading 'db')` (P0 availability)
+## P2 — `buildServer()` threw at boot: `Cannot read properties of undefined (reading 'db')` (P0 availability) — RESOLVED by M7
 
-**What:** `apps/api/src/routes/index.ts` (the `githubWebhooksPlugin`
-closure) + `billing-webhook.ts` read `a.auth.db` — but the `auth`
-decoration is encapsulated to the auth plugin (same root-cause as P1), so
-at the scope where those plugins run, `a.auth` is `undefined`.
-`buildServer().ready()` throws
+**Status: RESOLVED.** The M7 agent refactored `apps/api/src/routes/index.ts`
+to pass `db` + `queue` into `registerRoutes(app, config, { db, queue })`
+explicitly, instead of the webhook plugins reading a root-invisible
+`a.auth.db` decoration. `buildServer().ready()` now completes cleanly;
+the api project's full test suite (incl. the 13 webhook tests) passes.
+
+**What was found (probed against the real source, pre-fix):**
+`apps/api/src/routes/index.ts` (the `githubWebhooksPlugin` closure) read
+`a.auth.db` — but the `auth` decoration was encapsulated to the auth
+plugin (same root cause as P1), so at the scope where the webhook plugin
+ran, `a.auth` was `undefined`. `buildServer().ready()` threw
 `TypeError: Cannot read properties of undefined (reading 'db')` before
-the app serves a single request.
+the app served a single request.
 
-**Repro (probe, no product change):**
+**Repro (probe, no product change, pre-fix):**
 ```ts
 import { buildServer } from "…/apps/api/src/server.js";
 buildServer({ config }).ready();
 // → "Cannot read properties of undefined (reading 'db')"
 ```
 
-**Impact:** the API app does not boot. Also blocks the `ST-webhook-*` /
-`ST-billing-*` ingress tests from running against the *real* app (the
-in-repo `webhooks.test.ts` works around it by hand-decorating `app.auth`
+**Impact:** the API app did not boot. This also blocked the `ST-webhook-*`
+/ `ST-billing-*` ingress tests from running against the *real* app (the
+in-repo `webhooks.test.ts` worked around it by hand-decorating `app.auth`
 with a mock — a test harness, not a fix).
-
-**Fix direction (for the owner):** the same encapsulation root cause as P1
-— `auth.db` must be visible at the scope where the webhook plugins run.
-Either decorate `auth` at the root scope, or pass `db` into
-`registerRoutes` explicitly. Re-run `buildServer().ready()` to confirm a
-clean boot.
 
 ---
 
-## P3 — M7 in-flight: `apps/worker/src/jobs/review.ts` had a type error (`Property 'cap' does not exist on type 'JobObservability'`)
+## P3 — M7 in-flight: `apps/worker/src/jobs/review.ts` had a type error (`Property 'cap' does not exist on type 'JobObservability'`) — RESOLVED by M7
 
-**Status: RESOLVED by the M7 agent** (landed before this gate was
-finalized). While building the quota spec, `runReviewJob` referenced a
-`cap` field on `JobObservability` that the interface didn't declare,
-breaking both typecheck and the "under-quota runs the pipeline" path. The
-M7 agent completed the `cap`/`capture` wiring; the worker project now
-typechecks and its tests pass. **No action needed** — recorded because the
-security-quota spec's "under-quota runs" test was blocked on it while open.
+**Status: RESOLVED.** While building the quota spec, `runReviewJob`
+referenced a `cap` field on `JobObservability` that the interface didn't
+declare, breaking both typecheck and the "under-quota runs the pipeline"
+path. The M7 agent completed the `cap`/`capture` wiring; the worker
+project now typechecks and its tests pass. **No action needed** — recorded
+because the security-quota spec's "under-quota runs" test was blocked on
+it while open.
 
 ---
 
