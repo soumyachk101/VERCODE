@@ -337,6 +337,7 @@ describe("a the review-job handler (M5 T5.1/T5.2/T5.3)", () => {
     const { dbClient, state } = makeMockDb({ orgPlan: "DEVELOPER" });
     const publisher = new MockGithubPublisher();
     const deps = makeDeps({ db: dbClient, scenario: "down", publisher });
+    deps.testSleep = async () => {}; // a the provider-down path is fast (no real backoff wait)
 
     const result = await runReviewJob(deps, PAYLOAD);
 
