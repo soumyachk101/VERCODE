@@ -37,7 +37,7 @@ function ReviewsBody() {
   const [status, setStatus] = useState<string | null>(null);
   const [repoId, setRepoId] = useState<string | null>(null);
   const reviewsQ = useReviews(orgId || undefined, {
-    status,
+    status: status ?? undefined,
     repoId: repoId ?? undefined,
   });
 

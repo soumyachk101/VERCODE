@@ -204,9 +204,9 @@ function ReviewBody({ repo, prNumber, commitId }: { repo: string; prNumber: numb
         {/* 3. the summary narrative */}
         <Panel>
           <PanelTitle>Summary</PanelTitle>
-          {summary && summary.topRisks.length > 0 ? (
+          {topRisks.length > 0 ? (
             <p className="finding-line" style={{ margin: 0, maxWidth: 720 }}>
-              {summary.topRisks.join(". ")}.
+              {topRisks.join(". ")}.
             </p>
           ) : (
             <EmptyBlock>No summary narrative for this review</EmptyBlock>
