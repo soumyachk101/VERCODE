@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="560" viewBox="0 0 900 560" font-family="'SF Mono','Cascadia Code',Menlo,Consolas,monospace" role="img" aria-label="VERCODE system architecture">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#848fa8"/>
+    </marker>
+  </defs>
+
+  <!-- row 1: browser + external services -->
+  <rect x="40" y="40" width="240" height="64" rx="10" fill="#16213e" stroke="#2e3b5c"/>
+  <text x="60" y="67" fill="#e6e9f2" font-size="14" font-weight="700">Browser</text>
+  <text x="60" y="88" fill="#848fa8" font-size="12">Next.js dashboard — apps/web</text>
+
+  <rect x="360" y="40" width="180" height="64" rx="10" fill="#1a1d29" stroke="#2e3b5c"/>
+  <text x="378" y="67" fill="#e6e9f2" font-size="14" font-weight="700">GitHub</text>
+  <text x="378" y="88" fill="#848fa8" font-size="12">App + signed webhooks</text>
+
+  <rect x="620" y="40" width="240" height="64" rx="10" fill="#1a1d29" stroke="#2e3b5c"/>
+  <text x="640" y="67" fill="#e6e9f2" font-size="14" font-weight="700">External</text>
+  <text x="640" y="88" fill="#848fa8" font-size="12">AI providers · Stripe · Sentry/OTel</text>
+
+  <!-- row 2: services -->
+  <rect x="40" y="180" width="240" height="96" rx="10" fill="#16213e" stroke="#2e3b5c"/>
+  <text x="60" y="210" fill="#e6e9f2" font-size="14" font-weight="700">Fastify API — apps/api</text>
+  <text x="60" y="232" fill="#848fa8" font-size="12">auth · dashboard REST · webhook ingress</text>
+  <text x="60" y="250" fill="#848fa8" font-size="12">billing webhooks · verify + enqueue only</text>
+
+  <rect x="360" y="180" width="240" height="96" rx="10" fill="#16213e" stroke="#2e3b5c"/>
+  <text x="380" y="210" fill="#e6e9f2" font-size="14" font-weight="700">Worker — apps/worker</text>
+  <text x="380" y="232" fill="#848fa8" font-size="12">BullMQ consumer · runs the review pipeline</text>
+  <text x="380" y="250" fill="#848fa8" font-size="12">publishes reviews · usage accounting</text>
+
+  <rect x="620" y="180" width="240" height="96" rx="10" fill="#1a1d29" stroke="#2e3b5c"/>
+  <text x="640" y="210" fill="#e6e9f2" font-size="14" font-weight="700">Static analysis</text>
+  <text x="640" y="232" fill="#848fa8" font-size="12">ESLint + Semgrep (worker sub-process,</text>
+  <text x="640" y="250" fill="#848fa8" font-size="12">deterministic findings, no prod credentials)</text>
+
+  <!-- row 3: data -->
+  <rect x="180" y="380" width="220" height="64" rx="10" fill="#1a1d29" stroke="#2e3b5c"/>
+  <text x="200" y="407" fill="#e6e9f2" font-size="14" font-weight="700">PostgreSQL 16</text>
+  <text x="200" y="428" fill="#848fa8" font-size="12">reviews · findings · orgs · usage · audit</text>
+
+  <rect x="500" y="380" width="240" height="64" rx="10" fill="#1a1d29" stroke="#2e3b5c"/>
+  <text x="520" y="407" fill="#e6e9f2" font-size="14" font-weight="700">Redis 7 (BullMQ)</text>
+  <text x="520" y="428" fill="#848fa8" font-size="12">sessions · queues · org-scoped diff cache</text>
+
+  <!-- edges -->
+  <line x1="160" y1="104" x2="160" y2="180" stroke="#848fa8" marker-end="url(#arr)"/>
+  <line x1="450" y1="104" x2="230" y2="180" stroke="#848fa8" marker-end="url(#arr)"/>
+  <line x1="330" y1="256" x2="460" y2="320" stroke="#848fa8" marker-end="url(#arr)"/>
+  <line x1="300" y1="276" x2="290" y2="380" stroke="#848fa8" marker-end="url(#arr)"/>
+  <line x1="480" y1="276" x2="480" y2="380" stroke="#848fa8" marker-end="url(#arr)"/>
+  <line x1="480" y1="320" x2="480" y2="380" stroke="none"/>
+  <line x1="600" y1="256" x2="560" y2="280" stroke="#848fa8" marker-end="url(#arr)"/>
+  <line x1="700" y1="104" x2="520" y2="180" stroke="#848fa8" marker-end="url(#arr)"/>
+  <line x1="540" y1="316" x2="450" y2="104" stroke="none"/>
+
+  <text x="345" y="315" fill="#5d6b8c" font-size="11">review-queue job (jobId pointer only)</text>
+  <text x="720" y="320" fill="#5d6b8c" font-size="11">deterministic</text>
+  <text x="720" y="334" fill="#5d6b8c" font-size="11">findings</text>
+</svg>
