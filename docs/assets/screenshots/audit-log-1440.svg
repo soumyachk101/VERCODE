@@ -1,0 +1,107 @@
+<svg viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Audit log mockup">
+  <defs>
+    <style>
+      .h1   { font: 700 24px 'Inter', 'Segoe UI', sans-serif; fill: #1a2b3c; }
+      .sub  { font: 400 13px 'Inter', sans-serif; fill: #64748b; }
+      .cell { font: 400 13px 'Inter', sans-serif; fill: #374151; }
+      .mono { font: 400 12px ui-monospace, 'SF Mono', Menlo, monospace; fill: #475569; }
+      .gray { font: 400 12px 'Inter', sans-serif; fill: #94a3b8; }
+      .verb { font: 500 12px ui-monospace, 'SF Mono', Menlo, monospace; fill: #1a2b3c; }
+    </style>
+  </defs>
+
+  <rect width="1440" height="900" fill="#f8fafc"/>
+  <rect x="0" y="0" width="240" height="900" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="24" y="38" font-size="15" font-weight="800" fill="#1a2b3c" font-family="Inter">VERCODE</text>
+  <rect x="16" y="58" width="208" height="34" rx="7" fill="#f1f5f9"/>
+  <text x="28" y="80" font-size="12" fill="#475569" font-family="Inter">Acme Corp ▾</text>
+  <g font-family="Inter" font-size="13" fill="#475569">
+    <text x="28" y="163">Overview</text>
+    <text x="28" y="191">Repositories</text>
+    <text x="28" y="219">Reviews</text>
+    <text x="28" y="247">Security</text>
+    <text x="28" y="275">Usage &amp; Billing</text>
+    <text x="28" y="303">Settings</text>
+    <rect x="16" y="312" width="208" height="32" rx="6" fill="#eff6ff"/>
+    <text x="28" y="334" font-weight="600" fill="#1a2b3c">Audit Log</text>
+  </g>
+
+  <text x="280" y="44" class="h1">Audit Log</text>
+  <text x="280" y="70" class="sub">Append-only — every state change and every authorization denial, with the actor and source IP.</text>
+
+  <!-- Filters -->
+  <rect x="280" y="96" width="200" height="36" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="298" y="119" class="gray">All actions ▾</text>
+  <rect x="496" y="96" width="200" height="36" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="514" y="119" class="gray">All actors ▾</text>
+  <rect x="712" y="96" width="220" height="36" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="730" y="119" class="gray">Jan 23, 2026 – Feb 22, 2026</text>
+
+  <!-- Table -->
+  <rect x="280" y="152" width="1104" height="480" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="304" y="186" class="gray">Timestamp</text>
+  <text x="460" y="186" class="gray">Actor</text>
+  <text x="640" y="186" class="gray">Action</text>
+  <text x="880" y="186" class="gray">Target</text>
+  <text x="1120" y="186" class="gray">Source IP</text>
+  <line x1="304" y1="202" x2="1360" y2="202" stroke="#e2e8f0"/>
+
+  <g font-family="Inter">
+    <text x="304" y="232" font-size="12" fill="#475569">2026-02-22 09:14:03</text>
+    <text x="460" y="232" font-size="13" fill="#374151">rahul@acme.com</text>
+    <text x="640" y="232" class="verb">role.changed</text>
+    <text x="880" y="232" font-size="13" fill="#374151">maria → developer</text>
+    <text x="1120" y="232" class="mono">10.2.4.19</text>
+    <line x1="304" y1="248" x2="1360" y2="248" stroke="#f1f5f9"/>
+
+    <text x="304" y="276" font-size="12" fill="#475569">2026-02-22 08:51:47</text>
+    <text x="460" y="276" font-size="13" fill="#374151">aisha@acme.com</text>
+    <text x="640" y="276" class="verb">byok.rotated</text>
+    <text x="880" y="276" font-size="13" fill="#374151">org_acme_corp</text>
+    <text x="1120" y="276" class="mono">10.2.4.7</text>
+    <line x1="304" y1="292" x2="1360" y2="292" stroke="#f1f5f9"/>
+
+    <text x="304" y="320" font-size="12" fill="#475569">2026-02-21 17:22:11</text>
+    <text x="460" y="320" font-size="13" fill="#374151">system</text>
+    <text x="640" y="320" class="verb">review.skipped</text>
+    <text x="880" y="320" font-size="13" fill="#374151">PR #401 · quota_exceeded</text>
+    <text x="1120" y="320" class="mono">—</text>
+    <line x1="304" y1="336" x2="1360" y2="336" stroke="#f1f5f9"/>
+
+    <text x="304" y="364" font-size="12" fill="#475569">2026-02-21 16:04:58</text>
+    <text x="460" y="364" font-size="13" fill="#374151">system</text>
+    <text x="640" y="364" class="verb">review.published</text>
+    <text x="880" y="364" font-size="13" fill="#374151">PR #412 · 5 findings · $0.18</text>
+    <text x="1120" y="364" class="mono">—</text>
+    <line x1="304" y1="380" x2="1360" y2="380" stroke="#f1f5f9"/>
+
+    <text x="304" y="408" font-size="12" fill="#475569">2026-02-21 11:38:26</text>
+    <text x="460" y="408" font-size="13" fill="#374151">priya@acme.com</text>
+    <text x="640" y="408" class="verb">finding.actioned</text>
+    <text x="880" y="408" font-size="13" fill="#374151">finding_8f2c · accept</text>
+    <text x="1120" y="408" class="mono">10.2.4.31</text>
+    <line x1="304" y1="424" x2="1360" y2="424" stroke="#f1f5f9"/>
+
+    <text x="304" y="452" font-size="12" fill="#475569">2026-02-20 19:11:09</text>
+    <text x="460" y="452" font-size="13" fill="#374151">system</text>
+    <text x="640" y="452" class="verb">authz.denied</text>
+    <text x="880" y="452" font-size="13" fill="#374151">cross-tenant read · org_other</text>
+    <text x="1120" y="452" class="mono">10.2.4.31</text>
+    <line x1="304" y1="468" x2="1360" y2="468" stroke="#f1f5f9"/>
+
+    <text x="304" y="496" font-size="12" fill="#475569">2026-02-20 14:57:33</text>
+    <text x="460" y="496" font-size="13" fill="#374151">dana@acme.com</text>
+    <text x="640" y="496" class="verb">billing.upgrade_requested</text>
+    <text x="880" y="496" font-size="13" fill="#374151">developer → team</text>
+    <text x="1120" y="496" class="mono">10.2.4.22</text>
+    <line x1="304" y1="512" x2="1360" y2="512" stroke="#f1f5f9"/>
+
+    <text x="304" y="540" font-size="12" fill="#475569">2026-02-19 09:02:14</text>
+    <text x="460" y="540" font-size="13" fill="#374151">rahul@acme.com</text>
+    <text x="640" y="540" class="verb">rule.updated</text>
+    <text x="880" y="540" font-size="13" fill="#374151">api-server · suppress style</text>
+    <text x="1120" y="540" class="mono">10.2.4.19</text>
+  </g>
+
+  <text x="304" y="600" class="gray">Retention: 180 days minimum · the PITR window is the audit's storage · there is no delete path on an audit row</text>
+</svg>
