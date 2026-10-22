@@ -16,7 +16,7 @@
 import { useEffect, useRef, useState } from "react";
 import { OrgPage } from "@/components/page";
 import { useOrgShell } from "@/components/OrgShell";
-import { useJob, useFindings, useRepos, useFindingAction } from "@/lib/hooks";
+import { useJob, useFindings, useFindingAction } from "@/lib/hooks";
 import { PageHead } from "@/components/Settings";
 import { DataBlock, EmptyBlock } from "@/components/DataBlock";
 import { Panel, PanelTitle, VerdictBlock } from "@/components/cards";
@@ -57,12 +57,9 @@ export function ReviewDetailClient({
 function ReviewBody({ repo, prNumber, commitId }: { repo: string; prNumber: number; commitId: string }) {
   const s = useOrgShell();
   const orgId = s.active?.id ?? "";
-  const reposQ = useRepos(orgId || undefined);
-  const repoId = reposQ.data?.repos.find((r) => r.full_name === repo)?.id ?? undefined;
-  // the "commit" in the URL is the job id (the idempotency key (org,
-  // repo, pr, commitSha) maps 1:1 to a job; the API returns the job at
-  // /orgs/:id/reviews/:jobId) — we look the job up by id when the
-  // commit is a job id, else by sha
+  // the "commit" segment of the URL is the job id (the idempotency key
+  // (org, repo, pr, commitSha) maps 1:1 to a job; the API returns the
+  // job at /orgs/:id/reviews/:jobId)
   const jobQ = useJob(orgId || undefined, commitId);
   const findingsQ = useFindings(orgId || undefined, commitId);
   const findingAction = useFindingAction(orgId);
