@@ -25,7 +25,7 @@ import {
   type WorkerDeps,
 } from "./config.js";
 import { runReviewJob } from "./jobs/review.js";
-import { enqueueDeadLetter } from "./dlq.js";
+import { enqueueDeadLetter, type DeadLetterEntry } from "./dlq.js";
 
 /**
  * The per-attempt backoff delay (TRD.md §7 "exponential backoff 2^attempt * 1s
@@ -126,6 +126,14 @@ export function startWorker(deps: WorkerDeps, opts: WorkerOptions): StartedWorke
   const billingQueue = makeBillingQueue(redis);
   const deadLetterQueue = makeDeadLetterQueue(redis);
 
+  const dlqEntry = (jobId: string, reason: string, payload: unknown, error: string): DeadLetterEntry => ({
+    queue: QUEUES.review,
+    jobId,
+    reason,
+    payload: (payload as Record<string, unknown>) ?? null,
+    error,
+  });
+
   const handle = async (job: Job<ReviewJobPayload>): Promise<void> => {
     const payload = job.data;
     const lockKey = inFlightLockKey(payload.orgId, payload.repoId, payload.prNumber, payload.commitSha);
@@ -135,13 +143,8 @@ export function startWorker(deps: WorkerDeps, opts: WorkerOptions): StartedWorke
     if (lock === "duplicate") {
       // A live lock: another worker is mid-flight on the same key. This
       // delivery drops to the DLQ (REVIEW_ENGINE_SPEC §5 "waits or drops").
-      await enqueueDeadLetter(deadLetterQueue, {
-        queue: QUEUES.review,
-        jobId: payload.jobId,
-        reason: "duplicate_in_flight",
-        payload,
-        error: `in-flight lock ${lockKey} held by another worker`,
-      });
+      await enqueueDeadLetter(deadLetterQueue, dlqEntry(payload.jobId, "duplicate_in_flight", payload,
+        `in-flight lock ${lockKey} held by another worker`));
       return;
     }
 
@@ -153,18 +156,23 @@ export function startWorker(deps: WorkerDeps, opts: WorkerOptions): StartedWorke
     } catch (err) {
       // A transient failure: release the lock (the retry acquires a fresh one).
       await releaseInFlightLock(redis, lockKey, token);
+      // NFR-15 "a job that can't finish is re-queued atomically": a re-add the
+      // job to the waiting set so it's not lost if the process dies mid-flight.
+      if (job.attemptsMade < opts.maxAttempts) {
+        await requeueIncomplete(reviewQueue, payload, job.attemptsMade + 1);
+      }
       throw err; // A BullMQ retries per the backoff; the last attempt → DLQ.
     }
   };
 
-  const worker = new Worker<ReviewJobPayload, unknown>(QUEUES.review, handle, {
+  const worker = new Worker<Record<string, unknown>, unknown>(QUEUES.review, handle, {
     connection: redis,
     concurrency: opts.concurrency, // NFR-17
     // A the in-flight re-queue on SIGTERM (ERROR_HANDLING.md §8 "a job that
     // can't finish is re-queued atomically"): a an unfinished job is moved
     // back to waiting (not lost). A the max retained jobs cap memory.
-    removeOnComplete: 1_000,
-    removeOnFail: 1_000,
+    removeOnComplete: { count: 1_000 },
+    removeOnFail: { count: 1_000 },
   });
 
   // A the terminal-failure → DLQ hop (NFR-13/14 "terminal failures go to the
@@ -173,13 +181,11 @@ export function startWorker(deps: WorkerDeps, opts: WorkerOptions): StartedWorke
   worker.on("failed", async (job, err) => {
     if (!job) return;
     if (job.attemptsMade >= opts.maxAttempts) {
-      await enqueueDeadLetter(deadLetterQueue, {
-        queue: QUEUES.review,
-        jobId: String((job.data as ReviewJobPayload | undefined)?.jobId ?? job.id),
-        reason: "terminal_failure",
-        payload: job.data,
-        error: err.message,
-      });
+      const data = job.data as Partial<ReviewJobPayload>;
+      await enqueueDeadLetter(
+        deadLetterQueue,
+        dlqEntry(String(data.jobId ?? job.id), "terminal_failure", job.data, err.message)
+      );
     }
   });
 
@@ -193,8 +199,8 @@ export function startWorker(deps: WorkerDeps, opts: WorkerOptions): StartedWorke
     const start = Date.now();
     while (Date.now() - start < budget) {
       // A wait for in-flight jobs to finish (a the drain, NFR-15).
-      const active = (await worker.getJobCounts("active")).active;
-      if (active === 0) break;
+      const counts = await worker.getJobCounts("active");
+      if (counts.active === 0) break;
       await new Promise((r) => setTimeout(r, 250));
     }
     await worker.close();
