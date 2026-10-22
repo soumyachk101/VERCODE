@@ -1,23 +1,28 @@
 # ---------------------------------------------------------------------------
 # The VERCODE dev stack (DEPLOYMENT §2 "the dev topology").
 #
-#   postgres (16)  redis (7)  web  api  worker  mock-github  mock-ai  mock-billing
+#   postgres (16)  redis (7)  web  api  worker  mock-github  mock-ai
+#   mock-billing  (migrate — a one-shot profile service)
 #
 # The whole system runs LOCALLY with NO external credentials: the mock
 # GitHub / mock AI / mock billing stand in for the real integrations, so a
-# full end-to-end pipeline run is local (TRD §18 "the dev-stack"). The
-# mock flags are the ENVIRONMENT_VARIABLES §7 dev-only vars.
+# full end-to-end pipeline run is local (TRD §18 "the dev-stack"). The mock
+# flags are the ENVIRONMENT_VARIABLES §7 dev-only vars.
 #
 # THE SECRET RULE (SECRETS_MANAGEMENT §4, DEPLOYMENT §3 "no secret in an
 # image layer"): every credential below is a *dev placeholder* committed in
-# this file's defaults OR read from the host env. A real deploy injects the
-# real values from the platform secret store at runtime; nothing here is a
-# credential.
+# this file's `x-app-env` map OR baked into the image's `ENV` default (a the
+# Dockerfile's `GITHUB_APP_PRIVATE_KEY` placeholder). A real deploy injects
+# the real values from the platform secret store at runtime; nothing here is
+# a credential.
 #
-# The `smoke` target (DEPLOYMENT §2 "a smoke target (compose run smoke)
-# boots the stack + hits the health endpoints + runs one mock PR through the
-# pipeline"):
-#   docker compose -f infra/docker/compose.yaml run --rm smoke
+# THE SMOKE TARGET (DEPLOYMENT §2 "a the smoke target boots the stack + hits
+# the health endpoints + runs one mock PR through the pipeline"):
+#   ./infra/docker/smoke/smoke.sh
+#
+#   …which runs `docker compose --profile migrate run --rm migrate` (the
+#   one-shot schema apply + the dev-stack seed) and then `docker compose
+#   run --rm smoke` (a health + a mock PR through the pipeline).
 #
 # Ports (host → container):
 #   web 3000 → 3000   api 4000 → 4000   mock-github 8091   mock-ai 8092
@@ -26,32 +31,45 @@
 
 name: vercode
 
-# The shared env for the app services (the dev placeholders). A real deploy
-# overrides these with the secret store's values; the values here are the
-# documented dev defaults (ENVIRONMENT_VARIABLES.md §1–§7).
+# The shared env for the app services (the dev placeholders, x-app-env). A
+# real deploy overrides these with the secret store's values; the values
+# here are the documented dev defaults (ENVIRONMENT_VARIABLES.md §1–§7).
+#
+# A the api's `loadConfig()` validates the EXACT var set at boot (a a
+# missing/extra var is a startup error, not a silent default,
+# ENVIRONMENT_VARIABLES §9 "a the config package's loadConfig() validates
+# the exact set"). The Dockerfile.api's `ENV` defaults satisfy a the
+# *unset* case; the compose `environment:` below is the *explicit* dev-
+# stack values (a a deploy that flips a live value uses the secret store,
+# not this map).
 x-app-env: &app-env
   NODE_ENV: production
-  # The core (a the in-network hosts; a the host-mapped ports for a
-  # host-run api during development).
+  # The core (a the in-network hosts; a the host-mapped ports are for a
+  # host-run api/worker during development, not the in-network ones).
   DATABASE_URL: postgresql://vercode:vercode@postgres:5432/vercode
   REDIS_URL: redis://redis:6379
   SESSION_SIGNING_KEY: dev-stack-session-signing-key-not-a-real-secret-0000
-  API_BASE_URL: http://localhost:4000
-  WEB_BASE_URL: http://localhost:3000
+  API_BASE_URL: http://api:4000
+  WEB_BASE_URL: http://web:3000
   # The GitHub App (a the dev placeholders — a the mock GitHub is the
-  # actual integration in this stack).
+  # actual integration in this stack; a the App's install-token + a the
+  # webhook's HMAC are the mock's, not a real App's).
   GITHUB_APP_ID: "123456"
   GITHUB_APP_PRIVATE_KEY: dev-stack-placeholder-private-key-not-a-real-key
   GITHUB_WEBHOOK_SECRET: test-webhook-secret-dev
   GITHUB_API_BASE: http://mock-github:8091
-  # The AI provider (a the mock adapter — a deterministic).
+  # The AI provider (a the mock adapter — a deterministic; a the mock-ai
+  # service serves the same fixture the @vercode/ai-providers MockAdapter
+  # returns, INTEGRATION_TEST_PLAN §1 "a the mock providers' state").
   AI_DEFAULT_PROVIDER: mock
-  # The billing (a the Stripe test-mode signature source).
+  # The billing (a the Stripe test-mode signature source — a the
+  # mock-billing service signs with the fixture secret, a a Stripe
+  # test-mode signature, not a live call).
   BILLING_PROVIDER: stripe
   STRIPE_WEBHOOK_SECRET: whsec_test_vercode_dev_stack_secret
   BILLING_CURRENCY: USD
-  # The observability (a the local defaults; a the Sentry DSNs are unset in
-  # dev — a the OTel collector isn't part of the dev stack).
+  # The observability (a the local defaults; a the Sentry DSNs are unset
+  # in dev — a the OTel collector isn't part of the dev stack).
   OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
   OTEL_SERVICE_NAME: vercode-dev
   LOG_LEVEL: info
@@ -66,7 +84,8 @@ x-app-env: &app-env
   # THE DEV-ONLY MOCK FLAGS (ENVIRONMENT_VARIABLES §7). A live deploy flips
   # these to "false" + provides the real keys; a deploy that's "true" is a
   # *dev/mock* deploy — the live pipeline is blocked (the unverified-
-  # integration rule, PHASE 10).
+  # integration rule, PHASE 10 "CI does not claim a live integration that
+  # the credentialed lane didn't actually run").
   USE_MOCK_GITHUB: "true"
   USE_MOCK_AI: "true"
   USE_MOCK_BILLING: "true"
@@ -103,8 +122,11 @@ services:
       timeout: 3s
       retries: 20
 
-  # --- the migration runner (a one-shot; DEPLOYMENT §4 step 2) -------------
-
+  # --- the migration runner (a one-shot; DEPLOYMENT §4 step 2 "migrate
+  #     first"). The `migrate` profile is a optional service — a the main
+  #     `up` does NOT run it by default; the smoke target + a manual
+  #     from-scratch boot do.
+  # ------------------------------------------------------------------------
   migrate:
     image: postgres:16-alpine
     profiles: ["migrate"]
@@ -129,9 +151,11 @@ services:
     environment:
       <<: *app-env
       NODE_ENV: production
-      # A the browser-side API base (a the public origin — a NEXT_PUBLIC_* is
-      # inlined at build time; a the runtime env is a the server-side copy).
-      NEXT_PUBLIC_API_BASE: http://localhost:4000
+      OTEL_SERVICE_NAME: vercode-web
+      # A the browser-side API base (a the NEXT_PUBLIC_* is inlined at build
+      # time; a the server-side copy is a the api origin, a the compose
+      # network name, not a the host-mapped localhost).
+      NEXT_PUBLIC_API_BASE: http://api:4000
     ports:
       - "3000:3000"
     depends_on:
@@ -143,7 +167,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 20
-      start_period: 20s
+      start_period: 30s
 
   api:
     build:
@@ -165,22 +189,44 @@ services:
       interval: 10s
       timeout: 5s
       retries: 20
-      start_period: 20s
+      start_period: 30s
 
   worker:
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile.worker
+    # A the dev-stack's entrypoint (a the real `tsx apps/worker/src/
+    # index.ts` + the mock-github / mock-ai stand-in wiring,
+    # infra/docker/worker/entrypoint.cjs). A the prod worker runs the same
+    # source without these env vars (a plain tsx, no override).
+    command: ["node", "infra/docker/worker/entrypoint.cjs"]
     environment:
       <<: *app-env
       OTEL_SERVICE_NAME: vercode-worker
+      # A the dev-stack's stand-in env (a the worker's mock-client +
+      # publisher + PR map; a the entrypoint reads these + the worker's
+      # adapter factories pick them up when set).
+      MOCK_GITHUB_BASE: http://mock-github:8091
+      MOCK_PUBLISH_LOG: /data/publishes.json
+      MOCK_AI_BASE: http://mock-ai:8092
+      # A the AI provider (a the mock adapter; a the worker's
+      # `makeMockAiProviders` wires it — the deterministic good-output
+      # fixture, a the @vercode/ai-providers MockAdapter's "good" mode).
+      AI_DEFAULT_PROVIDER: mock
+    volumes:
+      - worker-data:/data
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    # A the SIGTERM drain (NFR-15) — a stop sends SIGTERM, a the worker
-    # drains in-flight within 60 s.
+      mock-github:
+        condition: service_started
+      mock-ai:
+        condition: service_started
+    # A the SIGTERM drain (NFR-15, ERROR_HANDLING §8 "a in-flight re-queue
+    # within 60 s") — a the stop sends SIGTERM, a the worker drains before
+    # the grace timeout.
     stop_grace_period: 70s
     restart: unless-stopped
 
@@ -192,8 +238,13 @@ services:
     command: ["node", "index.js"]
     environment:
       PORT: "8091"
+      # A the on-disk publish-record path (a the shared `worker-data`
+      # volume — a the worker's MockGithubPublisher writes here; a the
+      # smoke + the E2E read it back).
+      PUBLISH_LOG: /data/publishes.json
     volumes:
       - ./mock-github:/app:ro
+      - worker-data:/data
     ports:
       - "8091:8091"
     healthcheck:
@@ -242,15 +293,16 @@ services:
 
   # --- the smoke target (DEPLOYMENT §2) ------------------------------------
   #
-  # `docker compose -f infra/docker/compose.yaml run --rm smoke` — but a
-  # `run` starts the dependencies too, so the smoke target is a *one-shot
-  # script* that boots the stack (the `up -d` + the health wait) and then
-  # runs one mock PR through the pipeline. The script lives at
-  # infra/docker/smoke/smoke.sh and is mounted here.
+  # `docker compose -f infra/docker/compose.yaml run --rm smoke` — a
+  # one-shot container that (1) hits every service's /healthz, (2) POSTs a
+  # signed mock-PR webhook to the api, (3) polls the worker's recorded
+  # publish (a the pipeline's terminal step), (4) reads the mock-ai's call
+  # log + the mock-billing's signature source. It runs INSIDE the compose
+  # network (a the `smoke` service's env points at the in-network names).
   #
-  # The `smoke` service below is the *runner* (a node image that curls the
-  # health endpoints + drives the mock PR). The script `smoke.sh` is the
-  # documented entry point (a `make smoke` → it boots the stack itself).
+  # The host-side entry point is `./infra/docker/smoke/smoke.sh` (a it
+  # boots the stack first, then runs `compose run --rm smoke`). A direct
+  # `compose run smoke` against an already-up stack also works.
   smoke:
     image: node:22-slim
     working_dir: /app
@@ -265,6 +317,7 @@ services:
       GITHUB_WEBHOOK_SECRET: test-webhook-secret-dev
     volumes:
       - ./smoke:/app:ro
+      - worker-data:/data
     depends_on:
       api:
         condition: service_healthy
@@ -280,3 +333,8 @@ services:
 volumes:
   postgres-data:
   redis-data:
+  # A the shared publish-record (a the worker's mock publisher writes, a the
+  # smoke + E2E read). A the worker + the mock-github + the smoke all mount
+  # it, so the on-disk record is the smoke's read target (a the in-memory
+  # record is lost on restart, this one is not).
+  worker-data:
