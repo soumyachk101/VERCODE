@@ -81,7 +81,10 @@ export function createSigner(privateKey: string): { sign(data: string): string }
   // real GitHub).
   return {
     sign(data: string) {
-      return createSign("RSA-SHA256", Buffer.from(data)).update(privateKey).end().toString("hex");
+      const signer = createSign("RSA-SHA256");
+      signer.update(data);
+      // The privateKey is the RS256 private key (a KMS-decrypted in prod).
+      return signer.sign(privateKey, "hex");
     },
   };
 }
