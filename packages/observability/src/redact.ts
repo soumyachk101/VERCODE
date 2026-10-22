@@ -172,7 +172,10 @@ export function redact(input: string): RedactResult {
   // A the GitHub tokens (a the `ghp_` / `github_pat_` shape).
   text = text.replace(GITHUB_RE, (key: string) => {
     count += 1;
-    const prefix = key.startsWith("github_pat_") ? "github_pat_" : key.slice(0, key.indexOf("_"));
+    // A the `ghp_` / `gho_` / `ghs_` prefix is kept (a the operator
+    // correlation: "which token family is this"); a the `github_pat_`
+    // prefix is kept as-is.
+    const prefix = key.startsWith("github_pat_") ? "github_pat_" : key.slice(0, key.indexOf("_") + 1);
     return park(`${prefix}...${last4Of(key)}`);
   });
 

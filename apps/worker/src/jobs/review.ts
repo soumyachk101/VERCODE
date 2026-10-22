@@ -59,11 +59,10 @@ import {
   planQuota,
 } from "@vercode/contracts";
 import {
-  type PolicyState,
   type ReviewJobPayload,
   type WorkerDeps,
 } from "../config.js";
-import { applyPolicy, dedupFindings } from "./policy.js";
+import { applyPolicy, dedupFindings, resolveWorkerPolicy, type ReviewPolicy } from "./policy.js";
 
 // ---------------------------------------------------------------------------
 // The canonical finding (post-pipeline, pre-persist). Mirrors the contracts
@@ -194,13 +193,20 @@ export async function runReviewJob(
   // [load the durable state] — a the payload is a pointer.
   const { org, settings, repoRules } = await loadDurableState(db, payload);
 
-  // The org-level confidence floor (an org_settings override row; the
-  // platform default from the config when unset, ENVIRONMENT_VARIABLES §6).
+  // The platform-default budget + floor (config.limits, ENVIRONMENT_VARIABLES
+  // §6). The org-level overrides come from the durable rows (org_settings +
+  // repo_rules, re-read per run — the payload authorizes nothing).
   const orgFloor = settings?.confidenceFloor != null ? Number(settings.confidenceFloor) : null;
-  const policy: PolicyState = {
-    confidenceFloor: orgFloor ?? deps.confidenceFloor,
-    suppressCategories: [],
-  };
+  const policy: ReviewPolicy = resolveWorkerPolicy({
+    defaults: {
+      confidenceFloor: orgFloor ?? deps.confidenceFloor,
+      maxFiles: 60,
+      maxLines: 3000,
+      suppressCategories: [],
+    },
+    orgSettings: settings as never,
+    repoRules: repoRules,
+  });
 
   // [0] Pre-flight quota gate (NFR-18, AC-402): if a the org is over its
   // plan's quota (plans.ts quota + a the usage_events monthly aggregate) →
@@ -249,7 +255,7 @@ export async function runReviewJob(
   // [AI review] — a the deep pass (a triage-free MVP scope: a the high-risk
   // files heuristic of REVIEW_ENGINE_SPEC §2 stage [5] would gate this; a
   // provider failure → partial, a deterministic findings still publish).
-  const ai = await runAiStage(deps, changeSet, policy);
+  const ai = await runAiStage(deps, changeSet);
 
   // [merge]
   const merged: CanonicalFinding[] = [
