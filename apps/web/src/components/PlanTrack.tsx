@@ -66,11 +66,7 @@ export function PlanTrack({
   className?: string;
 }) {
   const m = computePlanTrack(used, limit, committed);
-  const { spentFrac, committedFrac, overflowFrac } = m as unknown as {
-    spentFrac: number;
-    committedFrac: number;
-    overflowFrac: number;
-  };
+  const { spentFrac, committedFrac, overflowFrac } = m;
   const pctUsed = limit > 0 ? used / limit : used > 0 ? 1 : 0;
   const warn = pctUsed >= warnAt;
 
