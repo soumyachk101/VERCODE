@@ -116,11 +116,10 @@ export async function loadDurableState(db: DbClient, payload: ReviewJobPayload):
     include: { settings: true },
   });
   if (!org) throw new Error(`org ${payload.orgId} not found or deleted`);
-  // The settings relation is a 1:1 (org_settings.org_id is unique) — an
-  // array-shaped include returns at most one row.
-  const settings = (org.settings as unknown as OrgSettings[] | OrgSettings | null)?.[0] as
-    | OrgSettings
-    | undefined;
+  // The settings relation is a 1:1 (org_settings.org_id is unique) — the
+  // include returns a row-or-array; normalize to a single row.
+  const settingsRaw = (org.settings as unknown as OrgSettings[] | OrgSettings | null) ?? [];
+  const settings = Array.isArray(settingsRaw) ? settingsRaw[0] : settingsRaw;
   const repoRules = await db.repoRule.findMany({
     where: { orgId: payload.orgId, repoId: payload.repoId },
     orderBy: { version: "desc" },
