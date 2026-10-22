@@ -1,14 +1,22 @@
-// The org routes: POST /orgs, GET /orgs/:id, the members, the invitations
-// (API_SPECIFICATION.md "Organizations", AUTHORIZATION.md §1 the capability
+// The org routes: POST /orgs, GET /orgs/:id, PATCH /orgs/:id, the members,
+// the invitations (API_SPECIFICATION.md "Organizations", AUTHORIZATION.md §1 the capability
 // matrix). Tenant + capability gated.
 
 import type { FastifyInstance } from "fastify";
-import { CreateOrgRequestSchema, CreateInvitationRequestSchema, ChangeRoleRequestSchema } from "@vercode/contracts";
+import {
+  CreateOrgRequestSchema,
+  CreateInvitationRequestSchema,
+  ChangeRoleRequestSchema,
+} from "@vercode/contracts";
 import { Role, Prisma } from "@prisma/client";
+import { z } from "zod";
+
+const UpdateOrgSchema = z.object({
+  name: z.string().min(2).optional(),
+});
 
 export async function orgRoutes(app: FastifyInstance) {
-  // A create org (the creator is the owner, AC-102). No tenancy (it's the
-  // tenant root), but a session is required.
+  // POST / — Create org (creator is the owner, AC-102). Session is required.
   app.post("/", { schema: { body: CreateOrgRequestSchema } }, async (req, reply) => {
     const { name } = req.body as { name: string };
     const userId = req.user.userId;
@@ -18,8 +26,6 @@ export async function orgRoutes(app: FastifyInstance) {
     }
     const db = app.auth.db;
 
-    // A slug from the name (a URL-safe, a reserved-words rejected, a
-    // DATABASE_DESIGN.md §3 "slug: UK, URL-safe, reserved-words rejected").
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     const RESERVED = new Set(["admin", "api", "web", "app", "org", "root", "system"]);
     if (!slug || RESERVED.has(slug) || slug.length < 2) {
@@ -33,9 +39,6 @@ export async function orgRoutes(app: FastifyInstance) {
       return;
     }
 
-    // A create + the creator is the owner (a exactly-one-owner, the
-    // partial-unique index backstop, SCHEMA_REFERENCE.md "the owner
-    // uniqueness").
     const org = await db.organization.create({
       data: {
         slug,
@@ -58,7 +61,7 @@ export async function orgRoutes(app: FastifyInstance) {
     reply.code(201).send({ org: { id: org.id, slug: org.slug, name: org.name, plan: org.plan } });
   });
 
-  // A GET /:id (the tenancy middleware resolves + 404s cross-org).
+  // GET /:id — Org detail
   app.get("/:id", { schema: { config: { capability: "read" } } }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const db = app.auth.db;
@@ -82,7 +85,54 @@ export async function orgRoutes(app: FastifyInstance) {
     });
   });
 
-  // A GET /:id/members (the Team page, PAGE_SPECIFICATIONS §7).
+  // PATCH /:id — Rename / update org (admin+)
+  app.patch(
+    "/:id",
+    {
+      schema: {
+        body: UpdateOrgSchema,
+        config: { capability: "org.manage" },
+      },
+    },
+    async (req, reply) => {
+      const { id } = req.params as { id: string };
+      const { name } = req.body as { name?: string };
+      const db = app.auth.db;
+
+      if (!name || name.trim().length < 2) {
+        reply.code(422).send({ error: { code: "VALIDATION_ERROR", message: "Name must be at least 2 characters." } });
+        return;
+      }
+
+      const updated = await db.organization.update({
+        where: { id },
+        data: { name: name.trim() },
+      });
+
+      await db.auditEvent.create({
+        data: {
+          orgId: id,
+          actorId: req.user.userId ?? "",
+          action: "org.updated",
+          targetType: "org",
+          targetId: id,
+          meta: { name: updated.name },
+        },
+      });
+
+      reply.send({
+        org: {
+          id: updated.id,
+          slug: updated.slug,
+          name: updated.name,
+          plan: updated.plan,
+          status: updated.status,
+        },
+      });
+    }
+  );
+
+  // GET /:id/members — List members
   app.get("/:id/members", { schema: { config: { capability: "read" } } }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const members = await app.auth.db.membership.findMany({
@@ -99,7 +149,7 @@ export async function orgRoutes(app: FastifyInstance) {
     });
   });
 
-  // A POST /:id/invitations (an admin+, AC-103).
+  // POST /:id/invitations — Invite member (admin+)
   app.post(
     "/:id/invitations",
     {
@@ -113,9 +163,6 @@ export async function orgRoutes(app: FastifyInstance) {
       const { email, role } = req.body as { email: string; role: "admin" | "developer" | "viewer" };
       const db = app.auth.db;
 
-      // A duplicate pending invite → 409 with the existing one (API_SPECIFICATION
-      // §POST /orgs/:id/invitations "409 (duplicate pending invite → returns
-      // the existing one)").
       const dup = await db.invitation.findFirst({
         where: { orgId: id, email: email.toLowerCase(), status: "PENDING" },
       });
@@ -124,7 +171,6 @@ export async function orgRoutes(app: FastifyInstance) {
         return;
       }
 
-      // A 7-day expiry (AC-103 "invitations expire in 7 days").
       const token = globalThis.crypto.randomUUID();
       const tokenHash = app.auth.hashToken(token);
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -154,13 +200,62 @@ export async function orgRoutes(app: FastifyInstance) {
         email: invite.email,
         role: invite.role,
         expiresAt: invite.expiresAt,
+        token, // Included for email dispatch link in development
       });
     }
   );
 
-  // A PATCH /:id/members/:userId (a role change, an admin+, AC-104). The
-  // owner-transfer is atomic (promote + demote in one txn, AUTHORIZATION §2
-  // "two owner rows can never coexist, even transiently").
+  // POST /:id/invitations/:token/accept — Accept invitation (session required)
+  app.post(
+    "/:id/invitations/:token/accept",
+    async (req, reply) => {
+      const { id, token } = req.params as { id: string; token: string };
+      const userId = req.user.userId;
+      if (!userId) {
+        reply.code(401).send({ error: { code: "UNAUTHENTICATED", message: "No session." } });
+        return;
+      }
+      const db = app.auth.db;
+      const tokenHash = app.auth.hashToken(token);
+
+      const invite = await db.invitation.findFirst({
+        where: { orgId: id, tokenHash, status: "PENDING" },
+      });
+
+      if (!invite || invite.expiresAt < new Date()) {
+        reply.code(404).send({ error: { code: "NOT_FOUND", message: "Invalid or expired invitation." } });
+        return;
+      }
+
+      // Add user to memberships and mark invite accepted
+      await db.$transaction([
+        db.membership.upsert({
+          where: { orgId_userId: { orgId: id, userId } },
+          create: { orgId: id, userId, role: invite.role },
+          update: { role: invite.role },
+        }),
+        db.invitation.update({
+          where: { id: invite.id },
+          data: { status: "ACCEPTED" },
+        }),
+      ]);
+
+      await db.auditEvent.create({
+        data: {
+          orgId: id,
+          actorId: userId,
+          action: "org.invitation_accepted",
+          targetType: "invitation",
+          targetId: invite.id,
+          meta: { role: invite.role },
+        },
+      });
+
+      reply.send({ ok: true, orgId: id, role: invite.role });
+    }
+  );
+
+  // PATCH /:id/members/:userId — Change role (admin+)
   app.patch(
     "/:id/members/:userId",
     {
@@ -178,8 +273,6 @@ export async function orgRoutes(app: FastifyInstance) {
 
       await db.$transaction(async (tx) => {
         if (targetRole === Role.OWNER) {
-          // An atomic owner-transfer: demote the current owner + promote the
-          // target in one txn (a exactly-one-owner invariant).
           const currentOwner = await tx.membership.findFirst({
             where: { orgId: id, role: Role.OWNER },
           });
@@ -216,8 +309,48 @@ export async function orgRoutes(app: FastifyInstance) {
     }
   );
 
-  // A DELETE /:id (an owner-only, AC-104 "a org.delete is owner-only, a
-  // soft-delete + a grace window, a retention §5").
+  // DELETE /:id/members/:userId — Remove member from org (admin+)
+  app.delete(
+    "/:id/members/:userId",
+    { schema: { config: { capability: "org.manage" } } },
+    async (req, reply) => {
+      const { id, userId: targetUserId } = req.params as { id: string; userId: string };
+      const db = app.auth.db;
+
+      // Prevent removing the sole owner
+      const membership = await db.membership.findUnique({
+        where: { orgId_userId: { orgId: id, userId: targetUserId } },
+      });
+      if (!membership) {
+        reply.code(404).send({ error: { code: "NOT_FOUND", message: "Membership not found." } });
+        return;
+      }
+      if (membership.role === Role.OWNER) {
+        reply.code(422).send({
+          error: { code: "OWNER_REQUIRED", message: "Cannot remove the organization owner. Transfer ownership first." },
+        });
+        return;
+      }
+
+      await db.membership.delete({
+        where: { id: membership.id },
+      });
+
+      await db.auditEvent.create({
+        data: {
+          orgId: id,
+          actorId: req.user.userId ?? "",
+          action: "org.member_removed",
+          targetType: "membership",
+          targetId: targetUserId,
+        },
+      });
+
+      reply.send({ ok: true, removedUserId: targetUserId });
+    }
+  );
+
+  // DELETE /:id — Soft-delete org (owner only)
   app.delete(
     "/:id",
     { schema: { config: { capability: "org.delete" } } },
