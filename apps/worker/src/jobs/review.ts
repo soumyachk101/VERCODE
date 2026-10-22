@@ -31,7 +31,7 @@
 
 import type {
   JobStatus,
-  Org,
+  Organization,
   OrgSettings,
   Plan,
   RepoRule,
