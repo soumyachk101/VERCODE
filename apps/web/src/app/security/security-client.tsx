@@ -183,16 +183,19 @@ function SecurityBody() {
                   hc: p.high + p.critical,
                 }));
                 const maxIdx = data.reduce((acc, p, i) => (p.hc > (data[acc]?.hc ?? 0) ? i : acc), 0);
-                const spike = data[maxIdx]?.hc ?? 0;
+                const spike =
+                  data[maxIdx]?.hc != null && data[maxIdx].hc > 0
+                    ? { index: maxIdx, label: `${data[maxIdx].hc} open` }
+                    : undefined;
                 return (
                   <MiniLine
                     data={data}
                     dataKey="hc"
                     height={160}
                     ariaLabel="High and critical findings per day, 30 days"
+                    spike={spike}
                   />
                 );
-                void spike;
               }}
             </DataBlock>
           </Panel>

@@ -266,11 +266,21 @@ export function MiniLine({
   dataKey,
   height = 96,
   ariaLabel,
+  spike,
 }: {
   data: Record<string, number | string>[];
   dataKey: string;
   height?: number;
   ariaLabel: string;
+  spike?: { index: number; label: string };
 }) {
-  return <LineChartBlock data={data} dataKey={dataKey} height={height} ariaLabel={ariaLabel} />;
+  return (
+    <LineChartBlock
+      data={data}
+      dataKey={dataKey}
+      height={height}
+      ariaLabel={ariaLabel}
+      spike={spike}
+    />
+  );
 }
