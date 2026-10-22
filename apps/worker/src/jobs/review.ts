@@ -530,7 +530,7 @@ export function applyPolicy(
 ): { published: CanonicalFinding[]; suppressedBelowFloor: number; suppressedByRule: number } {
   // The effective floor: a per-repo override beats the org floor.
   let effectiveFloor = floor;
-  const suppressSets: Set<string>[] = [];
+  const suppressCategories: string[] = [];
   for (const rule of repoRules) {
     if (typeof rule.confidenceFloorOverride === "number") {
       effectiveFloor = Math.max(effectiveFloor, rule.confidenceFloorOverride);
@@ -538,10 +538,9 @@ export function applyPolicy(
     const cats = Array.isArray(rule.suppressCategories)
       ? (rule.suppressCategories as string[])
       : [];
-    suppressSets.push(new Set(cats));
+    for (const c of cats) suppressCategories.push(c);
   }
-  const suppressed = new Set<string>();
-  for (const c of cats) suppressed.add(c);
+  const suppressed = new Set(suppressCategories.map(normalizeCategory));
 
   const published: CanonicalFinding[] = [];
   let suppressedBelowFloor = 0;
@@ -703,17 +702,21 @@ async function finishSkipped(
   body: { summaryBody: string }
 ): Promise<ReviewJobOutcome> {
   const { db } = deps;
-  const month = new Date().toISOString().slice(0, 7);
   // A persist the skip + a zero-usage row (a the "never silent" rule: a the
-  // skip is recorded, not just posted).
+  // skip is recorded, not just posted). The persist is the same transaction
+  // shape as the success path (a persist-then-publish, ERROR_HANDLING.md §6).
   await db.$transaction(async (tx: DbClient) => {
     await upsertJob(tx, payload, "SKIPPED", {
       skipReason,
       usage: { inputTokens: 0, outputTokens: 0, estUsdCost: 0, model: "", promptVersion: "" },
-      pr: { diff: "", prNumber: payload.prNumber, title: "", headSha: payload.commitSha, baseRef: "" },
+      pr: {
+        diff: "",
+        prNumber: payload.prNumber,
+        title: "",
+        headSha: payload.commitSha,
+        baseRef: "",
+      },
     });
-    // A zero-usage event (a the review-count for the quota gate — a skip
-    // doesn't count as a review, but a the row is written for the audit).
   });
   // A the skip notice (a NFR-18 "never silent").
   try {

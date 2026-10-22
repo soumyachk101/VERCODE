@@ -40,17 +40,15 @@ import {
 } from "@vercode/github";
 import { Prisma, PrismaClient } from "@prisma/client";
 import type { Enqueueable, ReviewJobPayload } from "../queue.js";
-import type { DbClient } from "@vercode/database";
 
 // The audit actor id (a webhook is not a user; the audit table requires
 // an actor, a fixed system actor names the ingress itself).
 const WEBHOOK_ACTOR = "github.webhook";
 
-// The DB surface (the mocked PrismaClient in tests, the real one in prod).
-export type WebhookDb = DbClient | PrismaClient;
-
 export interface GithubWebhookDeps {
-  db?: WebhookDb;
+  /** A mocked PrismaClient for the route test (a no Postgres). */
+  db?: PrismaClient;
+  /** A in-memory queue for the route test (a no Redis). */
   queue?: Enqueueable;
 }
 
@@ -59,18 +57,16 @@ export function githubWebhookRoutes(
   config: AppConfig,
   deps: GithubWebhookDeps = {}
 ) {
-  // A test seam: a the db + a queue are injected (a a mocked PrismaClient +
-  // an in-memory queue, a no Redis + a no Postgres). A the prod build is
-  // passed the real client + a BullQueue from `registerRoutes` (a it
-  // degrades to a no-op enqueue + a warning when the REDIS_URL is
-  // unreachable, a the dev-stack rule).
-  const db: WebhookDb = deps.db ?? new PrismaClient();
-  const queue: Enqueueable = deps.queue ?? (deps.queue ?? {
-    // A no-queue default: a the ingress logs the enqueue as a no-op (a
-    // the durable review_jobs row is a the source of truth, a the
-    // worker's re-drain picks it up, a BACKUP_RESTORE §1).
+  // A the db + a queue are injected (a a mocked PrismaClient + a in-memory
+  // queue, a no Redis + a no Postgres). A the prod build passes the real
+  // client + a BullQueue from `registerRoutes` (a it degrades to a no-op
+  // enqueue + a warning when the REDIS_URL is unreachable, a the dev-stack
+  // rule, a BACKUP_RESTORE §1 "a the durable review_jobs row is the source
+  // of truth").
+  const db: PrismaClient = deps.db ?? new PrismaClient();
+  const queue: Enqueueable = deps.queue ?? {
     enqueue: async () => ({ enqueued: false, reason: "degraded_no_redis" }),
-  });
+  };
   const secret = config.github.GITHUB_WEBHOOK_SECRET;
 
   async function audit(
@@ -113,12 +109,7 @@ export function githubWebhookRoutes(
       // A layer 1–2: a HMAC + a timestamp window (a `@vercode/github`). A
       // failure → a 401 + a audit, a no queue write (a ST-webhook-forged /
       // -stale, a THREAT_MODEL T-01).
-      const verdict = verifyGitHubWebhook(headers, raw, secret, {
-        isDeliverySeen: async (id) => {
-          const seen = await db.webhookDelivery.findUnique({ where: { deliveryId: id } });
-          return seen !== null;
-        },
-      });
+      const verdict = verifyGitHubWebhook(headers, raw, secret);
       if (!verdict.ok) {
         await audit(reply, {
           action: verdict.reason === "replay" ? "webhook.replay_rejected" : "webhook.rejected",
