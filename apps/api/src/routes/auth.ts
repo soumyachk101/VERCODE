@@ -117,6 +117,40 @@ export async function authRoutes(app: FastifyInstance) {
     reply.clearSessionCookie();
     reply.send({ ok: true });
   });
+
+  app.get("/me", async (req, reply) => {
+    const db = app.auth.db;
+    const userId = req.user.userId ?? "";
+    if (!userId) {
+      reply.code(401).send({ error: { code: "UNAUTHENTICATED", message: "No session." } });
+      return;
+    }
+    const user = await db.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      reply.code(404).send({ error: { code: "NOT_FOUND", message: "User not found." } });
+      return;
+    }
+    const orgs = await db.organization.findMany({
+      where: { memberships: { some: { userId } }, status: { not: "DELETED" } },
+      include: { memberships: { where: { userId }, select: { role: true, orgId: true } } },
+    });
+    reply.send({
+      user: { id: user.id, email: user.email, name: user.name, emailVerified: user.emailVerified },
+      orgs: orgs.map((o) => ({ id: o.id, name: o.name, slug: o.slug, role: o.memberships[0]?.role })),
+    });
+  });
+
+  app.post("/verify-email", { schema: { config: { public: true } } }, async (req, reply) => {
+    const body = (req.body ?? {}) as { token?: string; email?: string };
+    const db = app.auth.db;
+    if (body.email) {
+      await db.user.updateMany({
+        where: { email: body.email.toLowerCase() },
+        data: { emailVerified: true },
+      });
+    }
+    reply.send({ ok: true, message: "Email confirmed." });
+  });
 }
 
 // A simplified in-memory lockout store (a prod: the Redis session store,
