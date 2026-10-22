@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Copy, MoreHorizontal } from "lucide-react";
+import { ChevronDown, ChevronRight, MoreHorizontal } from "lucide-react";
 import { SeverityMark } from "./SeverityMark";
 import { Button } from "./Button";
 import { copyText } from "@/lib/clipboard";
