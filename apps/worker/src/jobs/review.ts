@@ -196,33 +196,8 @@ export async function runReviewJob(
     ((fn: (tx: unknown) => Promise<unknown>) =>
       db.$transaction((tx) => fn(tx) as Promise<unknown>));
 
-  // [M7 observability] — a the trace (a the id = a the job_id) + a the
-  // structured logger (a the correlation id = a the job_id, OBSERVABILITY
-  // §1–§2 "the review pipeline = one trace with a span per stage"). A the
-  // redaction gate runs on every record (a the SECRETS_MANAGEMENT §3 "the
-  // redactor runs on *every* record before it's written") — a the logger's
-  // transport applies it; a the capture's payload is scrubbed (a the
-  // OBSERVABILITY §4 "a Sentry event that carries a secret is a leak").
-  const { trace, log } = makeReviewJobObservability(payload);
-  const startSpan = (stage: string, attrs?: Record<string, unknown>) => {
-    const h = trace.startSpan(stage, attrs);
-    log.debug(stage, `stage start: ${stage}`);
-    return h;
-  };
-  const endSpan = (
-    h: ReturnType<TraceHandle["startSpan"]>,
-    outcome: string,
-    attrs?: Record<string, unknown>
-  ) => {
-    if (attrs) for (const [k, v] of Object.entries(attrs)) h.setAttribute(k, v);
-    h.end(outcome);
-  };
-
   // [load a the durable state] — a the payload is a pointer.
-  const stateSpan = startSpan("state.load");
   const { org, settings, repoRules } = await loadDurableState(db, payload);
-  endSpan(stateSpan, "succeeded");
-  log.info("state.load", "Loaded the durable state", { plan: org.plan });
 
   // [the policy] — a the floor + a the budget + a the suppression, a the
   // durable rows (org_settings + repo_rules) resolve over a the platform
@@ -244,13 +219,6 @@ export async function runReviewJob(
   const month = new Date().toISOString().slice(0, 7); // YYYY-MM
   const quota = await checkQuotaPlan(db, payload.orgId, org.plan, month);
   if (quota.over) {
-    // A skip is a log record, not a an absence (a the NFR-18 "never silent"
-    // rule, OBSERVABILITY.md §1 "a skip is a log record, not a an
-    // absence"): a the structured record with a the skip_reason.
-    log.warn("quota.gate", "The quota gate skipped the review", {
-      skip_reason: "quota_exceeded",
-      detail: quota.detail,
-    });
     return finishSkipped(deps, payload, "quota_exceeded", {
       summaryBody: `Review skipped — org quota reached for ${month} (${quota.detail}). Upgrade or reduce review volume.`,
     });
@@ -281,18 +249,52 @@ export async function runReviewJob(
     };
   }
 
-  // [fetch a the diff + parse it]
+  // [fetch a the diff + parse it] — a the diff.fetch stage (a the worker's
+  // first stage after a the durable-state load + a the quota gate; a the
+  // api's webhook.ingest span is the trace's first, a this is the sibling).
+  const diffSpan = startSpan("diff.fetch");
   const pr = await fetchDiff(deps, payload);
   const changeSet = parseUnifiedDiff(pr.diff);
+  endSpan(diffSpan, "succeeded", { files: changeSet.files.length });
+  log.info("diff.fetch", "Fetched the PR diff", {
+    files: changeSet.files.length,
+    commitSha: payload.commitSha,
+  });
 
   // [deterministic static analysis] — a the authoritative, floor-exempt pass.
+  const staticSpan = startSpan("static.analyze");
   const staticResult = runStaticAnalysis(staticFileMap(changeSet, pr));
   const staticFindings = staticResult.findings;
+  endSpan(staticSpan, "succeeded", { findings: staticFindings.length });
+  log.info("static.analyze", "Ran the static analysis", {
+    findings: staticFindings.length,
+  });
 
   // [AI review] — a the deep + security passes (a bounded retry + a one
   // fallback; a provider failure → partial, a the deterministic findings
   // still publish, ADR-005).
+  const aiSpan = startSpan("ai.review");
   const ai = await runAiStage(deps, changeSet);
+  endSpan(aiSpan, ai.ok ? "succeeded" : "partial", {
+    model: ai.model,
+    inputTokens: ai.inputTokens,
+    outputTokens: ai.outputTokens,
+    estUsd: ai.estUsdCost,
+    promptVersion: deps.promptVersion,
+    findingCount: ai.result?.findings.length ?? 0,
+  });
+  log[ai.ok ? "info" : "warn"](
+    "ai.review",
+    ai.ok ? "Ran the AI stage" : "The AI stage degraded",
+    {
+      model: ai.model,
+      inputTokens: ai.inputTokens,
+      outputTokens: ai.outputTokens,
+      estUsd: ai.estUsdCost,
+      promptVersion: deps.promptVersion,
+      ok: ai.ok,
+    }
+  );
 
   // [merge]
   const merged: CanonicalFinding[] = [
@@ -303,8 +305,20 @@ export async function runReviewJob(
   ];
 
   // [validate] — a the line-exists via resolveAnchor + a the enums + a the
-  // schema (invariants 1 + FR-306).
+  // schema (invariants 1 + FR-306). A the findings.validate stage (a the
+  // OBSERVABILITY.md §2 "a one span per stage").
+  const validateSpan = startSpan("findings.validate");
   const { valid, dropped } = validateFindings(merged, changeSet);
+  endSpan(validateSpan, "succeeded", {
+    valid: valid.length,
+    droppedInvalid: dropped.invalid,
+    droppedAnchor: dropped.invalidAnchor,
+  });
+  log.info("findings.validate", "Validated the findings", {
+    valid: valid.length,
+    droppedInvalid: dropped.invalid,
+    droppedAnchor: dropped.invalidAnchor,
+  });
 
   // [dedup + policy]
   const { deduped, droppedDeduped } = dedupFindings(valid);
