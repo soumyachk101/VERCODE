@@ -21,6 +21,19 @@ function setupTestApp() {
   const app = Fastify({ logger: false });
   app.register(fastifyCookie);
 
+  app.setValidatorCompiler(({ schema }: any) => {
+    return (data: any) => {
+      if (schema && typeof schema.safeParse === "function") {
+        const result = schema.safeParse(data);
+        if (!result.success) {
+          return { error: result.error as any };
+        }
+        return { value: result.data };
+      }
+      return { value: data };
+    };
+  });
+
   // In-memory data store for testing
   const store = {
     orgs: [

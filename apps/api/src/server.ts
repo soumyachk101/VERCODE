@@ -38,6 +38,20 @@ export function buildServer(opts: { config?: AppConfig; logger?: boolean } = {})
   app.register(fastifyCookie);
   app.register(fastifySensible);
 
+  // Validate request schemas with Zod
+  app.setValidatorCompiler(({ schema }: any) => {
+    return (data: any) => {
+      if (schema && typeof schema.safeParse === "function") {
+        const result = schema.safeParse(data);
+        if (!result.success) {
+          return { error: result.error as any };
+        }
+        return { value: result.data };
+      }
+      return { value: data };
+    };
+  });
+
   // The auth + tenant + capability plugins. The service layer re-checks the
   // highest-risk mutations (org delete, role transfer, BYOK rotation) —
   // a middleware bypass is caught by the service re-check (AUTHORIZATION §3).
