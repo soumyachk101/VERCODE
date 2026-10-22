@@ -1,0 +1,13 @@
+{
+  "id": "clean-no-findings-001",
+  "class": "clean",
+  "language": "typescript",
+  "repo": "fixture-app",
+  "diff": "diff --git a/src/util/e.ts b/src/util/e.ts\nnew file mode 100644\nindex 0000000..9c9c9c9\n--- /dev/null\n+++ b/src/util/e.ts\n@@ -0,0 +1,5 @@\n+export function clamp(n: number, min: number, max: number): number {\n+  if (n < min) return min;\n+  if (n > max) return max;\n+  return n;\n+}\n",
+  "headContext": "A the clean no-findings case (a the BENCHMARK_DATASET §3 'a the clean (a no-findings case)'). A the `clamp` function is correct — no finding of any class. A the FP-on-clean check: a finding on this file is a false positive.",
+  "groundTruth": [],
+  "cleanAssertions": [
+    { "file": "src/util/e.ts", "note": "A the correct `clamp` — must NOT produce any finding (a the FP-on-clean assertion)." }
+  ],
+  "expectedVerdict": "likely_mergeable"
+}

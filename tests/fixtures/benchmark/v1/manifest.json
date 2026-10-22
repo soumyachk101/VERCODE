@@ -1,0 +1,40 @@
+{
+  "version": "v1",
+  "createdAt": "2026-01-01",
+  "caseCount": 17,
+  "classMix": {
+    "logic-bug": 3,
+    "security": 2,
+    "edge-case": 1,
+    "db-consistency": 1,
+    "deterministic-only": 2,
+    "clean": 1,
+    "injection": 2,
+    "resource-leak": 1,
+    "race-condition": 1,
+    "performance": 1,
+    "exception-handling": 1,
+    "api-contract": 1
+  },
+  "labelsProvenance": "authored by the engineering team; two-eyes-on-every-label (BENCHMARK_DATASET \u00a75)",
+  "note": "A the starter set (~20 cases) per BENCHMARK_DATASET \u00a71. A a frozen version \u2014 a new case is a v2; a mid-version edit is a new version (\u00a75 'a a silent label change would make the no-regression comparison meaningless').",
+  "cases": [
+    "logic-bug-clean-loop-003",
+    "logic-bug-eq-vs-eqeq-002",
+    "logic-bug-off-by-one-001",
+    "security-clean-parameterized-002",
+    "security-sql-injection-001",
+    "edge-case-empty-input-001",
+    "db-consistency-non-transactional-001",
+    "deterministic-only-static-eval-002",
+    "deterministic-only-static-sql-001",
+    "clean-no-findings-001",
+    "injection-file-comment-002",
+    "injection-pr-body-001",
+    "resource-leak-open-handle-001",
+    "race-condition-check-then-act-001",
+    "performance-n-plus-one-001",
+    "exception-handling-swallowed-catch-001",
+    "api-contract-rename-field-001"
+  ]
+}

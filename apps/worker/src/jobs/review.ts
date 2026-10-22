@@ -281,17 +281,31 @@ export async function runReviewJob(
   }
 
   // [fetch a the diff + parse it]
+  const diffSpan = startSpan("diff.fetch");
   const pr = await fetchDiff(deps, payload);
   const changeSet = parseUnifiedDiff(pr.diff);
+  endSpan(diffSpan, "succeeded", {
+    prNumber: pr.prNumber,
+    files: changeSet.files.length,
+  });
 
   // [deterministic static analysis] — a the authoritative, floor-exempt pass.
+  const staticSpan = startSpan("static.analyze");
   const staticResult = runStaticAnalysis(staticFileMap(changeSet, pr));
   const staticFindings = staticResult.findings;
+  endSpan(staticSpan, "succeeded", { findings: staticFindings.length });
 
   // [AI review] — a the deep + security passes (a bounded retry + a one
   // fallback; a provider failure → partial, a the deterministic findings
   // still publish, ADR-005).
+  const aiSpan = startSpan("ai.review");
   const ai = await runAiStage(deps, changeSet);
+  endSpan(aiSpan, ai.ok ? "succeeded" : "degraded", {
+    model: ai.model,
+    inputTokens: ai.inputTokens,
+    outputTokens: ai.outputTokens,
+    estUsdCost: ai.estUsdCost,
+  });
 
   // [merge]
   const merged: CanonicalFinding[] = [

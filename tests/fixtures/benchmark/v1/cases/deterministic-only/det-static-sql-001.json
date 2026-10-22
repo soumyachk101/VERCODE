@@ -1,0 +1,22 @@
+{
+  "id": "deterministic-only-static-sql-001",
+  "class": "deterministic-only",
+  "language": "typescript",
+  "repo": "fixture-app",
+  "diff": "diff --git a/src/db/c.ts b/src/db/c.ts\nindex 5e5e5e5..6f6f6f6 100644\n--- a/src/db/c.ts\n+++ b/src/db/c.ts\n@@ -1 +1,4 @@\n export const n = 3;\n+export function select(user: string) {\n+  return db.query('SELECT * FROM users WHERE name = ' + user);\n+}\n",
+  "headContext": "A the static-analysis `sql-concat` rule already catches this (a the deterministic stage, ADR-005 'a provider-down still publishes'). A the case proves the provider-down path: a the deterministic finding is present even when the AI is mocked down (AC-301, BENCHMARK_DATASET §3 'a the deterministic-only' crossover).",
+  "groundTruth": [
+    {
+      "file": "src/db/c.ts",
+      "line": 3,
+      "severity": "high",
+      "category": "security",
+      "kind": "sql-concat",
+      "note": "A the static-analysis `sql-concat` rule fires: user input concatenated into a SQL string. A the deterministic finding publishes even with the AI provider mocked down."
+    }
+  ],
+  "cleanAssertions": [
+    { "file": "src/db/c.ts", "note": "The `n = 3` line is clean." }
+  ],
+  "expectedVerdict": "high_risk"
+}
