@@ -1,0 +1,101 @@
+<svg viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Repositories mockup">
+  <defs>
+    <style>
+      .h1   { font: 700 24px 'Inter', 'Segoe UI', sans-serif; fill: #1a2b3c; }
+      .sub  { font: 400 13px 'Inter', sans-serif; fill: #64748b; }
+      .cell { font: 400 13px 'Inter', sans-serif; fill: #374151; }
+      .num  { font: 600 13px 'Inter', sans-serif; fill: #1a2b3c; text-anchor: end; }
+      .gray { font: 400 12px 'Inter', sans-serif; fill: #94a3b8; }
+    </style>
+  </defs>
+
+  <rect width="1440" height="900" fill="#f8fafc"/>
+  <rect x="0" y="0" width="240" height="900" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="24" y="38" font-size="15" font-weight="800" fill="#1a2b3c" font-family="Inter">VERCODE</text>
+  <rect x="16" y="58" width="208" height="34" rx="7" fill="#f1f5f9"/>
+  <text x="28" y="80" font-size="12" fill="#475569" font-family="Inter">Acme Corp ▾</text>
+  <g font-family="Inter" font-size="13" fill="#475569">
+    <text x="28" y="163">Overview</text>
+    <rect x="16" y="172" width="208" height="32" rx="6" fill="#eff6ff"/>
+    <text x="28" y="194" font-weight="600" fill="#1a2b3c">Repositories</text>
+    <text x="28" y="223">Reviews</text>
+    <text x="28" y="251">Security</text>
+    <text x="28" y="279">Usage &amp; Billing</text>
+    <text x="28" y="307">Settings</text>
+  </g>
+
+  <text x="280" y="44" class="h1">Repositories</text>
+  <text x="280" y="70" class="sub">12 repositories connected through the GitHub App.</text>
+
+  <!-- Search + filters -->
+  <rect x="280" y="96" width="320" height="36" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="298" y="119" class="gray">Search repositories…</text>
+  <rect x="620" y="96" width="78" height="28" rx="14" fill="#1a2b3c"/>
+  <text x="659" y="114" font-size="11" font-weight="500" fill="#ffffff" text-anchor="middle" font-family="Inter">connected</text>
+  <rect x="706" y="96" width="106" height="28" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="759" y="114" font-size="11" fill="#475569" text-anchor="middle" font-family="Inter">disconnected</text>
+  <rect x="820" y="96" width="86" height="28" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="863" y="114" font-size="11" fill="#475569" text-anchor="middle" font-family="Inter">high risk</text>
+
+  <!-- Table -->
+  <rect x="280" y="152" width="1104" height="380" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="304" y="186" class="gray">Repository</text>
+  <text x="760" y="186" class="gray" text-anchor="end">Reviews (30d)</text>
+  <text x="920" y="186" class="gray" text-anchor="end">Open high/critical</text>
+  <text x="1080" y="186" class="gray" text-anchor="end">Last reviewed</text>
+  <text x="1360" y="186" class="gray" text-anchor="end">Status</text>
+  <line x1="304" y1="202" x2="1360" y2="202" stroke="#e2e8f0"/>
+
+  <g font-family="Inter">
+    <text x="304" y="234" font-size="13" fill="#374151">acme-corp/api-server</text>
+    <text x="760" y="234" font-size="13" font-weight="600" fill="#1a2b3c" text-anchor="end">412</text>
+    <rect x="874" y="225" width="9" height="9" rx="1" fill="#dc2626"/>
+    <text x="920" y="234" font-size="13" font-weight="600" fill="#1a2b3c" text-anchor="end">3</text>
+    <text x="1080" y="234" font-size="12" fill="#94a3b8" text-anchor="end">2 days ago</text>
+    <rect x="1280" y="218" width="80" height="22" rx="11" fill="#f1f5f9"/>
+    <text x="1320" y="233" font-size="11" fill="#475569" text-anchor="middle">connected</text>
+    <line x1="304" y1="256" x2="1360" y2="256" stroke="#f1f5f9"/>
+
+    <text x="304" y="288" font-size="13" fill="#374151">acme-corp/web-app</text>
+    <text x="760" y="288" font-size="13" font-weight="600" fill="#1a2b3c" text-anchor="end">228</text>
+    <rect x="874" y="279" width="9" height="9" rx="1" fill="#ea580c"/>
+    <text x="920" y="288" font-size="13" font-weight="600" fill="#1a2b3c" text-anchor="end">2</text>
+    <text x="1080" y="288" font-size="12" fill="#94a3b8" text-anchor="end">1 day ago</text>
+    <rect x="1280" y="272" width="80" height="22" rx="11" fill="#f1f5f9"/>
+    <text x="1320" y="287" font-size="11" fill="#475569" text-anchor="middle">connected</text>
+    <line x1="304" y1="310" x2="1360" y2="310" stroke="#f1f5f9"/>
+
+    <text x="304" y="342" font-size="13" fill="#374151">acme-corp/worker-service</text>
+    <text x="760" y="342" font-size="13" font-weight="600" fill="#1a2b3c" text-anchor="end">184</text>
+    <rect x="874" y="333" width="9" height="9" rx="1" fill="#f59e0b"/>
+    <text x="920" y="342" font-size="13" font-weight="600" fill="#1a2b3c" text-anchor="end">1</text>
+    <text x="1080" y="342" font-size="12" fill="#94a3b8" text-anchor="end">6 days ago</text>
+    <rect x="1280" y="326" width="80" height="22" rx="11" fill="#f1f5f9"/>
+    <text x="1320" y="341" font-size="11" fill="#475569" text-anchor="middle">connected</text>
+    <line x1="304" y1="364" x2="1360" y2="364" stroke="#f1f5f9"/>
+
+    <text x="304" y="396" font-size="13" fill="#374151">acme-corp/billing-svc</text>
+    <text x="760" y="396" font-size="13" font-weight="600" fill="#1a2b3c" text-anchor="end">96</text>
+    <text x="920" y="396" font-size="13" font-weight="600" fill="#1a2b3c" text-anchor="end">0</text>
+    <text x="1080" y="396" font-size="12" fill="#94a3b8" text-anchor="end">9 days ago</text>
+    <rect x="1280" y="380" width="80" height="22" rx="11" fill="#f1f5f9"/>
+    <text x="1320" y="395" font-size="11" fill="#475569" text-anchor="middle">connected</text>
+    <line x1="304" y1="418" x2="1360" y2="418" stroke="#f1f5f9"/>
+
+    <text x="304" y="450" font-size="13" fill="#374151">acme-corp/infra-terraform</text>
+    <text x="760" y="450" font-size="13" font-weight="600" fill="#1a2b3c" text-anchor="end">41</text>
+    <text x="920" y="450" font-size="13" font-weight="600" fill="#1a2b3c" text-anchor="end">0</text>
+    <text x="1080" y="450" font-size="12" fill="#94a3b8" text-anchor="end">18 days ago</text>
+    <rect x="1280" y="434" width="80" height="22" rx="11" fill="#f1f5f9"/>
+    <text x="1320" y="449" font-size="11" fill="#475569" text-anchor="middle">connected</text>
+    <line x1="304" y1="472" x2="1360" y2="472" stroke="#f1f5f9"/>
+
+    <text x="304" y="504" font-size="13" fill="#374151">acme-corp/design-system</text>
+    <text x="760" y="504" font-size="13" font-weight="600" fill="#1a2b3c" text-anchor="end">12</text>
+    <text x="920" y="504" font-size="13" font-weight="600" fill="#1a2b3c" text-anchor="end">0</text>
+    <text x="1080" y="504" font-size="12" fill="#94a3b8" text-anchor="end">31 days ago</text>
+    <rect x="1280" y="488" width="80" height="22" rx="11" fill="#f1f5f9"/>
+    <text x="1320" y="503" font-size="11" fill="#475569" text-anchor="middle">connected</text>
+  </g>
+  <text x="304" y="518" class="gray">View all 12 repositories →</text>
+</svg>
