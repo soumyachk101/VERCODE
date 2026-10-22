@@ -1,0 +1,137 @@
+<svg viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Settings - Rules and AI mockup">
+  <defs>
+    <style>
+      .h1   { font: 700 24px 'Inter', 'Segoe UI', sans-serif; fill: #1a2b3c; }
+      .sub  { font: 400 13px 'Inter', sans-serif; fill: #64748b; }
+      .cell { font: 400 13px 'Inter', sans-serif; fill: #374151; }
+      .label { font: 500 13px 'Inter', sans-serif; fill: #374151; }
+      .gray { font: 400 12px 'Inter', sans-serif; fill: #94a3b8; }
+      .mono { font: 400 12px ui-monospace, 'SF Mono', Menlo, monospace; fill: #475569; }
+      .card-title { font: 600 13px 'Inter', sans-serif; fill: #374151; }
+    </style>
+  </defs>
+
+  <rect width="1440" height="900" fill="#f8fafc"/>
+  <rect x="0" y="0" width="240" height="900" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="24" y="38" font-size="15" font-weight="800" fill="#1a2b3c" font-family="Inter">VERCODE</text>
+  <rect x="16" y="58" width="208" height="34" rx="7" fill="#f1f5f9"/>
+  <text x="28" y="80" font-size="12" fill="#475569" font-family="Inter">Acme Corp ▾</text>
+  <g font-family="Inter" font-size="13" fill="#475569">
+    <text x="28" y="163">Overview</text>
+    <text x="28" y="191">Repositories</text>
+    <text x="28" y="219">Reviews</text>
+    <text x="28" y="247">Security</text>
+    <text x="28" y="275">Usage &amp; Billing</text>
+    <rect x="16" y="284" width="208" height="32" rx="6" fill="#eff6ff"/>
+    <text x="28" y="306" font-weight="600" fill="#1a2b3c">Settings</text>
+    <text x="28" y="334">Audit Log</text>
+  </g>
+
+  <text x="280" y="44" class="h1">Settings · Rules &amp; AI</text>
+  <text x="280" y="70" class="sub">How the review is tuned for your team — confidence floor, suppressed categories, provider routing, and your key.</text>
+
+  <!-- Settings layout: label column + panel, split by 1px rules -->
+  <!-- Confidence floor -->
+  <rect x="280" y="96" width="450" height="120" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="304" y="126" class="label">Confidence floor</text>
+  <text x="304" y="148" class="gray">Findings below 0.6 are hidden.</text>
+  <line x1="304" y1="166" x2="706" y2="166" stroke="#e2e8f0"/>
+  <line x1="304" y1="166" x2="484" y2="166" stroke="#2563eb" stroke-width="3"/>
+  <circle cx="484" cy="166" r="7" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+  <text x="304" y="198" class="mono">0.60</text>
+  <text x="706" y="198" class="gray" text-anchor="end">Preview: 3 of the last 20 reviews fall below this floor.</text>
+
+  <!-- Suppressed categories -->
+  <rect x="280" y="232" width="450" height="208" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="304" y="262" class="label">Suppressed categories</text>
+  <text x="304" y="282" class="gray">Toggled on — findings in this category are omitted.</text>
+  <line x1="304" y1="296" x2="706" y2="296" stroke="#f1f5f9"/>
+  <g font-family="Inter">
+    <text x="304" y="324" font-size="13" fill="#374151">security</text>
+    <rect x="664" y="312" width="40" height="22" rx="11" fill="#e2e8f0"/>
+    <circle cx="694" cy="323" r="9" fill="#ffffff"/>
+    <text x="304" y="352" font-size="13" fill="#374151">logic-bug</text>
+    <rect x="664" y="340" width="40" height="22" rx="11" fill="#e2e8f0"/>
+    <circle cx="694" cy="351" r="9" fill="#ffffff"/>
+    <text x="304" y="380" font-size="13" fill="#374151">style</text>
+    <rect x="664" y="368" width="40" height="22" rx="11" fill="#047857"/>
+    <circle cx="704" cy="379" r="9" fill="#ffffff"/>
+    <text x="304" y="408" font-size="13" fill="#374151">reliability</text>
+    <rect x="664" y="396" width="40" height="22" rx="11" fill="#e2e8f0"/>
+    <circle cx="694" cy="407" r="9" fill="#ffffff"/>
+    <text x="304" y="436" font-size="13" fill="#374151">secret</text>
+    <rect x="664" y="424" width="40" height="22" rx="11" fill="#047857"/>
+    <circle cx="704" cy="435" r="9" fill="#ffffff"/>
+  </g>
+
+  <!-- Per-repo overrides -->
+  <rect x="280" y="456" width="450" height="200" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="304" y="486" class="label">Per-repo overrides</text>
+  <text x="304" y="506" class="gray">Versioned, audit-logged on change.</text>
+  <line x1="304" y1="520" x2="706" y2="520" stroke="#f1f5f9"/>
+  <g font-family="Inter">
+    <text x="304" y="548" font-size="13" fill="#374151">api-server</text>
+    <text x="480" y="548" font-size="12" fill="#94a3b8">style suppressed · floor 0.65</text>
+    <text x="706" y="548" font-size="12" fill="#2563eb" text-anchor="end">Manage</text>
+    <line x1="304" y1="564" x2="706" y2="564" stroke="#f1f5f9"/>
+    <text x="304" y="592" font-size="13" fill="#374151">worker-service</text>
+    <text x="480" y="592" font-size="12" fill="#94a3b8">no repo-specific rules</text>
+    <text x="706" y="592" font-size="12" fill="#2563eb" text-anchor="end">Manage</text>
+    <line x1="304" y1="608" x2="706" y2="608" stroke="#f1f5f9"/>
+    <text x="304" y="636" font-size="13" fill="#374151">web-app</text>
+    <text x="480" y="636" font-size="12" fill="#94a3b8">reliability suppressed</text>
+    <text x="706" y="636" font-size="12" fill="#2563eb" text-anchor="end">Manage</text>
+  </g>
+
+  <!-- Right panel: provider + task routing -->
+  <rect x="750" y="96" width="634" height="230" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="774" y="126" class="card-title">Provider &amp; task routing</text>
+  <text x="774" y="146" class="gray">Admin-set within the plan tier. A Team plan cannot pin a task to an Enterprise-only model.</text>
+  <line x1="774" y1="160" x2="1360" y2="160" stroke="#f1f5f9"/>
+  <g font-family="Inter">
+    <text x="774" y="186" font-size="12" fill="#94a3b8">Task</text>
+    <text x="980" y="186" font-size="12" fill="#94a3b8">Provider</text>
+    <text x="1140" y="186" font-size="12" fill="#94a3b8">Model</text>
+    <text x="1360" y="186" font-size="12" fill="#94a3b8" text-anchor="end">Max tokens</text>
+    <line x1="774" y1="198" x2="1360" y2="198" stroke="#f1f5f9"/>
+
+    <text x="774" y="224" font-size="13" fill="#374151">boilerplate-diff</text>
+    <text x="980" y="224" font-size="13" fill="#374151">openai</text>
+    <text x="1140" y="224" font-size="13" fill="#374151">gpt-4o-mini</text>
+    <text x="1360" y="224" font-size="13" fill="#1a2b3c" text-anchor="end">4,096</text>
+    <line x1="774" y1="240" x2="1360" y2="240" stroke="#f1f5f9"/>
+
+    <text x="774" y="266" font-size="13" fill="#374151">logic-review</text>
+    <text x="980" y="266" font-size="13" fill="#374151">openai</text>
+    <text x="1140" y="266" font-size="13" fill="#374151">gpt-4o</text>
+    <text x="1360" y="266" font-size="13" fill="#1a2b3c" text-anchor="end">8,192</text>
+    <line x1="774" y1="282" x2="1360" y2="282" stroke="#f1f5f9"/>
+
+    <text x="774" y="308" font-size="13" fill="#374151">security-review</text>
+    <text x="980" y="308" font-size="13" fill="#374151">anthropic</text>
+    <text x="1140" y="308" font-size="13" fill="#374151">claude-sonnet</text>
+    <text x="1360" y="308" font-size="13" fill="#1a2b3c" text-anchor="end">16,384</text>
+  </g>
+
+  <!-- BYOK key (masked) -->
+  <rect x="750" y="342" width="634" height="130" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="774" y="372" class="card-title">Bring your own key (BYOK)</text>
+  <text x="774" y="392" class="gray">Stored KMS-wrapped. The raw key is never shown.</text>
+  <rect x="774" y="406" width="300" height="34" rx="7" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="790" y="428" class="mono">sk-…abcd</text>
+  <rect x="1086" y="412" width="120" height="24" rx="12" fill="#f1f5f9"/>
+  <text x="1146" y="428" font-size="11" font-weight="500" fill="#475569" text-anchor="middle" font-family="Inter">Rotate</text>
+  <rect x="1214" y="412" width="120" height="24" rx="12" fill="#f1f5f9"/>
+  <text x="1274" y="428" font-size="11" font-weight="500" fill="#475569" text-anchor="middle" font-family="Inter">Revoke</text>
+  <text x="774" y="458" class="gray">Fallback provider: anthropic (configured)</text>
+
+  <!-- Tier-gated row -->
+  <rect x="750" y="488" width="634" height="90" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="774" y="516" class="card-title">Custom rules · prompt-driven (Enterprise)</text>
+  <text x="774" y="536" class="gray">Upgrade to use — not available on the Developer plan.</text>
+  <rect x="1280" y="508" width="90" height="28" rx="14" fill="#f1f5f9"/>
+  <text x="1325" y="526" font-size="11" font-weight="500" fill="#94a3b8" text-anchor="middle" font-family="Inter">Locked</text>
+
+  <!-- Save model -->
+  <text x="750" y="620" class="gray">Saved · 2 min ago</text>
+</svg>
