@@ -11,7 +11,7 @@ import { githubRoutes } from "./github.js";
 import { healthRoutes } from "./health.js";
 
 import { githubWebhookRoutes } from "./webhooks.js";
-import { billingWebhookRoutes } from "./billing-webhook.js";
+import { billingWebhookRoutes } from "../webhooks/billing.js";
 import { BullQueue, type Enqueueable } from "../queue.js";
 
 export function registerRoutes(app: FastifyInstance, config: AppConfig) {
@@ -23,17 +23,19 @@ export function registerRoutes(app: FastifyInstance, config: AppConfig) {
 
   // A the webhook ingress (a the public, a signature-verified, a
   // idempotent entry points; a WEBHOOK_SPECIFICATION §3 "a the two public,
-  // a non-session ingress routes"). A the GitHub queue is a a BullQueue
-  // (a ioredis + a bullmq; a it degrades to a no-op when a the REDIS_URL
-  // is unreachable in the dev-stack, a so the ingress stays up). A the
-  // test injects a in-memory queue via a the `queue` opt.
+  // a non-session ingress routes"). A the GitHub route takes the queue as a
+  // a dep (a a BullQueue — a ioredis + a bullmq; a it degrades to a no-op
+  // enqueue + a warning when a the REDIS_URL is unreachable in the
+  // dev-stack, a so the ingress stays up). A the test injects a in-memory
+  // queue instead.
   const queue: Enqueueable = new BullQueue({
     name: "review-queue",
     redisUrl: config.core.REDIS_URL,
-    logger: { warn: (m: string) => app.log?.warn?.(m) ?? console.warn(m) },
+    logger: { warn: (m: string) => (app.log?.warn ? app.log.warn(m) : console.warn(m)) },
   });
-  app.register(async (a) => {
-    await githubWebhookRoutes(a, config, queue);
-  }, { prefix: "/webhooks" });
+  const githubWebhooksPlugin = async (a: FastifyInstance) => {
+    await githubWebhookRoutes(a, config, { db: a.auth.db, queue });
+  };
+  app.register(githubWebhooksPlugin, { prefix: "/webhooks" });
   app.register(billingWebhookRoutes, { prefix: "/webhooks" });
 }
