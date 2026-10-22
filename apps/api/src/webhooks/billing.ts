@@ -203,7 +203,7 @@ export async function billingWebhookRoutes(app: FastifyInstance, config: AppConf
       // org_billing row (a a `providerCustomerId`). A a unknown customer →
       // a reject + a audit, a not a state change.
       const customerId = evt?.data?.object?.customer;
-      let billing = null;
+      let billing: import("@prisma/client").OrgBilling | null = null;
       if (customerId) {
         billing = await db.orgBilling.findFirst({ where: { provider, providerCustomerId: customerId } });
       }
