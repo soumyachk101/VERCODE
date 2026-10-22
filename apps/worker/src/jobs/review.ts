@@ -212,7 +212,7 @@ export async function runReviewJob(
   // plan's quota (plans.ts quota + a the usage_events monthly aggregate) →
   // skipped quota_exceeded, ZERO AI tokens consumed, a notice posted.
   const month = new Date().toISOString().slice(0, 7); // YYYY-MM
-  const quota = await checkQuotaPlan(db, payload.orgId, org.plan as unknown as Plan, month);
+  const quota = await checkQuotaPlan(db, payload.orgId, org.plan, month);
   if (quota.over) {
     return finishSkipped(deps, payload, "quota_exceeded", {
       summaryBody: `Review skipped — org quota reached for ${month} (${quota.detail}). Upgrade or reduce review volume.`,
@@ -417,8 +417,7 @@ function aiUsage(ai: AiStageResult, promptVersion: string) {
 
 async function runAiStage(
   deps: WorkerDeps,
-  changeSet: ChangeSet,
-  _policy: PolicyState
+  changeSet: ChangeSet
 ): Promise<AiStageResult> {
   const empty: AiStageResult = {
     ok: false,

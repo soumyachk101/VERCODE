@@ -52,7 +52,11 @@ const PEM_RE =
 // The generic env-var-shaped secret (a the `OPENAI_API_KEY=…` /
 // `DATABASE_URL=…` / `service_token=…` — a the name is kept, a the value
 // is masked to `***`).
-const ENVVAR_RE = /([A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*_(?:KEY|SECRET|TOKEN|PASSWORD|PASSWD|DSN|URL|WEBHOOK_SECRET|CREDENTIAL|CREDENTIALS))\s*=\s*(\S+)/gi;
+// The value side must not start with `*` or `.` (a the masked-marker
+// prefix — a the idempotency guarantee: a re-run over already-masked text
+// is a no-op, SECRETS_MANAGEMENT.md §6 "a a re-run over the masked text is
+// a no-op").
+const ENVVAR_RE = /([A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*_(?:KEY|SECRET|TOKEN|PASSWORD|PASSWD|DSN|URL|WEBHOOK_SECRET|CREDENTIAL|CREDENTIALS))\s*=\s*([^*.\s]\S*)/gi;
 
 // The Stripe webhook signing secret (a the `whsec_` + 8+ char base64url).
 const WHSEC_RE = /\bwhsec_[A-Za-z0-9_-]{8,}\b/g;
@@ -78,8 +82,10 @@ const AWS_RE = /\bAKIA[A-Z0-9]{16}\b/g;
 // boundary excludes the `.` / `=` / `-` punctuation (a a `https://…` link
 // is not a secret; a the `postgres://user:pass@host` DSN is handled by the
 // env-var rule; a a the `...` / `=***` masked markers are excluded so the
-// gate is idempotent).
-const ENTROPY_RE = /[A-Za-z0-9_+/:][A-Za-z0-9_+/:]{23,}/g;
+// gate is idempotent — a the `ghp_...abcd` / `whsec_...abcd` /
+// `pk_live_...abcd` masked forms keep the `_` but drop the trailing run so
+// a the re-run is a no-op).
+const ENTROPY_RE = /[A-Za-z0-9_+/:][A-Za-z0-9_+/:]{23,}(?![A-Za-z0-9])/g;
 
 // A the high-entropy minimum length (a a random secret is long; a a word is
 // not).
