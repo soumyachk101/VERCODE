@@ -20,22 +20,13 @@ import { Worker, Queue, type Job, type Worker as BullWorker } from "bullmq";
 import type IORedis from "ioredis";
 import {
   QUEUES,
-  type QueueName,
   type ReviewJobPayload,
-  type RetentionJobPayload,
-  type BillingJobPayload,
   inFlightLockKey,
   type WorkerOptions,
   type WorkerDeps,
 } from "./config.js";
-import { runReviewJob, type ReviewJobResult } from "./jobs/review.js";
+import { runReviewJob } from "./jobs/review.js";
 import { enqueueDeadLetter } from "./dlq.js";
-
-export const RETRY_BACKOFF = {
-  // TRD.md §7 "exponential backoff 2^attempt * 1s + jitter".
-  type: "exponential" as const,
-  delay: 1_000,
-};
 
 /** The jitter: a random 0–50 % of the base delay (avoids thundering-herd). */
 function withJitter(delayMs: number): number {
@@ -52,47 +43,14 @@ export function makeRetryBackoffFactory(opts: { maxAttempts?: number } = {}) {
   };
 }
 
-// ---------------------------------------------------------------------------
-// The queue constructors
-// ---------------------------------------------------------------------------
-
-export interface QueueHandle<T extends QueueName = QueueName> {
-  readonly name: T;
-  add(name: string, payload: Record<string, unknown>, opts?: { jobId?: string; delay?: number }): Promise<Job>;
-  drain(): Promise<void>;
-  close(): Promise<void>;
-}
-
-export function makeReviewQueue(redis: IORedis): Queue<Record<string, unknown>> {
-  return new Queue(QUEUES.review, {
-    connection: redis,
-    defaultJobOptions: {
-      attempts: 3,
-      backoff: { type: "exponential", delay: 1_000 },
-    },
-  });
-}
-
-export function makeRetentionQueue(redis: IORedis): Queue {
-  return new Queue(QUEUES.retention, {
-    connection: redis,
-    defaultJobOptions: { attempts: 3, backoff: { type: "exponential", delay: 1_000 } },
-  });
-}
-
-export function makeBillingQueue(redis: IORedis): Queue {
-  return new Queue(QUEUES.billing, {
-    connection: redis,
-    defaultJobOptions: { attempts: 3, backoff: { type: "exponential", delay: 1_000 } },
-  });
-}
-
-export function makeDeadLetterQueue(redis: IORedis): Queue {
-  // The DLQ never retries — a terminal failure is recorded, observable.
-  return new Queue(QUEUES.deadLetter, {
-    connection: redis,
-    defaultJobOptions: { attempts: 1 },
-  });
+export function makeRetryBackoffFactory(opts: { maxAttempts?: number } = {}) {
+  const maxAttempts = opts.maxAttempts ?? 3;
+  // attempt is 1-based in BullMQ.
+  return (attemptsMade: number) => {
+    const attempt = Math.min(attemptsMade, maxAttempts);
+    const base = 2 ** attempt * 1_000; // 2^attempt seconds
+    return withJitter(base);
+  };
 }
 
 // ---------------------------------------------------------------------------

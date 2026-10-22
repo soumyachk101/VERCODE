@@ -60,12 +60,17 @@ export function githubWebhookRoutes(
   deps: GithubWebhookDeps = {}
 ) {
   // A test seam: a the db + a queue are injected (a a mocked PrismaClient +
-  // an in-memory queue, a no Redis + a no Postgres). A the prod build uses
-  // the real client + a BullQueue from `registerRoutes` (a it degrades to a
-  // no-op enqueue + a warning when the REDIS_URL is unreachable, a the
-  // dev-stack rule).
+  // an in-memory queue, a no Redis + a no Postgres). A the prod build is
+  // passed the real client + a BullQueue from `registerRoutes` (a it
+  // degrades to a no-op enqueue + a warning when the REDIS_URL is
+  // unreachable, a the dev-stack rule).
   const db: WebhookDb = deps.db ?? new PrismaClient();
-  const queue: Enqueueable = deps.queue ?? new (queueFactory())();
+  const queue: Enqueueable = deps.queue ?? (deps.queue ?? {
+    // A no-queue default: a the ingress logs the enqueue as a no-op (a
+    // the durable review_jobs row is a the source of truth, a the
+    // worker's re-drain picks it up, a BACKUP_RESTORE §1).
+    enqueue: async () => ({ enqueued: false, reason: "degraded_no_redis" }),
+  });
   const secret = config.github.GITHUB_WEBHOOK_SECRET;
 
   async function audit(
