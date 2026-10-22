@@ -181,7 +181,7 @@ export interface SecurityTrendPoint {
   critical: number;
 }
 
-export interface SecurityFinding extends ReviewFinding {}
+export type SecurityFinding = ReviewFinding;
 
 export interface ListSecurityResponse {
   items: SecurityFinding[];
