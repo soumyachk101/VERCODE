@@ -10,7 +10,7 @@
 // A the dev-stack (docker-compose, TRD.md §18) runs USE_MOCK_GITHUB=true +
 // USE_MOCK_AI=true, so a the pipeline is deterministic end-to-end.
 
-import RedisConstructor from "ioredis";
+import * as IORedisNS from "ioredis";
 import type { Redis } from "ioredis";
 import { loadConfig, type AppConfig } from "@vercode/config";
 import { getPrismaClient } from "@vercode/database";
@@ -34,7 +34,7 @@ export async function createWorkerRuntime(
   config: AppConfig = loadConfig()
 ): Promise<WorkerRuntime> {
   const db = getPrismaClient();
-  const redis = new IORedis(config.core.REDIS_URL, { maxRetriesPerRequest: null });
+  const redis = new IORedisNS.Redis(config.core.REDIS_URL, { maxRetriesPerRequest: null });
 
   // [the GithubDiffClient seam] — a the mock reads the diff fixtures (a no
   // network, a deterministic); a the Octokit client is a later leaf.

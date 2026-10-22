@@ -14,7 +14,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { ReactNode } from "react";
 
 const ACCENT = "var(--accent)";
 const MUTED = "var(--muted)";
@@ -22,14 +21,14 @@ const GRID = "var(--grid)";
 
 /**
  * A single-series line chart. One hue on the main element; a spike gets a
- * 1px marker + a 12px label naming its cause (DESIGN_SYSTEM §6.5).
+ * 1px marker + a 12px label naming its cause (DESIGN_SYSTEM §6.5). A
+ * flat series is drawn flat (a 1-point history is a lone dot).
  */
 export function LineChartBlock({
   data,
   dataKey,
   xKey = "date",
   height = 200,
-  xLabel,
   spike,
   yFormat,
   ariaLabel,
@@ -38,40 +37,32 @@ export function LineChartBlock({
   dataKey: string;
   xKey?: string;
   height?: number;
-  xLabel?: string;
   spike?: { index: number; label: string };
   yFormat?: (n: number) => string;
   ariaLabel: string;
 }) {
-  const values = data.map((d) => Number(d[dataKey]));
+  const values = data.map((d) => Number(d[dataKey] ?? 0));
   const max = Math.max(0, ...values);
-  const tickMax = max === 0 ? 0 : Math.ceil(max / 50) * 50 || Math.ceil(max);
-  const yTicks = tickMax === 0 ? [0] : [0, 0.5, 1].map((f) => f * tickMax);
+  const tickMax = max === 0 ? 0 : Math.ceil(max / 5) * 5;
+  const yTicks =
+    tickMax === 0
+      ? [0]
+      : [0, 0.5, 1].map((f) => Math.round(f * tickMax));
 
   return (
     <figure style={{ margin: 0 }}>
-      <figcaption className="meta sr-only">{ariaLabel}</figcaption>
-      <div
-        role="img"
-        aria-label={ariaLabel}
-        style={{ height }}
-      >
+      <figcaption className="sr-only">{ariaLabel}</figcaption>
+      <div role="img" aria-label={ariaLabel} style={{ height }}>
         <ResponsiveContainer width="100%" height={height}>
           <LineChart data={data} margin={{ top: 12, right: 8, bottom: 4, left: 8 }}>
-            <CartesianGrid
-              stroke={GRID}
-              vertical={false}
-              strokeDasharray="0"
-              verticalCount={0}
-            />
+            <CartesianGrid stroke={GRID} vertical={false} />
             <XAxis
               dataKey={xKey}
               tickLine={false}
               axisLine={false}
               tick={{ fontSize: 11, fill: MUTED }}
-              interval={xLabel ? "preserveStartEnd" : "equidistant"}
-              maxBarSize={44}
-              tickFormatter={(v: string) => xLabel ?? String(v).slice(5, 10)}
+              interval="preserveStartEnd"
+              tickFormatter={(v: string) => String(v).slice(5, 10)}
             />
             <YAxis
               tickLine={false}
@@ -95,13 +86,13 @@ export function LineChartBlock({
               dataKey={dataKey}
               stroke={ACCENT}
               strokeWidth={2}
-              dot={false}
+              dot={values.length === 1 ? { r: 3 } : false}
               activeDot={{ r: 3 }}
               isAnimationActive={false}
             />
-            {spike != null && values[spike.index] != null && (
+            {spike != null && values.length > 0 && (
               <ReferenceDot
-                x={data[spike.index]?.[xKey]}
+                x={String(data[spike.index]?.[xKey] ?? "")}
                 y={values[spike.index]}
                 r={3}
                 fill={ACCENT}
@@ -138,11 +129,36 @@ export function BarList({
       {items.map((it, idx) => {
         const top = idx === 0 && it.value > 0;
         return (
-          <li key={it.label} style={{ display: "grid", gridTemplateColumns: "140px 1fr 56px", alignItems: "center", gap: 8 }}>
-            <span className="meta" style={{ fontSize: 12, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <li
+            key={it.label}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "140px 1fr 56px",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <span
+              className="meta"
+              style={{
+                fontSize: 12,
+                color: "var(--text)",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
               {it.label}
             </span>
-            <div style={{ position: "relative", height: 8, background: "var(--raised)", borderRadius: 2, border: "1px solid var(--rule)" }}>
+            <div
+              style={{
+                position: "relative",
+                height: 8,
+                background: "var(--raised)",
+                borderRadius: 2,
+                border: "1px solid var(--rule)",
+              }}
+            >
               <div
                 style={{
                   position: "absolute",
@@ -153,7 +169,10 @@ export function BarList({
                 }}
               />
             </div>
-            <span className="meta tabular" style={{ textAlign: "right", fontSize: 12, color: "var(--muted)" }}>
+            <span
+              className="meta tabular"
+              style={{ textAlign: "right", fontSize: 12, color: "var(--muted)" }}
+            >
               {new Intl.NumberFormat("en-US").format(it.value)}
               {unit ? <span style={{ color: "var(--faint)" }}> {unit}</span> : null}
             </span>
@@ -164,37 +183,64 @@ export function BarList({
   );
 }
 
-/** A small horizontal grouped bar (the risk-trend by category). */
+/**
+ * A grouped bar (the risk-trend by category, the repo detail's Marcus
+ * path). The top category gets the data hue; the others get stepped
+ * grey tones (a single hue per chart — the *primary* element is the
+ * top; the secondary series is muted greys, not a rainbow).
+ */
 export function CategoryTrendChart({
   data,
+  categories,
   ariaLabel,
 }: {
-  /** rows: one per date; columns: one key per category */
   data: { date: string; [k: string]: number | string }[];
   categories: string[];
   ariaLabel: string;
   height?: number;
 }) {
   const top = categories[0];
+  const tone = (i: number) =>
+    i === 0 ? ACCENT : `color-mix(in srgb, var(--control) ${70 - i * 20}%, var(--surface))`;
+  const shown = categories.slice(0, 4);
   return (
     <div role="img" aria-label={ariaLabel}>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} margin={{ top: 12, right: 8, bottom: 4, left: 8 }}>
           <CartesianGrid stroke={GRID} vertical={false} />
-          <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: MUTED }} tickFormatter={(v: string) => String(v).slice(5, 10)} />
+          <XAxis
+            dataKey="date"
+            tickLine={false}
+            axisLine={false}
+            tick={{ fontSize: 11, fill: MUTED }}
+            tickFormatter={(v: string) => String(v).slice(5, 10)}
+          />
           <YAxis tickLine={false} axisLine={false} width={36} tick={{ fontSize: 11, fill: MUTED }} />
-          <Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12, color: "var(--text)" }} />
-          <Bar dataKey={top} fill={ACCENT} barSize={10} isAnimationActive={false} />
-          {categories
-            .filter((c) => c !== top)
-            .slice(0, 3)
-            .map((c, i) => (
-              <Bar key={c} dataKey={c} fill={`color-mix(in srgb, var(--control) ${70 - i * 20}%, var(--surface))`} barSize={10} isAnimationActive={false} />
-            ))}
+          <Tooltip
+            contentStyle={{
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: 8,
+              fontSize: 12,
+              color: "var(--text)",
+            }}
+          />
+          {shown.map((c, i) => (
+            <Bar
+              key={c}
+              dataKey={c}
+              fill={tone(i)}
+              barSize={10}
+              isAnimationActive={false}
+            />
+          ))}
         </BarChart>
       </ResponsiveContainer>
-      <div className="meta" style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 8 }}>
-        {categories.slice(0, 4).map((c, i) => (
+      <div
+        className="meta"
+        style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 8 }}
+      >
+        {shown.map((c, i) => (
           <span key={c} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
             <span
               aria-hidden="true"
@@ -202,10 +248,7 @@ export function CategoryTrendChart({
                 width: 8,
                 height: 8,
                 borderRadius: 1,
-                background:
-                  i === 0
-                    ? ACCENT
-                    : `color-mix(in srgb, var(--control) ${70 - i * 20}%, var(--surface))`,
+                background: tone(i),
                 display: "inline-block",
               }}
             />
@@ -217,7 +260,7 @@ export function CategoryTrendChart({
   );
 }
 
-/** A tiny flat line (a 30d reviews/day) — ⅔ width, flat drawn flat. */
+/** A small line (a 30d reviews/day) — ⅔ width, flat drawn flat. */
 export function MiniLine({
   data,
   dataKey,
@@ -229,14 +272,5 @@ export function MiniLine({
   height?: number;
   ariaLabel: string;
 }) {
-  return (
-    <LineChartBlock
-      data={data}
-      dataKey={dataKey}
-      height={height}
-      ariaLabel={ariaLabel}
-    />
-  );
+  return <LineChartBlock data={data} dataKey={dataKey} height={height} ariaLabel={ariaLabel} />;
 }
-
-export type { ReactNode };

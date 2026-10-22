@@ -22,8 +22,7 @@ export function useOrgShell() {
   const activeOrg = active?.id ?? "";
 
   const sec = useSecurity(activeOrg || undefined);
-  const securityCount =
-    sec && !sec.isError ? sec.open.critical + sec.open.high : null;
+  const securityCount = sec?.data ? sec.data.open.critical + sec.data.open.high : null;
 
   const skipped = useReviews(activeOrg || undefined, { status: "skipped" });
   const failed = useReviews(activeOrg || undefined, { status: "failed" });
