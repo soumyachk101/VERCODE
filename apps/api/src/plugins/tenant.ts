@@ -7,6 +7,15 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { Prisma, PrismaClient } from "@prisma/client";
 import type { Role } from "@prisma/client";
 
+export type Capability =
+  | "org.manage"
+  | "integrations.manage"
+  | "rules.manage"
+  | "reviews.run"
+  | "read"
+  | "audit.read"
+  | "org.delete";
+
 export interface TenantContext {
   orgId: string;
   role: Role;
@@ -17,19 +26,7 @@ declare module "fastify" {
   interface FastifyRequest {
     tenant: TenantContext | null;
   }
-  interface FastifyRequestOptions {
-    capability?: Capability;
-  }
 }
-
-export type Capability =
-  | "org.manage"
-  | "integrations.manage"
-  | "rules.manage"
-  | "reviews.run"
-  | "read"
-  | "audit.read"
-  | "org.delete";
 
 // The role → capability matrix (AUTHORIZATION.md §1, PRD §6). The server is
 // the enforcement point; the UI only hides (never enforces).
@@ -59,26 +56,22 @@ export function buildTenantPlugin() {
   return async (app: FastifyInstance) => {
     const db = new PrismaClient();
 
-    // A preHandler that resolves the tenant for a `/orgs/:orgId/*` request.
-    // The org id comes from the path (the `:orgId` param). A non-member → 404.
+    // A preHandler that resolves the tenant for a `/orgs/:id/*` request.
+    // The org id comes from the `:id` path param. A non-member → 404.
     app.addHook("preHandler", async (req: FastifyRequest, reply: FastifyReply) => {
       req.tenant = null;
 
-      // Only tenant routes resolve a tenant (a `/orgs/:orgId/*`). The public +
-      // the account routes don't.
-      const orgId = req.params.orgId as string | undefined;
+      const params = req.params as Record<string, unknown>;
+      const orgId = (params.orgId ?? params.id) as string | undefined;
       if (!orgId) return;
 
       const userId = req.user.userId;
       if (!userId) {
-        // A session is required for a tenant route (the authn preHandler ran
-        // first; a no-session → 401 already handled). A no-user reaching here
-        // is a 404 (a cross-tenant without a session is no access, no oracle).
         reply.code(404).send({ error: { code: "NOT_FOUND", message: "Org not found." } });
         return;
       }
-        where: { orgId, userId },
-      });
+
+      const membership = await db.membership.findFirst({ where: { orgId, userId } });
       const org = await db.organization.findFirst({
         where: { id: orgId, status: { not: "DELETED" } },
       });
@@ -86,14 +79,18 @@ export function buildTenantPlugin() {
       // A cross-tenant (a not-a-member, or a deleted/unknown org) → 404, NOT
       // 403 (no existence oracle, AC-902, TENANT_ISOLATION.md §2).
       if (!membership || !org) {
-        await db.auditEvent.create({
-          data: {
-            orgId: userId ? orgId : undefined,
-            actorId: userId,
-            action: "access.denied_cross_tenant",
-            meta: Prisma.jsonObjectToJson({ requested: req.routeConfig.url, role: "none" }),
-          },
-        });
+        await db.auditEvent
+          .create({
+            data: {
+              orgId,
+              actorId: userId,
+              action: "access.denied_cross_tenant",
+              meta: Prisma.inputToJson({ requested: req.route.url, role: "none" }),
+            },
+          })
+          .catch(() => {
+            /* an audit write failure is not a request failure */
+          });
         reply.code(404).send({ error: { code: "NOT_FOUND", message: "Org not found." } });
         return;
       }
@@ -105,14 +102,18 @@ export function buildTenantPlugin() {
       // capability is a bug — a lint rule flags it").
       const required = req.context.config.capability as Capability | undefined;
       if (required && !req.tenant.capabilities.has(required)) {
-        await db.auditEvent.create({
-          data: {
-            orgId,
-            actorId: userId,
-            action: "access.denied_capability",
-            meta: Prisma.jsonObjectToJson({ requested: required, role }),
-          },
-        });
+        await db.auditEvent
+          .create({
+            data: {
+              orgId,
+              actorId: userId,
+              action: "access.denied_capability",
+              meta: Prisma.inputToJson({ requested: required, role }),
+            },
+          })
+          .catch(() => {
+            /* an audit write failure is not a request failure */
+          });
         reply.code(403).send({
           error: { code: "FORBIDDEN", message: `Requires the ${required} capability.` },
         });
