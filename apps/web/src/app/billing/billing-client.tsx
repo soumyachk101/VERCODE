@@ -22,7 +22,7 @@ import { PlanTrack } from "@/components/PlanTrack";
 import { Button, TextButton } from "@/components/Button";
 import { ConfirmDialog } from "@/components/BlockError";
 import { money, relativeTime } from "@/lib/format";
-import { ALL_PLANS } from "@/lib/plans";
+import { ALL_PLANS, PLAN_QUOTA } from "@/lib/plans";
 
 export function BillingClient() {
   return (
