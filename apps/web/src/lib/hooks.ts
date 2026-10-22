@@ -242,7 +242,7 @@ export function useReReview(orgId: string) {
 }
 export function useSettingsUpdate(orgId: string) {
   return useMutation({
-    mutationFn: (body: Partial<OrgSettings>) => api.patch(`/orgs/${orgId}/settings`, body),
+    mutationFn: (body: Record<string, unknown>) => api.patch(`/orgs/${orgId}/settings`, body),
   });
 }
 export function useByok(orgId: string) {
@@ -276,12 +276,12 @@ export function useInvite(orgId: string) {
 export function useChangeRole(orgId: string) {
   return useMutation({
     mutationFn: ({ userId, role }: { userId: string; role: string }) =>
-      api.patch(`/orgs/${orgId}/members/${userId}`, { role }),
+      api.patch<{ userId: string; role: string }>(`/orgs/${orgId}/members/${userId}`, { role }),
   });
 }
 export function useRemoveMember(orgId: string) {
   return useMutation({
-    mutationFn: (userId: string) => api.del(`/orgs/${orgId}/members/${userId}`),
+    mutationFn: (userId: string) => api.del<unknown>(`/orgs/${orgId}/members/${userId}`).then((v) => ({ ok: true as const, removed: userId, value: v })),
   });
 }
 export function useSignOutAll() {
