@@ -13,9 +13,12 @@ import { formatNumber } from "@/lib/format";
 export interface PlanTrackModel {
   used: number;
   limit: number;
-  committed?: number;
-  overflow?: number;
-  unit?: string;
+  committed: number;
+  overflow: number;
+  unit: string;
+  spentFrac: number;
+  committedFrac: number;
+  overflowFrac: number;
 }
 
 /** Compute the segment fractions from the raw numbers (the one source). */

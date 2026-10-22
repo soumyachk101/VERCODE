@@ -39,14 +39,18 @@ import {
   type InstallationRepositoriesEvent,
 } from "@vercode/github";
 import { Prisma, PrismaClient } from "@prisma/client";
-import { createInMemoryQueue, type Enqueueable, type ReviewJobPayload } from "../queue.js";
+import type { Enqueueable, ReviewJobPayload } from "../queue.js";
+import type { DbClient } from "@vercode/database";
 
-// The audit actor id (a a webhook is not a user; a the audit table requires
-// an actor, a a fixed system actor names the ingress itself).
+// The audit actor id (a webhook is not a user; the audit table requires
+// an actor, a fixed system actor names the ingress itself).
 const WEBHOOK_ACTOR = "github.webhook";
 
+// The DB surface (the mocked PrismaClient in tests, the real one in prod).
+export type WebhookDb = DbClient | PrismaClient;
+
 export interface GithubWebhookDeps {
-  db?: PrismaClient;
+  db?: WebhookDb;
   queue?: Enqueueable;
 }
 
@@ -55,11 +59,13 @@ export function githubWebhookRoutes(
   config: AppConfig,
   deps: GithubWebhookDeps = {}
 ) {
-  const db = deps.db ?? new PrismaClient();
-  // A test seam: an in-memory queue (a no Redis). A prod build uses the
-  // BullQueue from `registerRoutes` (a it degrades to a no-op enqueue + a
-  // warning when the REDIS_URL is unreachable, a the dev-stack rule).
-  const queue: Enqueueable = deps.queue ?? createInMemoryQueue();
+  // A test seam: a the db + a queue are injected (a a mocked PrismaClient +
+  // an in-memory queue, a no Redis + a no Postgres). A the prod build uses
+  // the real client + a BullQueue from `registerRoutes` (a it degrades to a
+  // no-op enqueue + a warning when the REDIS_URL is unreachable, a the
+  // dev-stack rule).
+  const db: WebhookDb = deps.db ?? new PrismaClient();
+  const queue: Enqueueable = deps.queue ?? new (queueFactory())();
   const secret = config.github.GITHUB_WEBHOOK_SECRET;
 
   async function audit(
@@ -89,13 +95,8 @@ export function githubWebhookRoutes(
       // A raw body: a the HMAC is computed over the *raw* bytes, a not a
       // re-serialized object (a WEBHOOK_SPECIFICATION §1.1 "the HMAC is
       // computed over the raw request body").
-      const rawBody = (req.body as unknown as { raw?: string } & string) ?? "";
-      const raw =
-        typeof rawBody === "string"
-          ? rawBody
-          : Buffer.isBuffer(req.rawBody ? undefined : undefined)
-            ? ""
-            : JSON.stringify(req.body ?? {});
+      const rawBody = req.rawBody;
+      const raw = rawBody ?? JSON.stringify(req.body ?? {});
 
       const headers = {
         signature: (req.headers["x-hub-signature-256"] as string | undefined) ?? "",

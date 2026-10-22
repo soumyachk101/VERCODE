@@ -38,7 +38,7 @@ import {
   type GithubPublisher,
   type DiffContext,
 } from "../config.js";
-import { planQuota, type Plan } from "@vercode/contracts";
+import { planQuota } from "@vercode/contracts";
 
 // ---------------------------------------------------------------------------
 // The canonical finding (post-pipeline, pre-persist). Mirrors the contracts
@@ -309,10 +309,10 @@ export interface QuotaState {
 
 export async function checkQuota(
   db: DbClient,
-  org: { plan: Plan; id: string },
+  org: { plan: import("@prisma/client").Plan; id: string },
   month: string
 ): Promise<QuotaState> {
-  const quota = planQuota(org.plan);
+  const quota = planQuota(org.plan.toLowerCase() as import("@vercode/contracts").Plan);
   const totals = await db.usageEvent.aggregate({
     where: { orgId: org.id, month },
     _sum: { reviewCount: true, estUsdCost: true },

@@ -229,10 +229,11 @@ const DB_PATTERNS: RegExp[] = [
 ];
 
 const GENERATED_PATTERNS: RegExp[] = [
-  rx("\\.(min\\.js|map|lock|snap|d\\.ts|css|scss\\.min)$"),
+  rx("\\.(min\\.js|map|snap|d\\.ts|css|scss\\.min)$"),
+  // Lockfiles by exact name (not by `.lock` suffix, so `pnpm-lock.yaml` matches).
+  rx("(^|/)(pnpm-lock\\.yaml|package-lock\\.json|yarn\\.lock|bun\\.lockb|Cargo\\.lock|go\\.sum|Gemfile\\.lock|poetry\\.lock|uv\\.lock)$"),
+  rx("\\.lock$"),
   rx("(^|/)(dist|build|out|target|coverage|node_modules|vendor|generated|gen|\\.next|\\.nuxt)(/|$)"),
-  rx("(^|/)(pnpm-lock|package-lock|yarn|bun|cargo|go|Gemfile)\\.?(lock|sum)(\\.lock)?$"),
-  rx("(^|/)(poetry|uv)\\.lock$"),
   rx("^go\\.mod$"),
   rx("([^/]\\.pb\\.|\\.gen\\.|_generated\\.)"),
 ];
