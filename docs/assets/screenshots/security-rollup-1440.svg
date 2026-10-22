@@ -21,7 +21,7 @@
     <text x="28" y="219">Reviews</text>
     <rect x="16" y="228" width="208" height="32" rx="6" fill="#eff6ff"/>
     <text x="28" y="250" font-weight="600" fill="#1a2b3c">Security</text>
-    <text x="28" y="279">Usage & Billing</text>
+    <text x="28" y="279">Usage &amp; Billing</text>
     <text x="28" y="307">Settings</text>
   </g>
 
