@@ -119,7 +119,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
 
 // The exact set of vars the config package reads (the "a variable not in the
 // doc doesn't exist" gate). A var outside this set is not read.
-const KNOWN_VARS = [
+export const KNOWN_VARS = [
   // core
   "NODE_ENV",
   "DATABASE_URL",
