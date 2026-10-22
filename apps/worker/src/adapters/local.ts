@@ -95,21 +95,26 @@ export const localStaticAnalyzer: StaticAnalyzer = {
 // ai-providers stand-in (the mock provider, TRD.md §18 "a mock-AI provider
 // for deterministic runs").
 //
-// Deterministic: given a diff, it produces a small, stable set of findings.
-// Zero real token cost. The provider is configured via the env
+// Deterministic: given the diff, it produces a small, stable set of findings
+// anchored to the first added line of each candidate file (guaranteed to be
+// in the diff's added ranges → a valid anchor, resolveAnchor passes). Zero
+// real token cost. The provider is selected via the config
 // (AI_DEFAULT_PROVIDER=mock is the dev default).
 // ---------------------------------------------------------------------------
 
 export class MockAiProvider implements AiProvider {
   readonly name = "mock";
+  private readonly diff: PRDiff;
+
+  /** The provider is constructed per-review with the PR diff it reviews. */
+  constructor(diff: PRDiff) {
+    this.diff = diff;
+  }
 
   async completeStructured(input: AiCompleteInput): Promise<AiCompleteResult> {
-    // A deterministic mock: one finding per candidate file, anchored to the
-    // first added line of that file (guaranteed to be in the diff's added
-    // ranges → a valid anchor).
     const findings = input.files.slice(0, 3).map((f, i) => ({
       file: f.path,
-      line: firstAddedLine(f.content) ?? 1,
+      line: firstAddedLineOf(this.diff, f.path) ?? 1,
       severity: i === 0 ? "high" : "medium",
       category: i === 0 ? "security" : "logic-bug",
       title: `${input.task}: ${f.path}`,
@@ -128,15 +133,6 @@ export class MockAiProvider implements AiProvider {
       promptVersion: "mock-v0",
     };
   }
-}
-
-// A best-effort "first added line" from a file's raw content (a + prefix).
-function firstAddedLine(content: string): number | null {
-  const lines = content.split("\n");
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].startsWith("+") && !lines[i].startsWith("+++")) return i + 1;
-  }
-  return null;
 }
 
 // ---------------------------------------------------------------------------

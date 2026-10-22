@@ -19,13 +19,6 @@
     "bullmq": "^5.54.0",
     "ioredis": "^5.6.0",
     "zod": "^3.23.8"
-    // TODO(T5.1): the M4 packages land in parallel with this task. When merged,
-    // uncomment + rewire (the local adapters in src/adapters/local.ts
-    // implement exactly these interfaces, so the swap is import-line-only):
-    //   "@vercode/diff-engine": "workspace:*",
-    //   "@vercode/static-analysis": "workspace:*",
-    //   "@vercode/ai-providers": "workspace:*",
-    //   "@vercode/review-engine": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
