@@ -127,7 +127,7 @@ export interface WorkerDeps {
    * fails → the job is `partial`, the deterministic findings still publish
    * (ADR-005, ERROR_HANDLING.md §5).
    */
-  aiProviders: Partial<Record<ReviewTask, AIProvider>>;
+  aiProviders?: Partial<Record<ReviewTask, AIProvider>>;
   /** The GitHub publisher (a mock records publishes in dev). */
   publisher: GithubPublisher;
   /**

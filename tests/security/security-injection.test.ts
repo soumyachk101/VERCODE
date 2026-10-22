@@ -206,7 +206,7 @@ describe("ST-injection: the pipeline invariants (PROMPT_INJECTION_DEFENSE.md §2
         aiProviders: steeredProviders(),
       })
     );
-    assertNoLeakAndStaticsPublish(result, result ? new MockAdapter("steered") : (new MockAdapter("steered") as never));
+    assertNoLeakAndStaticsPublish(result, new MockAdapter("steered"));
   });
 
   it("ST-injection-02: a file comment with an exfil instruction → no secret in any finding, statics publish", async () => {

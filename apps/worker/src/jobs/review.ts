@@ -69,29 +69,6 @@ import {
   resolveWorkerPolicy,
   type ReviewPolicy,
 } from "./policy.js";
-import { logger, tracer, type StructuredLogger, type TraceHandle, type SpanHandle } from "@vercode/observability";
-
-/**
- * Build the per-job observability context (a the OBSERVABILITY.md §2 "a the
- * review is a single trace with a span per stage"). The trace id = the
- * job_id (a the correlation key). A no-OTLP-endpoint tracer (a the
- * in-memory spans array — a the queryable surface; a the OTel exporter is a
- * later seam).
- */
-function makeJobObservability(
-  deps: WorkerDeps,
-  payload: ReviewJobPayload,
-): { trace: TraceHandle; log: StructuredLogger; startSpan: (s: string) => SpanHandle; endSpan: (h: SpanHandle, outcome: string, attrs?: Record<string, unknown>) => void } {
-  const trace = tracer();
-  const traceHandle = trace.startTrace(payload.jobId);
-  const log = logger({ correlationId: payload.jobId, orgId: payload.orgId });
-  const startSpan = (s: string) => traceHandle.startSpan(s);
-  const endSpan = (h: SpanHandle, outcome: string, attrs?: Record<string, unknown>) => {
-    if (attrs) for (const [k, v] of Object.entries(attrs)) h.setAttribute(k, v);
-    h.end(outcome);
-  };
-  return { trace: traceHandle, log, startSpan, endSpan };
-}
 
 // ---------------------------------------------------------------------------
 // The canonical finding (post-pipeline, pre-persist). Mirrors the contracts
@@ -119,7 +96,7 @@ export interface CanonicalFinding {
   description: string;
   suggestedFix?: string;
   confidence: number;
-  /** A the validated anchor outcome (inline = a GitHub comment; anchor_failed = a PR-body section). */
+  /** The validated anchor outcome (inline = a GitHub comment; anchor_failed = a PR-body section). */
   anchorStatus: "inline" | "anchor_failed";
 }
 
@@ -137,14 +114,14 @@ export interface ReviewJobOutcome {
     model: string;
     promptVersion: string;
   };
-  /** The summary body to post (the deterministic narrative + a a degraded note). */
+  /** The summary body to post (the deterministic narrative + a degraded note). */
   summaryBody: string;
-  /** The inline comments to post (a the anchor-validated ones only). */
+  /** The inline comments to post (the anchor-validated ones only). */
   inlineComments: Array<{ path: string; side: "RIGHT" | "LEFT"; line: number; body: string }>;
 }
 
 // ---------------------------------------------------------------------------
-// A the AI findings schema (invariant 1: the provider's claim is re-parsed,
+// The AI findings schema (invariant 1: the provider's claim is re-parsed,
 // never trusted — AI_SYSTEM_DESIGN §1/§4)
 // ---------------------------------------------------------------------------
 
@@ -169,7 +146,7 @@ const AIFindingsOutputSchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
-// A the durable state load (a the re-read, never the payload)
+// The durable state load (the re-read, never the payload)
 // ---------------------------------------------------------------------------
 
 export interface DurableState {
@@ -187,7 +164,7 @@ export async function loadDurableState(
     include: { settings: true },
   });
   if (!org) throw new Error(`org ${payload.orgId} not found or deleted`);
-  // A the settings relation is a 1:1 (org_settings.org_id is unique) — a the
+  // The settings relation is a 1:1 (org_settings.org_id is unique) — the
   // include returns a row-or-array; normalize to a single row.
   const settingsRaw = (org.settings as unknown as OrgSettings[] | OrgSettings | null) ?? [];
   const settings = Array.isArray(settingsRaw) ? settingsRaw[0] : settingsRaw;
@@ -199,12 +176,12 @@ export async function loadDurableState(
 }
 
 // ---------------------------------------------------------------------------
-// A the pipeline
+// The pipeline
 // ---------------------------------------------------------------------------
 
 export interface RunReviewOptions {
   attempt?: number;
-  /** A the transaction boundary (injected so tests can record the commit). */
+  /** The transaction boundary (injected so tests can record the commit). */
   txFactory?: (fn: (tx: unknown) => Promise<unknown>) => Promise<unknown>;
 }
 
@@ -219,18 +196,12 @@ export async function runReviewJob(
     ((fn: (tx: unknown) => Promise<unknown>) =>
       db.$transaction((tx) => fn(tx) as Promise<unknown>));
 
-  // The per-job observability context (OBSERVABILITY.md §2: a trace = a
-  // single job; a span per stage; the trace id = the job_id). The no-OTLP
-  // case (the dev stack) keeps the spans in-memory (a the queryable
-  // surface; a the OTel exporter is a later seam).
-  const { trace: traceCtx, log, startSpan, endSpan } = makeJobObservability(deps, payload);
-
-  // [load a the durable state] — a the payload is a pointer.
+  // [load the durable state] — the payload is a pointer.
   const { org, settings, repoRules } = await loadDurableState(db, payload);
 
-  // [the policy] — a the floor + a the budget + a the suppression, a the
-  // durable rows (org_settings + repo_rules) resolve over a the platform
-  // defaults (ENVIRONMENT_VARIABLES §6). The floor only goes UP.
+  // [the policy] — the floor + the budget + the suppression, the durable
+  // rows (org_settings + repo_rules) resolve over the platform defaults
+  // (ENVIRONMENT_VARIABLES §6). The floor only goes UP.
   const policy: ReviewPolicy = resolveWorkerPolicy({
     defaults: {
       confidenceFloor: deps.confidenceFloor,
@@ -242,8 +213,8 @@ export async function runReviewJob(
     repoRules,
   });
 
-  // [0] Pre-flight quota gate (NFR-18, AC-402): if a the org is over its
-  // plan's quota (plans.ts quota + a the usage_events monthly aggregate) →
+  // [0] Pre-flight quota gate (NFR-18, AC-402): if the org is over its
+  // plan's quota (plans.ts quota + the usage_events monthly aggregate) →
   // skipped quota_exceeded, ZERO AI tokens consumed, a notice posted.
   const month = new Date().toISOString().slice(0, 7); // YYYY-MM
   const quota = await checkQuotaPlan(db, payload.orgId, org.plan, month);
@@ -254,7 +225,7 @@ export async function runReviewJob(
   }
 
   // [1] Same-SHA idempotency gate (ADR-007 / NFR-13): a redelivered job for
-  // a completed key → no-op. A the stored published_github_review_id is the
+  // a completed key → no-op. The stored published_github_review_id is the
   // authority: a re-publish never re-runs the pipeline.
   const existing = await db.reviewJob.findUnique({
     where: {
@@ -267,8 +238,6 @@ export async function runReviewJob(
     },
   });
   if (existing && (existing.status === "SUCCEEDED" || existing.status === "PARTIAL")) {
-    // A the skip is a log record, not a an absence (NFR-18 "never silent",
-    // OBSERVABILITY.md §1 "a skip is a log record, not a an absence").
     return {
       status: "SKIPPED",
       skipReason: "same_sha",
@@ -280,13 +249,18 @@ export async function runReviewJob(
     };
   }
 
-  // [fetch a the diff + parse it]
+  // [fetch the diff + parse it] — a the diff.fetch stage (a the worker's
+  // first stage after a the durable-state load + a the quota gate; a the
+  // api's webhook.ingest span is the trace's first, a this is the sibling,
+  // OBSERVABILITY.md §2 "the webhook→worker hand-off is one trace, not two
+  // disconnected ones").
   const diffSpan = startSpan("diff.fetch");
   const pr = await fetchDiff(deps, payload);
   const changeSet = parseUnifiedDiff(pr.diff);
-  endSpan(diffSpan, "succeeded", {
-    prNumber: pr.prNumber,
+  endSpan(diffSpan, "succeeded", { files: changeSet.files.length, commitSha: payload.commitSha });
+  log.info("diff.fetch", "Fetched the PR diff", {
     files: changeSet.files.length,
+    commitSha: payload.commitSha,
   });
 
   // [deterministic static analysis] — a the authoritative, floor-exempt pass.
@@ -294,6 +268,7 @@ export async function runReviewJob(
   const staticResult = runStaticAnalysis(staticFileMap(changeSet, pr));
   const staticFindings = staticResult.findings;
   endSpan(staticSpan, "succeeded", { findings: staticFindings.length });
+  log.info("static.analyze", "Ran the static analysis", { findings: staticFindings.length });
 
   // [AI review] — a the deep + security passes (a bounded retry + a one
   // fallback; a provider failure → partial, a the deterministic findings
@@ -304,8 +279,21 @@ export async function runReviewJob(
     model: ai.model,
     inputTokens: ai.inputTokens,
     outputTokens: ai.outputTokens,
-    estUsdCost: ai.estUsdCost,
+    estUsd: ai.estUsdCost,
+    promptVersion: deps.promptVersion,
   });
+  log[ai.ok ? "info" : "warn"](
+    "ai.review",
+    ai.ok ? "Ran the AI stage" : "The AI stage degraded",
+    {
+      model: ai.model,
+      inputTokens: ai.inputTokens,
+      outputTokens: ai.outputTokens,
+      estUsd: ai.estUsdCost,
+      promptVersion: deps.promptVersion,
+      ok: ai.ok,
+    }
+  );
 
   // [merge]
   const merged: CanonicalFinding[] = [
@@ -316,8 +304,19 @@ export async function runReviewJob(
   ];
 
   // [validate] — a the line-exists via resolveAnchor + a the enums + a the
-  // schema (invariants 1 + FR-306).
+  // schema (invariants 1 + FR-306). A the findings.validate stage.
+  const validateSpan = startSpan("findings.validate");
   const { valid, dropped } = validateFindings(merged, changeSet);
+  endSpan(validateSpan, "succeeded", {
+    valid: valid.length,
+    droppedInvalid: dropped.invalid,
+    droppedAnchor: dropped.invalidAnchor,
+  });
+  log.info("findings.validate", "Validated the findings", {
+    valid: valid.length,
+    droppedInvalid: dropped.invalid,
+    droppedAnchor: dropped.invalidAnchor,
+  });
 
   // [dedup + policy]
   const { deduped, droppedDeduped } = dedupFindings(valid);
@@ -331,15 +330,15 @@ export async function runReviewJob(
   void belowFloor;
   void suppressedByRule;
 
-  // [summary] — a the deterministic verdict (a works provider-down too).
+  // [summary] — the deterministic verdict (works provider-down too).
   const summary = buildSummary(
     published,
     ai.ok ? undefined : "AI provider degraded — deterministic findings only (ADR-005)"
   );
   const summaryBody = renderSummary(summary, ai.ok);
 
-  // [PERSIST] — a the findings + a the job state + a the usage in ONE
-  // transaction (a the persist-then-publish invariant, ERROR_HANDLING §6).
+  // [PERSIST] — the findings + the job state + the usage in ONE
+  // transaction (the persist-then-publish invariant, ERROR_HANDLING §6).
   const jobStatus: JobStatus = ai.ok ? "SUCCEEDED" : "PARTIAL";
   await txFactory(async (tx) => {
     const t = tx as unknown as DbClient;
@@ -364,8 +363,8 @@ export async function runReviewJob(
         },
       });
     }
-    // A the usage event — a single row per job, attributed to the org
-    // (REVIEW_ENGINE_SPEC §6 "the dashboard and a the quota gate both read
+    // The usage event — a single row per job, attributed to the org
+    // (REVIEW_ENGINE_SPEC §6 "the dashboard and the quota gate both read
     // this single source").
     const u = aiUsage(ai, deps.promptVersion);
     await t.usageEvent.create({
@@ -382,14 +381,15 @@ export async function runReviewJob(
     });
   });
 
-  // [publish to GitHub] — a AFTER a the commit. A failed publish does NOT
-  // roll back the findings (ERROR_HANDLING §6); a the published review id is
+  // [publish to GitHub] — AFTER the commit. A failed publish does NOT roll
+  // back the findings (ERROR_HANDLING §6); the published review id is
   // stored on the job (a retry no-ops, NFR-13).
   const inlineComments = buildInlineComments(published);
   const publishResult = await publishGithub(deps, payload, {
     summary: summaryBody,
     inlineComments,
   });
+
   if (publishResult.publishedGithubReviewId) {
     await db.reviewJob.update({
       where: {
@@ -403,6 +403,7 @@ export async function runReviewJob(
       data: { publishedGithubReviewId: publishResult.publishedGithubReviewId },
     });
   }
+
   const usage = aiUsage(ai, deps.promptVersion);
   return {
     status: jobStatus,
@@ -415,9 +416,9 @@ export async function runReviewJob(
 }
 
 // ---------------------------------------------------------------------------
-// A the quota pre-flight (a the single enforcement point — plans.ts +
-// usage_events, USAGE_QUOTAS §4 / AC-401/402; a the rule lives in
-// @vercode/policy-engine, the worker supplies a the durable aggregate)
+// The quota pre-flight (the single enforcement point — plans.ts +
+// usage_events, USAGE_QUOTAS §4 / AC-401/402; the rule lives in
+// @vercode/policy-engine, the worker supplies the durable aggregate)
 // ---------------------------------------------------------------------------
 
 export interface QuotaState {
@@ -446,9 +447,9 @@ export async function checkQuotaPlan(
 }
 
 // ---------------------------------------------------------------------------
-// A the AI stage — a the bounded retry + a one fallback (TRD §9 /
+// The AI stage — the bounded retry + one fallback (TRD §9 /
 // AI_SYSTEM_DESIGN §5 / ERROR_HANDLING §5). A stage failure NEVER fails the
-// review: a the deterministic findings still publish; the job is `partial`.
+// review: the deterministic findings still publish; the job is `partial`.
 // ---------------------------------------------------------------------------
 
 interface AiStageResult {
@@ -481,8 +482,8 @@ async function runAiStage(
     estUsdCost: 0,
     model: "",
   };
-  const deep = deps.aiProviders["deep-review"];
-  const security = deps.aiProviders["security-review"];
+  const deep = deps.aiProviders?.["deep-review"];
+  const security = deps.aiProviders?.["security-review"];
   if (!deep && !security) return { ...empty, ok: true }; // no provider → static-only
 
   const files = changeSet.files.filter((f) => !f.isBinary);
@@ -528,11 +529,11 @@ async function runAiStage(
     try {
       // The bounded retry (TRD.md §9 / AI_SYSTEM_DESIGN §5): primary → 2
       // retries with exp backoff → one fallback switch. The sleep is
-      // injectable for the tests (a the provider-down test doesn't actually
+      // injectable for the tests (the provider-down test doesn't actually
       // wait 500+2000ms of real time).
       const res: StructuredResult = await runWithRetry(pass.provider, req, {
         fallbackProvider:
-          pass.task === "deep-review" ? deps.aiProviders["summary"] : undefined,
+          pass.task === "deep-review" ? deps.aiProviders?.["summary"] : undefined,
         ...(deps.testSleep
           ? { sleep: deps.testSleep, baseDelayMs: 1 }
           : {}),
@@ -555,13 +556,13 @@ async function runAiStage(
         );
       }
     } catch (err) {
-      // A the stage failed (a ProviderStageError after the bounded retry + a
-      // one fallback). ERROR_HANDLING §5 "a provider failure never fails the
-      // review" — a the deterministic findings survive; the job is partial.
+      // The stage failed (a ProviderStageError after the bounded retry + one
+      // fallback). ERROR_HANDLING §5 "a provider failure never fails the
+      // review" — the deterministic findings survive; the job is partial.
       if (err instanceof ProviderStageError) {
         collect.ok = false;
       } else {
-        throw err; // a unexpected bug — a the job fails + a the DLQ.
+        throw err; // an unexpected bug — the job fails + the DLQ.
       }
     }
   }
@@ -578,7 +579,7 @@ async function runAiStage(
 }
 
 // ---------------------------------------------------------------------------
-// A the validate / summary / inline stages
+// The validate / summary / inline stages
 // ---------------------------------------------------------------------------
 
 export interface ValidationOutcome {
@@ -588,8 +589,8 @@ export interface ValidationOutcome {
 
 /**
  * Validate (REVIEW_ENGINE_SPEC §2 stage [9]): line-exists via resolveAnchor
- * (+ a the enum-valid + a the schema-valid checks). A anchor-failed finding
- * is KEPT, demoted to a the PR-body section (INTEGRATION_DESIGN §1.6); a
+ * (+ the enum-valid + schema-valid checks). An anchor-failed finding is
+ * KEPT, demoted to the PR-body section (INTEGRATION_DESIGN §1.6); a
  * schema-invalid one is dropped.
  */
 export function validateFindings(
@@ -624,9 +625,9 @@ export function validateFindings(
       invalid += 1;
       continue;
     }
-    // A the line-exists check: a RIGHT-side line must be in the diff's
-    // added ranges (or a the LEFT side of a the removed ranges for a
-    // removed-line note). A the miss → a demotion, not a drop.
+    // The line-exists check: a RIGHT-side line must be in the diff's added
+    // ranges (or the LEFT side of the removed ranges for a removed-line
+    // note). The miss → a demotion, not a drop.
     const right = resolveAnchor(changeSet, f.file, f.line, "RIGHT");
     const left = resolveAnchor(changeSet, f.file, f.line, "LEFT");
     if (!right.ok && !left.ok) {
@@ -638,7 +639,7 @@ export function validateFindings(
   return { valid, dropped: { invalid, invalidAnchor } };
 }
 
-/** A the summary (stage [12]) — a the deterministic verdict. */
+/** The summary (stage [12]) — the deterministic verdict. */
 export function buildSummary(
   findings: CanonicalFinding[],
   ...notes: (string | undefined)[]
@@ -669,7 +670,7 @@ export function buildSummary(
       ? 0
       : findings.reduce((s, f) => s + f.confidence, 0) / findings.length;
 
-  // A the notes are folded into a the verdict suffix so the published body
+  // The notes are folded into the verdict suffix so the published body
   // carries a degraded-stage note (ERROR_HANDLING §5).
   const extra = notes.filter((n): n is string => Boolean(n));
   return {
@@ -698,7 +699,7 @@ function emptyUsage(promptVersion: string) {
   return { inputTokens: 0, outputTokens: 0, estUsdCost: 0, model: "", promptVersion };
 }
 
-/** A the inline comments (a the anchor-valid ones only; a the anchor_failed go to a the PR body). */
+/** The inline comments (the anchor-valid ones only; the anchor_failed go to the PR body). */
 export function buildInlineComments(
   findings: CanonicalFinding[]
 ): Array<{ path: string; side: "RIGHT" | "LEFT"; line: number; body: string }> {
@@ -713,7 +714,7 @@ export function buildInlineComments(
 }
 
 // ---------------------------------------------------------------------------
-// A the helpers
+// The helpers
 // ---------------------------------------------------------------------------
 
 function toCanonical(f: {
@@ -743,11 +744,11 @@ function toCanonical(f: {
   };
 }
 
-// A the static-analysis package wants a path → content map. A the diff string
-// is all the worker has at this stage (a the full head-SHA contents come with
-// a the bounded-context fetch, FR-401 — a later seam). We feed each changed
-// file its hunk lines (a the diff carries a the added/removed content) so
-// a the pattern rules still run over a the changed lines.
+// The static-analysis package wants a path → content map. The diff string
+// is all the worker has at this stage (the full head-SHA contents come with
+// the bounded-context fetch, FR-401 — a later seam). We feed each changed
+// file its hunk lines (the diff carries the added/removed content) so the
+// pattern rules still run over the changed lines.
 function staticFileMap(changeSet: ChangeSet, pr: PRDiff): Map<string, string> {
   const map = new Map<string, string>();
   const diffByFile = diffTextByFile(pr.diff);
@@ -758,7 +759,7 @@ function staticFileMap(changeSet: ChangeSet, pr: PRDiff): Map<string, string> {
   return map;
 }
 
-/** A split a the unified diff text into per-file blocks (a a simple split). */
+/** Split the unified diff text into per-file blocks (a simple split). */
 function diffTextByFile(diff: string): Map<string, string> {
   const out = new Map<string, string>();
   const blocks = diff.split(/^diff --git /m).filter((b) => b.length > 0);
@@ -769,7 +770,7 @@ function diffTextByFile(diff: string): Map<string, string> {
   return out;
 }
 
-// A the diff fetch (a the GithubDiffClient seam).
+// The diff fetch (the GithubDiffClient seam).
 async function fetchDiff(deps: WorkerDeps, payload: ReviewJobPayload): Promise<PRDiff> {
   const repo = await deps.db.githubRepo.findFirst({
     where: { orgId: payload.orgId, id: payload.repoId },
@@ -785,7 +786,7 @@ async function fetchDiff(deps: WorkerDeps, payload: ReviewJobPayload): Promise<P
   });
 }
 
-// A the GitHub publish (a the seam; a failed publish does NOT roll back).
+// The GitHub publish (the seam; a failed publish does NOT roll back).
 async function publishGithub(
   deps: WorkerDeps,
   payload: ReviewJobPayload,
@@ -809,15 +810,15 @@ async function publishGithub(
     });
     return { publishedGithubReviewId: res.publishedGithubReviewId };
   } catch (err) {
-    // A the GitHub 429/422/404 (INTEGRATION_DESIGN §1.7): a the findings are
-    // already persisted (a the invariant). A the publish retry is independent
-    // of a the pipeline (ERROR_HANDLING §3 "re-publishes the already-computed
+    // The GitHub 429/422/404 (INTEGRATION_DESIGN §1.7): the findings are
+    // already persisted (the invariant). The publish retry is independent of
+    // the pipeline (ERROR_HANDLING §3 "re-publishes the already-computed
     // review; it never re-runs the pipeline").
     return { error: (err as Error).message };
   }
 }
 
-// A the job upsert (a the persist step, inside a the transaction).
+// The job upsert (the persist step, inside the transaction).
 async function upsertJob(
   tx: DbClient,
   payload: ReviewJobPayload,
@@ -867,9 +868,11 @@ async function upsertJob(
   });
 }
 
-// A the skip path (a the quota-gate + a the install/pr-closed; a the same-SHA
-// no-op is inline above). A the "never silent" rule (NFR-18): a the skip is a
-// terminal, recorded state + a notice is posted on a the PR.
+// The skip path (the quota-gate + the install/pr-closed; the same-SHA no-op
+// is inline above). The "never silent" rule (NFR-18): the skip is a
+// terminal, recorded state + a notice is posted on the PR. The skip also
+// records a zero-usage event (no token spend is attributed to the org —
+// the abuse path is closed, AC-402).
 async function finishSkipped(
   deps: WorkerDeps,
   payload: ReviewJobPayload,
@@ -878,15 +881,15 @@ async function finishSkipped(
   body: { summaryBody: string }
 ): Promise<ReviewJobOutcome> {
   const { db } = deps;
-  await db.$transaction((tx) => {
+  await db.$transaction(async (tx) => {
     const t = tx as unknown as DbClient;
-    const job = upsertJob(t, payload, "SKIPPED", {
+    const job = await upsertJob(t, payload, "SKIPPED", {
       skipReason,
       usage: emptyUsage(deps.promptVersion),
     });
-    // A the skipped job records a zero-usage event (a no token spend is
-    // attributed to the org — a the abuse path is closed, AC-402).
-    const usageRow = t.usageEvent.create({
+    // The skipped job records a zero-usage event (the quota gate counts it
+    // toward the monthly total; the spend is 0 — no AI ran).
+    await t.usageEvent.create({
       data: {
         orgId: payload.orgId,
         jobId: job.id,
@@ -898,7 +901,6 @@ async function finishSkipped(
         model: null,
       },
     });
-    return Promise.all([job, usageRow]);
   });
   try {
     await publishGithub(deps, payload, {
@@ -906,8 +908,8 @@ async function finishSkipped(
       inlineComments: [],
     });
   } catch {
-    // A the notice post can fail (a GitHub down) — a the skip is still
-    // persisted; a the DB record is authoritative (ERROR_HANDLING §10).
+    // The notice post can fail (GitHub down) — the skip is still persisted;
+    // the DB record is authoritative (ERROR_HANDLING §10).
   }
   return {
     status: "SKIPPED",
@@ -921,7 +923,7 @@ async function finishSkipped(
 }
 
 // ---------------------------------------------------------------------------
-// A the Prisma enum mapping helpers (a the contracts enum → a the DB enum)
+// The Prisma enum mapping helpers (the contracts enum → the DB enum)
 // ---------------------------------------------------------------------------
 
 type PrismaFindingSource =
@@ -965,6 +967,6 @@ function mapCategoryToPrisma(c: string): PrismaCategory {
 
 export type { ChangeSet };
 
-// Re-export the policy helpers (a the test imports them from here, a they
-// live in the sibling module `./policy.js`).
+// Re-export the policy helpers (the test imports them from here; they live
+// in the sibling module `./policy.js`).
 export { dedupFindings, applyPolicy } from "./policy.js";
