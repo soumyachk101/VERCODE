@@ -643,6 +643,9 @@ describe("POST /webhooks/github installation events (M3 T3.3)", () => {
     // AC-204 + a DATA_RETENTION §4).
     expect(st.retentionJobs.some((rj) => rj.kind === "install_content_purge")).toBe(true);
     expect(st.audits.some((a) => a.action === "github.install_removed")).toBe(true);
+    // A the receipt row (a the `webhook_deliveries` row, a NFR-06 — a
+    // written with the real install + a org id, a not a placeholder).
+    expect(st.deliveries.some((d) => d.deliveryId === "delivery-install-deleted")).toBe(true);
   });
 
   it("a installation_repositories.added → a the repo upsert", async () => {
