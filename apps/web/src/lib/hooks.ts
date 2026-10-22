@@ -130,6 +130,11 @@ export function useSecurity(orgId?: string, since?: string) {
     placeholderData: keepPreviousData,
   });
 }
+export interface TrendPoint {
+  date: string;
+  category: string;
+  count: number;
+}
 export function useTrends(orgId: string | undefined, params: { repoId?: string } = {}) {
   return useQuery({
     queryKey: ["org", orgId ?? "none", "trends", params],
@@ -138,7 +143,12 @@ export function useTrends(orgId: string | undefined, params: { repoId?: string }
         `/orgs/${orgId}/trends`,
         { repoId: params.repoId, range: "30d" },
       );
-      return r?.series ?? [];
+      const arr = Array.isArray(r?.series) ? (r?.series as Array<Record<string, unknown>>) : [];
+      return arr.map((p) => ({
+        date: String(p.date ?? ""),
+        category: String(p.category ?? "logic-bug"),
+        count: Number(p.count ?? p.total ?? 0),
+      })) as TrendPoint[];
     },
     enabled: !!orgId,
   });
