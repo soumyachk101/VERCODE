@@ -9,7 +9,7 @@ import { DataBlock, EmptyBlock } from "@/components/DataBlock";
 import { Panel, PanelTitle } from "@/components/cards";
 import { Table, TRow, TCell } from "@/components/Table";
 import { Pill } from "@/components/Pill";
-import { Search, VcToggle } from "@/components/controls";
+import { Search } from "@/components/controls";
 import { relativeTime } from "@/lib/format";
 
 export function RepositoriesClient() {
