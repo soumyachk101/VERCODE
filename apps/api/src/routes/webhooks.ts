@@ -136,6 +136,9 @@ export function githubWebhookRoutes(
 
       // Layer 3 lookup: is the delivery id already seen in
       // `webhook_deliveries` (the 24 h replay-dedup window, NFR-06)?
+      // A seen delivery id → the replay verdict from the verifier → the
+      // route turns it into a 200 no-op (ST-webhook-replay, "the pipeline
+      // does NOT re-run"). A fresh delivery id → proceed to the receipt.
       const deliverySeen = headers.deliveryId
         ? (await db.webhookDelivery.findUnique({ where: { deliveryId: headers.deliveryId } })) !== null
         : false;

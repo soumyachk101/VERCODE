@@ -454,7 +454,7 @@ export function normalizeFindings(r: unknown): NormalizedFindings {
     id: String(x.id ?? ""),
     file: String(x.file ?? ""),
     line: Number(x.line ?? 0),
-    severity: (String(x.severity ?? "low") as FindingSeverityCount["items"][number]["severity"]),
+    severity: (String(x.severity ?? "low") as Severity),
     category: String(x.category ?? "logic-bug"),
     title: String(x.title ?? "Untitled finding"),
     description: String(x.description ?? ""),
@@ -469,7 +469,7 @@ export function normalizeFindings(r: unknown): NormalizedFindings {
     actioned: x.actioned === true || (x.action != null ? true : false),
     action: x.action != null ? String(x.action) : undefined,
   }));
-  const counts: Record<NormalizedFindings["counts"][number], number> = { critical: 0, high: 0, medium: 0, low: 0 };
+  const counts: Record<Severity, number> = { critical: 0, high: 0, medium: 0, low: 0 };
   for (const f of items) counts[f.severity] = (counts[f.severity] ?? 0) + 1;
   return { items, counts };
 }
