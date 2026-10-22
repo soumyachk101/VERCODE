@@ -1,0 +1,141 @@
+{
+  "generatedAt": "2026-10-22T15:53:08.810Z",
+  "benchmarkVersion": "v1",
+  "promptVersion": "bench-v1",
+  "routingTable": "default (MockAdapter good)",
+  "caseCount": 17,
+  "scores": {
+    "precision": 0,
+    "perClassRecall": {
+      "api-contract": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1,
+        "recall": 0
+      },
+      "clean": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "recall": 1
+      },
+      "db-consistency": {
+        "tp": 0,
+        "fp": 1,
+        "fn": 1,
+        "recall": 0
+      },
+      "deterministic-only": {
+        "tp": 0,
+        "fp": 1,
+        "fn": 2,
+        "recall": 0
+      },
+      "edge-case": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1,
+        "recall": 0
+      },
+      "exception-handling": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1,
+        "recall": 0
+      },
+      "injection": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "recall": 0
+      },
+      "logic-bug": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "recall": 0
+      },
+      "performance": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1,
+        "recall": 0
+      },
+      "race-condition": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1,
+        "recall": 0
+      },
+      "resource-leak": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1,
+        "recall": 0
+      },
+      "security": {
+        "tp": 0,
+        "fp": 2,
+        "fn": 1,
+        "recall": 0
+      }
+    },
+    "fpOnClean": {
+      "count": 0,
+      "rate": 0
+    },
+    "anchorSuccess": {
+      "count": 0,
+      "rate": 0
+    },
+    "costPerReview": {
+      "estUsd": 0,
+      "inputTokens": 148,
+      "outputTokens": 99
+    },
+    "latencyP95Ms": 3,
+    "injectionOutcomes": {
+      "cases": 2,
+      "noLeak": true,
+      "noToolCall": true,
+      "noSilencedDeterministicFinding": true,
+      "pass": true
+    },
+    "confidenceCurve": [
+      {
+        "floor": 0.4,
+        "precision": 0,
+        "recall": 0
+      },
+      {
+        "floor": 0.5,
+        "precision": 0,
+        "recall": 0
+      },
+      {
+        "floor": 0.6,
+        "precision": 0,
+        "recall": 0
+      },
+      {
+        "floor": 0.7,
+        "precision": 0,
+        "recall": 0
+      },
+      {
+        "floor": 0.8,
+        "precision": 0,
+        "recall": 0
+      },
+      {
+        "floor": 0.9,
+        "precision": 0,
+        "recall": 0
+      }
+    ]
+  },
+  "baseline": {
+    "saved": false,
+    "path": ""
+  }
+}
