@@ -1,5 +1,11 @@
 packages:
   - "apps/*"
   - "packages/*"
+# DEV-2 / RISK_REGISTER R-D1: the placeholder "esbuild: set this to true or false"
+# (PROJECT_DISCOVERY.md §4.5) is resolved deliberately. esbuild is the one
+# dependency whose install runs a postinstall (a native binary download) — allow
+# it. Unknown build scripts are denied by default (THREAT_MODEL T-09/T-16: a
+# supply-chain build-script is RCE in the trusted core). The CI supply-chain
+# gate (CI_CD.md §3 gate 12) asserts the effective allowBuilds set matches this.
 allowBuilds:
-  esbuild: set this to true or false
+  esbuild: true
