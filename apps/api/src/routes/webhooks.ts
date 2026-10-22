@@ -123,8 +123,9 @@ export function githubWebhookRoutes(
     { schema: { config: { public: true } } },
     async (req: FastifyRequest, reply: FastifyReply) => {
       // The HMAC is computed over the *raw* body (WEBHOOK_SPECIFICATION
-      // §1.1 "the raw request body"), not a re-serialized object.
-      const raw = req.rawBody ?? "";
+      // §1.1 "the raw request body"), not a re-serialized object. The
+      // raw-body parser stashes it on `req.rawBody`.
+      const raw = req.rawBody ?? JSON.stringify(req.body ?? {});
 
       const headers = {
         signature: (req.headers["x-hub-signature-256"] as string | undefined) ?? "",
