@@ -54,6 +54,13 @@ declare module "fastify" {
 // an actor, a fixed system actor names the ingress itself).
 const WEBHOOK_ACTOR = "github.webhook";
 
+// A no-queue default: a no-db, no-queue context (a a the route still
+// writes the durable review_jobs row; a the worker's re-drain picks it
+// up, a BACKUP_RESTORE §1 "a the durable row is the source of truth").
+const defaultNoopQueue: Enqueueable = {
+  enqueue: async () => ({ enqueued: false, reason: "degraded_no_redis" }),
+};
+
 export interface GithubWebhookDeps {
   /** A mocked PrismaClient for the route test (a no Postgres). */
   db?: PrismaClient;
@@ -73,9 +80,7 @@ export function githubWebhookRoutes(
   // rule, a BACKUP_RESTORE §1 "a the durable review_jobs row is the source
   // of truth").
   const db: PrismaClient = deps.db ?? new PrismaClient();
-  const queue: Enqueueable = deps.queue ?? {
-    enqueue: async () => ({ enqueued: false, reason: "degraded_no_redis" }),
-  };
+  const queue: Enqueueable = deps.queue ?? defaultNoopQueue;
   const secret = config.github.GITHUB_WEBHOOK_SECRET;
 
   async function audit(
