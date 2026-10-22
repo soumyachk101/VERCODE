@@ -634,12 +634,16 @@ async function handleInstallation(
 async function handleInstallationRepositories(
   db: PrismaClient,
   evt: InstallationRepositoriesEvent,
-  _reply: FastifyReply
+  _reply: FastifyReply,
+  ctx: { deliveryId: string }
 ): Promise<void> {
   const install = await db.githubInstall.findFirst({
     where: { githubInstallationId: String(evt.installation.id) },
   });
   if (!install) return;
+
+  // A the receipt (a the replay-dedup key, a NFR-06).
+  await writeReceipt(db, { installId: install.id, deliveryId: ctx.deliveryId, event: "installation_repositories", orgId: install.orgId });
 
   const now = new Date();
   if (evt.action === "added" && evt.repositories_added?.length) {
