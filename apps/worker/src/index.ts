@@ -10,7 +10,7 @@
 // A the dev-stack (docker-compose, TRD.md §18) runs USE_MOCK_GITHUB=true +
 // USE_MOCK_AI=true, so a the pipeline is deterministic end-to-end.
 
-import IORedis from "ioredis";
+import RedisConstructor from "ioredis";
 import type { Redis } from "ioredis";
 import { loadConfig, type AppConfig } from "@vercode/config";
 import { getPrismaClient } from "@vercode/database";

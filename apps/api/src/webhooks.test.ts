@@ -106,7 +106,7 @@ interface Seed {
   billingEvent?: BillingEvent;
 }
 
-function mockPrisma(seed: Seed = {}) {
+export function mockPrisma(seed: Seed = {}) {
   const audits: AuditEvent[] = [];
   const retentionJobs: RetentionJob[] = [];
   const billingEvents: BillingEvent[] = [seed.billingEvent as BillingEvent];
