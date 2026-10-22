@@ -333,7 +333,13 @@ async function buildBillingApp(seed: Seed = {}) {
   const { db, state } = mockPrisma(seed);
   const config = testConfig();
   const app = Fastify({ logger: false });
-  app.decorate("auth", { db, config, hashToken: () => "", argon2: null, newSessionToken: () => "" });
+  app.decorate("auth", { db, config, hashToken: () => "", argon2: undefined, newSessionToken: () => "" } as unknown as {
+    db: PrismaClient;
+    config: AppConfig;
+    hashToken: (t: string) => string;
+    argon2: typeof import("argon2");
+    newSessionToken: () => string;
+  });
   await billingWebhookRoutes(app, config);
   await app.ready();
   return { app, db, state, config };

@@ -133,8 +133,8 @@ export async function loadDurableState(db: DbClient, payload: ReviewJobPayload):
 
 export interface RunReviewOptions {
   attempt?: number;
-  /** A the prisma transaction boundary (injected so tests can record the commit). */
-  txFactory?: (fn: (tx: DbClient) => Promise<unknown>) => Promise<unknown>;
+  /** A the transaction boundary (injected so tests can record the commit). */
+  txFactory?: (fn: (tx: unknown) => Promise<unknown>) => Promise<unknown>;
 }
 
 export async function runReviewJob(
@@ -146,7 +146,7 @@ export async function runReviewJob(
   const txFactory =
     opts.txFactory ??
     ((fn: (tx: unknown) => Promise<unknown>) =>
-      db.$transaction((tx) => fn(tx as unknown) as Promise<unknown>));
+      db.$transaction((tx) => fn(tx) as Promise<unknown>));
 
   // [load the durable state] — the payload is a pointer.
   const { org, settings, repoRules } = await loadDurableState(db, payload);
@@ -706,10 +706,15 @@ async function finishSkipped(
   // terminal, recorded state. A the same transaction shape as the success
   // path (a persist-then-publish).
   await db.$transaction((tx) =>
-    upsertJob(tx, payload, "SKIPPED", {
-      skipReason,
-      usage: { inputTokens: 0, outputTokens: 0, estUsdCost: 0, model: "", promptVersion: "" },
-    })
+    upsertJob(
+      tx as unknown as DbClient,
+      payload,
+      "SKIPPED",
+      {
+        skipReason,
+        usage: { inputTokens: 0, outputTokens: 0, estUsdCost: 0, model: "", promptVersion: "" },
+      }
+    )
   );
   // A the skip notice (a NFR-18 "never silent" — a posted notice on the PR).
   try {
