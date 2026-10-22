@@ -146,8 +146,9 @@ export async function runReviewJob(
   // [load the durable state] — the payload is a pointer.
   const { org, settings, repoRules } = await loadDurableState(db, payload);
 
-  // The org's confidence floor (an org-level override row; the platform
-  // default 0.6 when unset).
+  // A the org's confidence floor (an org-level override row; the platform
+  // default 0.6 when unset, TRD.md "confidence floor 0.6 default from
+  // org_settings").
   const confidenceFloor =
     settings?.confidenceFloor != null ? Number(settings.confidenceFloor) : 0.6;
 
