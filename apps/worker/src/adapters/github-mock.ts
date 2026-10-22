@@ -15,7 +15,7 @@ import {
   type GithubDiffClient,
   type PRDiff,
 } from "@vercode/github";
-import type { GithubPublisher } from "./config.js";
+import type { GithubPublisher } from "../config.js";
 
 // ---------------------------------------------------------------------------
 // The mock diff client — reads a fixture per (repoFullName, prNumber, headSha).
@@ -25,7 +25,7 @@ export interface MockGithubDeps {
   /** The fixtures directory (tests/fixtures by default). */
   fixturesDir?: string;
   /** The PR metadata to attach to the fixture diff (defaults to sensible). */
-  prMetadata?: Partial<Record<number, { title: string; baseRef: string; author?: string }>>;
+  prMetadata?: Partial<Record<number, { title?: string; baseRef?: string; author?: string }>>;
 }
 
 export function makeMockGithubClient(deps: MockGithubDeps = {}): GithubDiffClient {

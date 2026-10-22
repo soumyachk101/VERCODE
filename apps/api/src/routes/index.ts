@@ -9,7 +9,6 @@ import { accountRoutes } from "./account.js";
 import { orgRoutes } from "./orgs.js";
 import { githubRoutes } from "./github.js";
 import { healthRoutes } from "./health.js";
-
 import { githubWebhookRoutes } from "./webhooks.js";
 import { billingWebhookRoutes } from "./billing-webhook.js";
 import { BullQueue, type Enqueueable } from "../queue.js";
@@ -21,21 +20,23 @@ export function registerRoutes(app: FastifyInstance, config: AppConfig) {
   app.register(orgRoutes, { prefix: "/orgs" });
   app.register(githubRoutes, { prefix: "/orgs" });
 
-  // A the webhook ingress (a the public, a signature-verified, a
-  // idempotent entry points; a WEBHOOK_SPECIFICATION §3 "a the two public,
-  // a non-session ingress routes"). A the GitHub route takes the queue as a
-  // a dep (a a BullQueue — a ioredis + a bullmq; a it degrades to a no-op
-  // enqueue + a warning when a the REDIS_URL is unreachable in the
-  // dev-stack, a so the ingress stays up). A the test injects a in-memory
-  // queue instead.
+  // The webhook ingress (the two public, non-session routes,
+  // WEBHOOK_SPECIFICATION §3). The GitHub route gets the BullQueue — it
+  // degrades to a no-op enqueue + a warning when the REDIS_URL is
+  // unreachable (the dev-stack rule, NFR-04 "a queue outage must not 5xx
+  // the ingress"); the durable review_jobs row is the source of truth
+  // (the worker's re-drain picks it up, BACKUP_RESTORE §1).
   const queue: Enqueueable = new BullQueue({
     name: "review-queue",
     redisUrl: config.core.REDIS_URL,
-    logger: { warn: (m: string) => (app.log?.warn ? app.log.warn(m) : console.warn(m)) },
+    logger: { warn: (m: string) => (app.log ? app.log.warn(m) : console.warn(m)) },
   });
   const githubWebhooksPlugin = async (a: FastifyInstance) => {
-    await githubWebhookRoutes(a, config, { db: a.auth.db, queue });
+    githubWebhookRoutes(a, config, { db: a.auth.db, queue });
   };
   app.register(githubWebhooksPlugin, { prefix: "/webhooks" });
-  app.register(billingWebhookRoutes, { prefix: "/webhooks" });
+  const billingWebhooksPlugin = async (a: FastifyInstance) => {
+    await billingWebhookRoutes(a, config);
+  };
+  app.register(billingWebhooksPlugin, { prefix: "/webhooks" });
 }
