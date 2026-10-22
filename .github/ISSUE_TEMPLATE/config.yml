@@ -1,0 +1,26 @@
+# Repository-wide issue templates for VERCODE.
+#
+# - bug_report.md        → reproducible problem
+# - feature_request.md   → roadmap-scope suggestion
+# - security_report.md   → private disclosure (preferred via GitHub private
+#                          advisory or the channel in SECURITY.md)
+#
+# Anything that is a security vulnerability MUST NOT be a public issue —
+# use the security channel (see SECURITY.md).
+
+blank_issues_enabled: true
+
+contact_links:
+  - name: Security vulnerability
+    description: >-
+      Please do not open a public issue for a security problem. Follow the
+      reporting process in SECURITY.md (GitHub private advisory is preferred).
+    about: Report a security vulnerability in VERCODE
+    url: https://github.com/soumyachk101/VERCODE/security/advisories/new
+
+  - name: Documentation question
+    description: >-
+      The docs/ package is the manual. If you can't find an answer, open a
+      normal issue and we'll route it to the right doc owner.
+    about: Ask a question about the docs or the architecture
+    url: https://github.com/soumyachk101/VERCODE/issues/new

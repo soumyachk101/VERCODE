@@ -1,0 +1,76 @@
+# ---------------------------------------------------------------------------
+# VERCODE worker image (DEPLOYMENT §1 "the worker is the BullMQ consumer +
+# the review pipeline; it scales on queue depth"; §2 the multi-stage
+# install → build → runtime rule; §3 "no secret in a layer").
+#
+# Same shape as the api image: deps → build → runtime. The worker reads the
+# review queue from Redis and persists to Postgres; its only inbound surface
+# is the queue (no HTTP port, no EXPOSE). The SIGTERM drain (NFR-15,
+# ERROR_HANDLING §8) is built into the process — a compose/k8s stop sends a
+# SIGTERM and the drain runs before the grace timeout.
+#
+# Build (from the repo root):
+#   docker build -f infra/docker/Dockerfile.worker -t vercode/worker .
+# ---------------------------------------------------------------------------
+
+# --- deps ------------------------------------------------------------------
+FROM node:22-slim AS deps
+RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
+WORKDIR /repo
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
+COPY apps/api/package.json apps/api/
+COPY apps/worker/package.json apps/worker/
+COPY packages/contracts/package.json packages/contracts/
+COPY packages/config/package.json packages/config/
+COPY packages/database/package.json packages/database/
+COPY packages/github/package.json packages/github/
+COPY packages/diff-engine/package.json packages/diff-engine/
+COPY packages/static-analysis/package.json packages/static-analysis/
+COPY packages/review-engine/package.json packages/review-engine/
+COPY packages/ai-providers/package.json packages/ai-providers/
+COPY packages/billing/package.json packages/billing/
+RUN pnpm install --frozen-lockfile
+
+# --- build -----------------------------------------------------------------
+FROM deps AS build
+COPY . .
+RUN pnpm --filter @vercode/database exec prisma generate && pnpm --filter @vercode/worker typecheck
+
+# --- runtime ----------------------------------------------------------------
+FROM node:22-slim AS runtime
+ENV NODE_ENV=production
+RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
+WORKDIR /repo
+COPY --from=deps /repo/node_modules ./node_modules
+COPY --from=deps /repo/apps/worker/node_modules ./apps/worker/node_modules
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.base.json ./
+COPY apps/api/package.json apps/api/
+COPY apps/worker/package.json apps/worker/
+COPY packages/contracts/package.json packages/contracts/
+COPY packages/config/package.json packages/config/
+COPY packages/database/package.json packages/database/
+COPY packages/github/package.json packages/github/
+COPY packages/diff-engine/package.json packages/diff-engine/
+COPY packages/static-analysis/package.json packages/static-analysis/
+COPY packages/review-engine/package.json packages/review-engine/
+COPY packages/ai-providers/package.json packages/ai-providers/
+COPY packages/billing/package.json packages/billing/
+COPY apps/worker apps/worker
+COPY packages/contracts packages/contracts
+COPY packages/config packages/config
+COPY packages/database packages/database
+COPY packages/github packages/github
+COPY packages/diff-engine packages/diff-engine
+COPY packages/static-analysis packages/static-analysis
+COPY packages/review-engine packages/review-engine
+COPY packages/ai-providers packages/ai-providers
+COPY packages/billing packages/billing
+# A the diff fixtures the mock GitHub client reads (USE_MOCK_GITHUB=true,
+# the Compose dev-stack path, TRD §18) — a fixture, not a secret.
+COPY apps/worker/tests apps/worker/tests
+# A non-root user.
+RUN useradd -m -u 10001 vercode
+USER vercode
+# No EXPOSE (a the worker has no inbound port; the SIGTERM drain, NFR-15, is
+# the lifecycle contract).
+CMD ["node", "node_modules/.bin/tsx", "apps/worker/src/index.ts"]

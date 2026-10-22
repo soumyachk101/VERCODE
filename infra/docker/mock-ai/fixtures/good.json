@@ -1,0 +1,16 @@
+{
+  "findings": [
+    {
+      "id": "mock-finding-001",
+      "file": "src/db/queries.ts",
+      "line": 14,
+      "severity": "high",
+      "category": "security",
+      "title": "SQL string concatenation in findUserById",
+      "description": "User-controlled input is concatenated directly into a SQL string. Use a parameterized query instead.",
+      "suggestedFix": "Pass the value as a bind parameter: db.query('SELECT * FROM users WHERE id = ?', [id])",
+      "confidence": 0.9,
+      "promptVersion": "mock-v1"
+    }
+  ]
+}

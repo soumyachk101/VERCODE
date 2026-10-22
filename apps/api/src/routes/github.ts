@@ -35,7 +35,6 @@ export async function githubRoutes(app: FastifyInstance) {
     { schema: { config: { capability: "integrations.manage" } } },
     async (req, reply) => {
       const { id } = req.params as { id: string };
-      const config = app.auth.config;
       // The App's marketplace install URL (a GitHub-hosted, a pre-scoped).
       const url = `https://github.com/apps/vercode/installations/new`;
       await app.auth.db.auditEvent.create({

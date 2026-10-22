@@ -1,0 +1,86 @@
+# ---------------------------------------------------------------------------
+# VERCODE api image (DEPLOYMENT §1 "the api is a Fastify deployable"; §2
+# the multi-stage install → build → runtime rule; §3 "no secret in a layer").
+#
+# Stage 1 (deps): the pnpm workspace install. The build context is the repo
+# root so pnpm can link the workspace packages.
+# Stage 2 (build): typecheck + the generated Prisma client — a broken build
+# never reaches the runtime stage.
+# Stage 3 (runtime): a slim runtime that carries only what the server needs.
+#
+# NO SECRET IN A LAYER (SECRETS_MANAGEMENT §4): every credential is a
+# deploy-time env (the platform secret store, DEPLOYMENT §3); the image is a
+# pure build artifact. A KMS-wrapped key (the GitHub App private key) is
+# decrypted in-process at boot, never copied into the image.
+#
+# Build (from the repo root):
+#   docker build -f infra/docker/Dockerfile.api -t vercode/api .
+# ---------------------------------------------------------------------------
+
+# --- deps ------------------------------------------------------------------
+FROM node:22-slim AS deps
+# pnpm via corepack (the workspace's packageManager).
+RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
+WORKDIR /repo
+# Lockfile + manifests first (a layer-cache break only when they change,
+# the standard pnpm monorepo build pattern).
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
+COPY apps/api/package.json apps/api/
+COPY apps/worker/package.json apps/worker/
+COPY packages/contracts/package.json packages/contracts/
+COPY packages/config/package.json packages/config/
+COPY packages/database/package.json packages/database/
+COPY packages/github/package.json packages/github/
+COPY packages/diff-engine/package.json packages/diff-engine/
+COPY packages/static-analysis/package.json packages/static-analysis/
+COPY packages/review-engine/package.json packages/review-engine/
+COPY packages/ai-providers/package.json packages/ai-providers/
+COPY packages/billing/package.json packages/billing/
+RUN pnpm install --frozen-lockfile
+
+# --- build -----------------------------------------------------------------
+FROM deps AS build
+# The whole source (the TS packages are source-linked: each package.json
+# points at ./src, so the "build" is a typecheck + a generated artifact).
+COPY . .
+RUN pnpm --filter @vercode/database exec prisma generate && pnpm --filter @vercode/api typecheck
+
+# --- runtime ----------------------------------------------------------------
+FROM node:22-slim AS runtime
+ENV NODE_ENV=production
+RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
+WORKDIR /repo
+COPY --from=deps /repo/node_modules ./node_modules
+COPY --from=deps /repo/apps/api/node_modules ./apps/api/node_modules
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.base.json ./
+COPY apps/api/package.json apps/api/
+COPY apps/worker/package.json apps/worker/
+COPY packages/contracts/package.json packages/contracts/
+COPY packages/config/package.json packages/config/
+COPY packages/database/package.json packages/database/
+COPY packages/github/package.json packages/github/
+COPY packages/diff-engine/package.json packages/diff-engine/
+COPY packages/static-analysis/package.json packages/static-analysis/
+COPY packages/review-engine/package.json packages/review-engine/
+COPY packages/ai-providers/package.json packages/ai-providers/
+COPY packages/billing/package.json packages/billing/
+COPY apps/api apps/api
+COPY packages/contracts packages/contracts
+COPY packages/config packages/config
+COPY packages/database packages/database
+COPY packages/github packages/github
+COPY packages/diff-engine packages/diff-engine
+COPY packages/static-analysis packages/static-analysis
+COPY packages/review-engine packages/review-engine
+COPY packages/ai-providers packages/ai-providers
+COPY packages/billing packages/billing
+# A non-root user (the container never needs to be root to serve).
+RUN useradd -m -u 10001 vercode
+USER vercode
+EXPOSE 4000
+# A health + a readiness probe (NFR-23, DEPLOYMENT §5).
+HEALTHCHECK --interval=15s --timeout=5s --retries=5 \
+  CMD node -e "fetch('http://127.0.0.1:4000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+# The server runs via tsx (a source-linked workspace — no separate bundle
+# step; the typecheck in the build stage is the gate).
+CMD ["node", "node_modules/.bin/tsx", "apps/api/src/main.ts"]

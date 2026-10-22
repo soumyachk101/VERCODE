@@ -53,6 +53,7 @@ model Organization {
   memberships  Membership[]
   invitations  Invitation[]
   installs     GithubInstall[]
+  repos        GithubRepo[]
   settings     OrgSettings[]
   byokKeys     BYOKKey[]
   billing      OrgBilling?
@@ -454,7 +455,7 @@ model AuditEvent {
 model RetentionJob {
   id         String   @id @default(cuid())
   orgId      String   @map("org_id")
-  kind       String   // "repo_content_purge" | "findings_expire" | "audit_expire" | "usage_expire"
+  kind       String   // "repo_content_purge" | "install_content_purge" | "findings_expire" | "audit_expire" | "usage_expire"
   target     String   // repo_id / job_id / scope descriptor
   runAt      DateTime @map("run_at")
   status     RetStatus @default(PENDING)

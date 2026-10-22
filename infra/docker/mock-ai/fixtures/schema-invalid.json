@@ -1,0 +1,14 @@
+{
+  "findings": [
+    {
+      "id": "mock-invalid-001",
+      "file": "src/db/queries.ts",
+      "line": 14,
+      "severity": "high",
+      "category": "not-a-real-category",
+      "title": "A finding with an invalid category",
+      "description": "This object fails Zod schema validation (out-of-enum category + confidence > 1).",
+      "confidence": 1.5
+    }
+  ]
+}

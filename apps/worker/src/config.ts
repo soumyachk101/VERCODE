@@ -1,23 +1,40 @@
-// The worker's process config (M5 T5.1). The *env* comes from @vercode/config
-// (loadConfig is the only reader of env — ENVIRONMENT_VARIABLES.md §9); this
-// module derives the worker-specific values + carries the runtime seams (the
-// injected diff client, publisher, providers) so the pipeline is testable
-// without a live Redis/Postgres/GitHub.
+// The worker's process config (M5 T5.1, TRD.md §7; NFR-13/14/15/17).
 //
-// The diff parse + anchor resolution + static analysis come straight from the
-// M4 packages (@vercode/diff-engine, @vercode/static-analysis). The only
-// remaining local seam is the AI provider (src/adapters/local.ts stands in
-// for @vercode/ai-providers until it lands).
+// The *env* comes from @vercode/config (loadConfig is the only reader of env —
+// ENVIRONMENT_VARIABLES.md §9 "a variable not in the doc doesn't exist"). This
+// module derives the worker-specific values + carries the runtime seams (the
+// injected diff client, publisher, AI providers, policy state) so the
+// pipeline is testable without a live Redis/Postgres/GitHub.
+//
+// Job payload shape (TRD.md §7): `{ jobId, orgId, repoId, prNumber,
+// commitSha }` — a POINTER ONLY (SERVICE_BOUNDARIES.md "the job payload never
+// carries authorization; it's a pointer"). The worker re-reads the
+// org/repo/quota state from Postgres; a payload field authorizes nothing.
 
 import type { AppConfig } from "@vercode/config";
-import type { ChangeSet } from "@vercode/diff-engine";
+import type {
+  AIProvider,
+  OrgContext,
+  ReviewTask,
+} from "@vercode/ai-providers";
 import type { DbClient } from "@vercode/database";
+import type { GithubDiffClient } from "@vercode/github";
 
 // ---------------------------------------------------------------------------
-// The job payloads — pointers ONLY (SERVICE_BOUNDARIES.md "the job payload
-// never carries authorization; it's a pointer"). The worker re-reads the
-// org/repo/quota state from Postgres; a payload field is trusted for
-// *nothing* it authorizes.
+// The queue names (TRD.md §7; the api's enqueue side uses the same strings).
+// ---------------------------------------------------------------------------
+
+export const QUEUES = {
+  review: "review-queue",
+  retention: "retention-queue",
+  billing: "billing-queue",
+  deadLetter: "review-dead-letter",
+} as const;
+export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
+
+// ---------------------------------------------------------------------------
+// The job payloads — pointers ONLY (SERVICE_BOUNDARIES.md "never trust the
+// payload for authz"; NFR-13 the idempotency key).
 // ---------------------------------------------------------------------------
 
 export interface ReviewJobPayload {
@@ -41,68 +58,19 @@ export interface BillingJobPayload {
 }
 
 // ---------------------------------------------------------------------------
-// The AI provider interface (the @vercode/ai-providers seam, TRD.md §9).
-// The M4 package lands the OpenAI/Anthropic/Ollama/mock adapters; this is the
-// shape they implement. The local adapter implementing it lives in
-// src/adapters/local.ts until that package is merged.
-// ---------------------------------------------------------------------------
-
-export interface AiFinding {
-  file: string;
-  line: number;
-  severity: "low" | "medium" | "high" | "critical";
-  category: string;
-  title: string;
-  description: string;
-  suggestedFix?: string;
-  confidence: number;
-}
-
-export interface AiCompleteInput {
-  task: string;
-  /** The changed files in scope (bounded context, FR-401). */
-  files: Array<{ path: string; language: string }>;
-  changedLines: number;
-  schemaNote?: string;
-}
-
-export interface AiCompleteResult {
-  findings: AiFinding[];
-  inputTokens: number;
-  outputTokens: number;
-  estUsdCost: number;
-  model: string;
-  promptVersion: string;
-}
-
-export interface AiProvider {
-  readonly name: string;
-  /** Bounded: the caller retries up to 2× + falls back once (TRD.md §9). */
-  completeStructured(input: AiCompleteInput): Promise<AiCompleteResult>;
-}
-
-/**
- * A provider factory: the pipeline constructs the provider per-review with
- * the parsed change set in hand (the mock provider anchors its deterministic
- * findings to the diff's added lines; the real @vercode/ai-providers adapters
- * route by task + org context instead).
- */
-export type AiProviderFactory = (changeSet: ChangeSet) => AiProvider;
-
-// ---------------------------------------------------------------------------
-// The GitHub publisher (the INTEGRATION_DESIGN.md §1.6 seam). A mock records
-// publishes in-memory / to a JSON file (dev); the Octokit publisher is a
-// later leaf behind this interface.
+// The GitHub publisher (the INTEGRATION_DESIGN.md §1.6 seam).
+//
+// A mock records publishes in-memory (dev); the Octokit publisher (the
+// `publishReview` in @vercode/github, TRD.md §10 "create a review + add the
+// inline review comments") is a later leaf behind this interface.
+//
+// A failed publish does NOT roll back the persisted findings (the
+// persist-then-publish invariant, ERROR_HANDLING.md §6). The returned id is
+// stored on the job; a retried publish that finds the stored id no-ops
+// (NFR-13, TRD.md §12 "a published review id stored per job").
 // ---------------------------------------------------------------------------
 
 export interface GithubPublisher {
-  /**
-   * Publish the review: one summary comment (event COMMENT, MVP — no
-   * blocking) + the validated inline comments. Returns the created
-   * review id (stored on the job; a retried publish that finds the stored
-   * id no-ops, NFR-13). A failure here does NOT roll back the persisted
-   * findings (ERROR_HANDLING.md §6 "persist-then-publish").
-   */
   publish(params: {
     repoId: string;
     repoFullName: string;
@@ -119,6 +87,24 @@ export interface GithubPublisher {
 }
 
 // ---------------------------------------------------------------------------
+// The policy-engine state (TASK_BREAKDOWN T4.5; REVIEW_ENGINE_SPEC §2
+// stages [10]/[11]).
+//
+// `@vercode/policy-engine` is not merged yet, so the floor + suppression
+// values are re-read from durable state at run time (org_settings +
+// repo_rules, orgId-scoped — the same rows the future package would read).
+// The application functions live in `src/jobs/policy.ts` (pure + unit
+// tested), and a policy-engine adapter is a later leaf.
+// ---------------------------------------------------------------------------
+
+export interface PolicyState {
+  /** The AI-finding confidence floor (default 0.6; static findings exempt). */
+  confidenceFloor: number;
+  /** Categories suppressed for this repo (per-repo + per-org merge). */
+  suppressCategories: string[];
+}
+
+// ---------------------------------------------------------------------------
 // The composition root — everything the pipeline needs, injected.
 // ---------------------------------------------------------------------------
 
@@ -126,34 +112,42 @@ export interface WorkerDeps {
   db: DbClient;
   redis: import("ioredis").Redis;
   /** The diff fetch (the GithubDiffClient seam — the mock in dev). */
-  github: import("@vercode/github").GithubDiffClient;
+  github: GithubDiffClient;
   /**
-   * The AI provider factories, in fallback order [primary, secondary]
-   * (TRD.md §9 "bounded retry, then fall back to the configured secondary
-   * provider — one switch").
+   * The task → provider map (the @vercode/ai-providers seam, TRD.md §9).
+   *   "risk-triage"     → cheap
+   *   "deep-review"     → strong
+   *   "security-review" → strong
+   *   "summary"         → cheap (or deterministic when absent)
+   *
+   * A provider failure is bounded-retried by @vercode/ai-providers'
+   * `runWithRetry` (the primary + one fallback switch); a stage that still
+   * fails → the job is `partial`, the deterministic findings still publish
+   * (ADR-005, ERROR_HANDLING.md §5).
    */
-  aiProviderFactories: AiProviderFactory[];
+  aiProviders: Partial<Record<ReviewTask, AIProvider>>;
+  /** The org's routing context (the plan tier + a optional model overrides). */
+  orgContext?: OrgContext;
   /** The GitHub publisher (a mock records publishes in dev). */
   publisher: GithubPublisher;
-  /** The provider to use first (config.ai.AI_DEFAULT_PROVIDER / org_settings.provider). */
-  providerPreference?: string;
+  /**
+   * The confidence floor (config.limits.DEFAULT_CONFIDENCE_FLOOR, the
+   * platform default; an org-level override comes from org_settings,
+   * re-read per run — the worker never trusts the payload for it).
+   */
+  confidenceFloor: number;
+  /** A prompt-version label recorded on findings + the usage event. */
+  promptVersion: string;
 }
 
 export interface WorkerOptions {
+  /** NFR-17: the per-instance concurrency (default 4, WORKER_CONCURRENCY). */
   concurrency: number;
+  /** NFR-14: the retry cap (default 3, QUEUE_MAX_ATTEMPTS). */
   maxAttempts: number;
-  /** The SIGTERM drain budget (NFR-15, 60 s). */
+  /** NFR-15: the SIGTERM drain budget (60 s). */
   drainBudgetMs: number;
 }
-
-// The queue names (TRD.md §7; the api's enqueue side uses the same strings).
-export const QUEUES = {
-  review: "review-queue",
-  retention: "retention-queue",
-  billing: "billing-queue",
-  deadLetter: "review-dead-letter",
-} as const;
-export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
 
 /** The in-flight lock key (REVIEW_ENGINE_SPEC §5 "Redis SET NX on lock:{key}"). */
 export function inFlightLockKey(
@@ -165,10 +159,12 @@ export function inFlightLockKey(
   return `lock:${orgId}:${repoId}:${prNumber}:${commitSha}`;
 }
 
+/** Derive the worker options from the typed config (the only env reader). */
 export function workerOptsFromConfig(config: AppConfig): WorkerOptions {
   return {
     // NFR-17: the per-instance concurrency (default 4, env-overridable).
     concurrency: Math.max(1, Math.round(config.limits.WORKER_CONCURRENCY)),
+    // NFR-14: the bounded retry cap (default 3).
     maxAttempts: Math.max(1, Math.round(config.limits.QUEUE_MAX_ATTEMPTS)),
     // NFR-15: the 60 s drain budget.
     drainBudgetMs: 60_000,

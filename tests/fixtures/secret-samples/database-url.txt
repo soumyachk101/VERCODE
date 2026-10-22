@@ -1,0 +1,1 @@
+DATABASE_URL=postgres://vercode:s3cr3tPassw0rd@db.internal:5432/vercode?sslmode=require

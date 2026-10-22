@@ -8,7 +8,6 @@
 // org_id filter does not exist in this surface.
 
 import { Prisma, PrismaClient, Role } from "@prisma/client";
-import type { Role as ContractRole } from "@vercode/contracts";
 
 export type DbClient = PrismaClient;
 // The DB role enum (uppercase) is the Prisma `Role`; the contracts role
