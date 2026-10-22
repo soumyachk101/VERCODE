@@ -1,136 +1,168 @@
-// The BullQueue wrapper (a ioredis + a bullmq). The dev-stack runs without a
-// live Redis (a REDIS_URL is unreachable) — this degrades to a no-op enqueue +
-// a warning log so the api stays up (a NFR-04 "the webhook ingress is
-// constant-latency; a queue outage must not 5xx the ingress").
+// The BullQueue wrapper (ioredis + bullmq) — M3's enqueue seam.
 //
-// The job *payload* is ONLY a pointer (`jobId` + a few correlation fields).
-// The worker re-reads durable state (org, quota, settings) — it never trusts
-// the payload for authz (SERVICE_BOUNDARIES.md §worker "Must NOT: trust job
-// payload for authorization").
+// The api only *enqueues* (SERVICE_BOUNDARIES "the api does not run the
+// pipeline; it only enqueues"). The job *payload* carries ONLY a `jobId`
+// pointer + correlation fields — the worker re-reads durable state and never
+// trusts the payload for authz (SERVICE_BOUNDARIES "a job payload is a
+// pointer, not an authority").
+//
+// Dev-stack: REDIS_URL may be unreachable (the Compose stack is up without a
+// live Redis). A connect failure → the queue degrades to a no-op enqueue + a
+// warning log (a NFR-04 "the ingress is constant-latency; a queue outage
+// must not 5xx the ingress" + a "a queue loss is a re-drain from the DB",
+// BACKUP_RESTORE §1 — the durable `review_jobs` row is the source of truth).
+//
+// No secret ever reaches a log line (SECRETS_MANAGEMENT §5 / a the redaction
+// gate): a log carries the `jobId` + a correlation ids only.
 
-import type { Queue, Job } from "bullmq";
-import type { Redis } from "ioredis";
-import IORedis from "ioredis";
-import { Queue as BullQueue } from "bullmq";
+import IORedis, { type RedisOptions } from "ioredis";
+import { Queue } from "bullmq";
 
-// The queue names (the worker consumes these, a T5.1).
+// The queue names (the worker consumes these, T5.1: `review-queue` +
+// `retention-queue` + a `billing-queue`).
 export const REVIEW_QUEUE = "review-queue";
 export const RETENTION_QUEUE = "retention-queue";
 export const BILLING_QUEUE = "billing-queue";
 
-// The review-job payload shape (a ONLY a pointer + a correlation fields).
+// The review-job payload (a ONLY the pointer + a correlation — no diff, no
+// findings, no authz material, a NFR-04 "no LLM on the webhook path").
 export interface ReviewJobPayload {
-  /** The durable id the worker re-reads (a the sole authz pointer). */
+  /** The durable review_jobs id the worker re-reads (a the authz pointer). */
   jobId: string;
-  /** Correlation (a observability, not authz). */
+  /** Correlation (a observability, OBSERVABILITY §2 "the trace id = the job_id"). */
   orgId: string;
   repoId: string;
   prNumber: number;
   commitSha: string;
-  /** The receipt's correlation id (a the trace, a OBSERVABILITY §2). */
+  /** The receipt's delivery id (a the replay-dedup key, a log correlation). */
   deliveryId?: string;
 }
 
-/**
- * The queue facade. In dev + REDIS unreachable the `enqueue` no-ops with a
- * warning (a the ingress path must not block / 5xx on a queue outage).
- *
- * `redisUrl` is a required *string* (a REDIS_URL from the config). The
- * constructor tries to build a live connection; a connection *failure*
- * (a a unreachable host) doesn't throw at construction time — BullMQ lazy
- * -connects. So we track whether Redis is reachable + expose an `isDegraded`
- * flag so callers can choose.
- */
 export interface EnqueueResult {
+  /** Whether the job reached the queue. A degraded enqueue is a not-enqueued
+   *   no-op (a the durable row is already written; a the re-drain is the
+   *   worker's job, BACKUP_RESTORE §1). */
   enqueued: boolean;
-  /** The BullMQ job id (a undefined when degraded). */
+  /** The BullMQ job id (a only when actually enqueued). */
   id?: string;
-  reason?: "degraded_no_redis" | "noop";
+  /** Why it wasn't enqueued (a the degrade reason, a log + a audit). */
+  reason?: "degraded_no_redis";
 }
 
-export class BullQueue {
-  private readonly queue: Queue | null;
-  /** A no-redis degrade flag (a dev-stack without a live Redis). */
-  degraded: boolean;
-  private readonly log: (...args: unknown[]) => void;
+// The generic enqueue surface the route + the test seam share (a the
+// in-memory queue implements this exact shape, so the route type-checks
+// against either).
+export interface Enqueueable {
+  enqueue(payload: Record<string, unknown>, opts?: Record<string, unknown>): Promise<EnqueueResult>;
+}
 
-  constructor(
-    opts: {
-      name?: string;
-      redisUrl?: string;
-      logger?: { warn(...a: unknown[]): void; info(...a: unknown[]): void };
-    } = {}
-  ) {
-    const name = opts.name ?? REVIEW_QUEUE;
-    const redisUrl = opts.redisUrl;
-    this.log =
-      opts.logger?.warn ??
-      ((...a: unknown[]) => {
-        console.warn("[queue]", ...a);
-      });
+export class BullQueue implements Enqueueable {
+  private queue: Queue | null = null;
+  /** A connect failure → degraded (a no-op enqueue + a warning). */
+  private degraded = false;
+  private readonly logWarn: (msg: string) => void;
+  private readonly ready: Promise<void>;
+  readonly name: string;
 
-    // A BullMQ needs a connection. When REDIS_URL is absent / unreachable in
-    // the dev-stack we degrade (a no-op enqueue + a warning), a not a crash.
-    if (redisUrl) {
-      // A lazy connection: BullMQ queues connect on first use. We attempt an
-      // eager readiness probe; a failure → degrade. The ioredis import is
-      // a side-effect on module load only (a no network at import time).
-      this.queue = new BullQueue(name, redisUrl, {
-        removeOnComplete: 50,
-        removeOnFail: 100,
-        // A dev-stack has no live worker; a job that's never drained is a
-        // not-a-DoS (a the worker in prod drains it).
-      });
-      this.degraded = false;
-    } else {
-      this.queue = null;
+  constructor(opts: {
+    name?: string;
+    redisUrl: string;
+    /** A optional logger (defaults to a console.warn — a the route injects
+     *   the Fastify logger so a enqueue warning is in the structured log). */
+    logger?: { warn(msg: string): void };
+  }) {
+    this.name = opts.name ?? REVIEW_QUEUE;
+    this.logWarn = opts.logger?.warn.bind(opts.logger) ?? ((m) => console.warn(m));
+
+    // A the connect probe: a try to ping with a bounded timeout. A failure
+    // (a ECONNREFUSED / a unreachable host) → degraded (a no crash, a the
+    // ingress stays up). A ping succeeds → build the real Queue.
+    this.ready = this.probeAndBuild(opts.redisUrl).catch((err: unknown) => {
       this.degraded = true;
-      this.log("queue", name, "is degraded (a no REDIS_URL): a enqueue is a no-op");
+      this.logWarn(`[queue ${this.name}] redis unreachable (${(err as Error).message}); enqueues are no-ops`);
+      return;
+    });
+  }
+
+  private async probeAndBuild(redisUrl: string): Promise<void> {
+    const conn = new IORedis(redisUrl, {
+      lazyConnect: true,
+      maxRetriesPerRequest: 1,
+      enableOfflineQueue: false,
+    } as Partial<RedisOptions>);
+    try {
+      await conn.connect();
+      const pong = await Promise.race([
+        conn.ping(),
+        new Promise((_, rej) => setTimeout(() => rej(new Error("ping timeout")), 2000)),
+      ]);
+      if (pong !== "PONG") throw new Error("unexpected ping response");
+      this.queue = new Queue(this.name, { connection: conn, defaultJobOptions: { removeOnComplete: 1000, removeOnFail: 5000 } });
+    } catch (err) {
+      // A the probe failed: a close the conn, a the caller (the `catch` on
+      // `ready`) marks us degraded.
+      await conn.quit().catch(() => {});
+      throw err;
     }
   }
 
   /**
-   * Enqueue a job. When degraded (a no live Redis) this is a no-op + a
-   * warning (a NFR-04 "the ingress must not 5xx on a queue outage").
+   * Enqueue a job. Awaited once so the probe's result is known before we
+   * decide (a the first enqueue blocks until the probe settles — a subsequent
+   * enqueues are O(1)). A degraded queue no-ops + a warns.
    */
-  async enqueue(payload: Record<string, unknown>, opts?: Record<string, unknown>): Promise<EnqueueResult> {
-    if (!this.queue) {
-      // A the no-op degrade path. The warning carries NO payload fields
-      // (a secrets / PII never in a log, a redaction).
-      this.log("enqueue no-op (a degraded, a no live Redis):", payload.jobId ?? "(no jobId)");
+  async enqueue(payload: Record<string, unknown>, _opts?: Record<string, unknown>): Promise<EnqueueResult> {
+    await this.ready;
+    if (this.degraded || !this.queue) {
+      // A the log carries ONLY the jobId (a a correlation id, a not a
+      // secret). The payload diff/contents are NOT logged.
+      this.logWarn(`[queue ${this.name}] no-op enqueue: jobId=${payload.jobId ?? "(none)"}`);
       return { enqueued: false, reason: "degraded_no_redis" };
     }
-    const job = await this.queue.add(payload, opts);
+    const job = await this.queue.add(payload as never, _opts as never);
     return { enqueued: true, id: job.id ?? undefined };
   }
 
-  /** A typed helper for the review queue. */
+  /** A typed review-job enqueue (a the route's convenience). */
   async enqueueReviewJob(payload: ReviewJobPayload): Promise<EnqueueResult> {
-    return this.enqueue(payload as unknown as Record<string, unknown>, {
-      attempts: 3,
-      backoff: { type: "exponential", delay: 1000 },
-    });
+    return this.enqueue(
+      {
+        jobId: payload.jobId,
+        orgId: payload.orgId,
+        repoId: payload.repoId,
+        prNumber: payload.prNumber,
+        commitSha: payload.commitSha,
+        ...(payload.deliveryId ? { deliveryId: payload.deliveryId } : {}),
+      },
+      { attempts: 3, backoff: { type: "exponential", delay: 1000 } }
+    );
   }
 
-  /** The close (a the api's graceful shutdown). */
+  /** A whether the queue is in the degraded no-op state. */
+  isDegraded(): boolean {
+    return this.degraded;
+  }
+
+  /** A the graceful shutdown (a close the queue + a the underlying conn). */
   async close(): Promise<void> {
-    if (this.queue) await this.queue.close();
-  }
-
-  // A the export + a re-export so the worker + the test can construct a real
-  // or a fake connection.
-  static createFromRedis(
-    connection: Redis,
-    name: string = REVIEW_QUEUE
-  ): Queue {
-    return new BullQueue(name, { connection });
+    if (this.queue) {
+      await this.queue.close();
+      await this.queue.client?.quit().catch(() => {});
+    }
   }
 }
 
-// A in-memory fake for the route test (a the "in-memory queue" seam).
-export interface InMemoryQueue {
+// ---------------------------------------------------------------------------
+// The in-memory fake (a the "in-memory queue" test seam). The route type-
+// checks against `Enqueueable`; the fake records every enqueue so a test can
+// assert "a opened event → 202 + a queued job" and "a forged → no queue
+// write".
+// ---------------------------------------------------------------------------
+
+export interface InMemoryQueue extends Enqueueable {
   readonly enqueued: Array<{ payload: Record<string, unknown>; opts?: Record<string, unknown> }>;
-  enqueue(payload: Record<string, unknown>, opts?: Record<string, unknown>): Promise<EnqueueResult>;
+  /** A convenience: the enqueued review payloads (a typed view). */
+  reviewJobs(): ReviewJobPayload[];
 }
 
 export function createInMemoryQueue(): InMemoryQueue {
@@ -139,15 +171,14 @@ export function createInMemoryQueue(): InMemoryQueue {
     enqueued,
     async enqueue(payload, opts) {
       enqueued.push({ payload, opts });
-      return { enqueued: true, reason: "noop" };
+      return { enqueued: true, id: `mem-${enqueued.length}` };
+    },
+    reviewJobs() {
+      return enqueued.map((e) => e.payload as unknown as ReviewJobPayload);
     },
   };
 }
 
-// A the export for the route (a the queue interface the route enqueues to).
-export type Enqueueable = {
-  enqueue(payload: Record<string, unknown>, opts?: Record<string, unknown>): Promise<EnqueueResult>;
-};
-
 export default BullQueue;
-export { Job, IORedis, Redis };
+export { IORedis, type RedisOptions };
+export { Queue as BullMQQueue } from "bullmq";
