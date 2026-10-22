@@ -6,4 +6,8 @@ import { defineWorkspace } from "vitest/config";
 export default defineWorkspace([
   "packages/*/vitest.config.ts",
   "apps/*/vitest.config.ts",
+  // The security suite (docs/SECURITY/SECURITY_TEST_PLAN.md "all security
+  // tests live in tests/security/") — a dedicated project so the cross-app
+  // specs have their own tsconfig root.
+  "tests/vitest.config.ts",
 ]);

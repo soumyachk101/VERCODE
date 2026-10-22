@@ -46,15 +46,15 @@ function loadSecret() {
 }
 
 /** The Stripe-style signature over `${timestamp}.${rawBody}`. */
-export function stripeSign(rawBody: string, secret: string, timestamp: number) {
+export function stripeSign(rawBody, secret, timestamp) {
   const signed = `${timestamp}.${rawBody}`;
   const v1 = createHmac("sha256", secret).update(signed).digest("hex");
   return `t=${timestamp},v1=${v1}`;
 }
 
-const calls: Array<Record<string, unknown>> = [];
+const calls = [];
 
-function json(body: unknown, status = 200) {
+function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "content-type": "application/json" },
@@ -85,7 +85,7 @@ async function main(): Promise<void> {
     const url = new URL(req.url ?? "/", `http://localhost:${PORT}`);
     const path = url.pathname;
     const secret = loadSecret();
-    const send = (status: number, body: unknown): void => {
+    const send = (status, body) => {
       res.writeHead(status, { "content-type": "application/json" });
       res.end(JSON.stringify(body));
     };
@@ -114,7 +114,7 @@ async function main(): Promise<void> {
         const text = await req.text();
         if (text) {
           try {
-            const parsed = JSON.parse(text) as { body?: string; event?: unknown };
+            const parsed = JSON.parse(text);
             raw = typeof parsed.body === "string" ? parsed.body : JSON.stringify(parsed.event ?? parsed);
           } catch {
             send(400, { error: "invalid json" });
