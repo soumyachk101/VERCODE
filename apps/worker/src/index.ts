@@ -1,35 +1,34 @@
 // The worker bootstrap (M5 T5.1, TRD.md §7). The process is:
-//   1. Load the config (a the loadConfig — the only reader of env).
+//   1. Load the config (the loadConfig — the only reader of env).
 //   2. Open the Redis + Postgres clients.
-//   3. Wire the seams (a the diff client, the publisher, the AI providers —
+//   3. Wire the seams (the diff client, the publisher, the AI providers —
 //      the mock versions in dev, the Octokit/real-provider versions later).
 //   4. Start the BullMQ worker on the review-queue.
 //   5. Install the SIGTERM handler (NFR-15): stop dequeueing, drain
 //      in-flight within 60 s, re-queue the unfinished ones atomically.
 //
-// A the dev-stack (docker-compose, TRD.md §18) runs USE_MOCK_GITHUB=true +
-// USE_MOCK_AI=true, so a the pipeline is deterministic end-to-end.
+// The dev-stack (docker-compose, TRD.md §18) runs USE_MOCK_GITHUB=true +
+// USE_MOCK_AI=true, so the pipeline is deterministic end-to-end.
 
 import * as IORedisNS from "ioredis";
 import type { Redis, RedisOptions } from "ioredis";
 import { loadConfig, type AppConfig } from "@vercode/config";
 import { getPrismaClient } from "@vercode/database";
 import type { AIProvider, ReviewTask } from "@vercode/ai-providers";
-import { createOllamaAdapter, MockAdapter } from "@vercode/ai-providers";
-import type { GithubDiffClient } from "@vercode/github";
 import {
-  resolvePolicy,
-} from "@vercode/policy-engine";
+  createOllamaAdapter,
+  createOpenAIAdapter,
+  createAnthropicAdapter,
+  MockAdapter,
+} from "@vercode/ai-providers";
+import type { GithubDiffClient } from "@vercode/github";
 import { makeMockGithubClient, MockGithubPublisher } from "./adapters/github-mock.js";
 import {
   makeMockAiProviders,
-  makeFailingAiProviders,
 } from "./adapters/local.js";
 import { startWorker, type StartedWorker } from "./queues.js";
 import type { WorkerDeps } from "./config.js";
 import { workerOptsFromConfig } from "./config.js";
-import { setWorkerTracer, setWorkerCapture } from "./jobs/review.js";
-import { tracer, capture } from "@vercode/observability";
 
 export interface WorkerRuntime {
   config: AppConfig;
@@ -46,37 +45,30 @@ export async function createWorkerRuntime(
     ...({} as RedisOptions),
   });
 
-  // [M7 observability] — a the worker's global tracer + a the capture
-  // (OBSERVABILITY.md §1–§4 "one trace per pipeline" + a the PII-scrubbed
-  // captured-errors array). A the trace id = a the job_id (a the §2 "the
-  // trace id = the job_id"); a the redaction gate runs on every record
-  // (SECRETS_MANAGEMENT §3 "the redactor runs on *every* record before
-  // it's written") + a the capture's payload is scrubbed (a the §4 "a
-  // Sentry event that carries a secret is a leak").
-  setWorkerTracer(tracer(config.observability.OTEL_EXPORTER_OTLP_ENDPOINT));
-  setWorkerCapture(capture());
-
-  // [the GithubDiffClient seam] — a the mock reads the diff fixtures (a no
-  // network, a deterministic); a the Octokit client is a later leaf.
+  // [the GithubDiffClient seam] — the mock reads the diff fixtures (a no
+  // network, a deterministic); the Octokit client is a later leaf.
   const useMockGithub = config.devMock.USE_MOCK_GITHUB === "true";
   const github: GithubDiffClient = useMockGithub
     ? makeMockGithubClient()
     : makeMockGithubClient();
-  // TODO: a the real Octokit GithubDiffClient (M4's @vercode/github) when it
-  // lands behind this interface.
+  // TODO: the real Octokit GithubDiffClient (@vercode/github's fetchPRDiff
+  // with the installation token) when it lands behind this interface.
 
-  // [the GithubPublisher seam] — a the mock records publishes in-memory (+
-  // optionally a JSON file in dev); a the Octokit publisher is a later leaf.
+  // [the GithubPublisher seam] — the mock records publishes in-memory (+
+  // optionally a JSON file in dev); the Octokit publisher (publishReview,
+  // TRD.md §10) is a later leaf.
   const publisher = new MockGithubPublisher();
 
-  // [the AI providers] — a the mock provider (a deterministic) is a the dev
-  // default. A the @vercode/ai-providers package lands the OpenAI/Anthropic/
-  // Ollama adapters; a the mock provider stays for a the deterministic runs
+  // [the AI providers] — the mock provider (a deterministic) is the dev
+  // default. The @vercode/ai-providers package lands the OpenAI/Anthropic/
+  // Ollama adapters; the mock provider stays for the deterministic runs
   // (TRD.md §18).
   const useMockAi = config.devMock.USE_MOCK_AI === "true";
   const aiProviders: Partial<Record<ReviewTask, AIProvider>> = useMockAi
     ? makeMockAiProviders()
     : makeRealAiProviders(config);
+
+  const opts = workerOptsFromConfig(config);
 
   const deps: WorkerDeps = {
     db,
@@ -84,19 +76,22 @@ export async function createWorkerRuntime(
     github,
     aiProviders,
     publisher,
-    confidenceFloor: config.limits.DEFAULT_CONFIDENCE_FLOOR,
+    confidenceFloor: opts.confidenceFloor,
+    maxFiles: opts.maxFiles,
+    maxLines: opts.maxLines,
     promptVersion: "worker-v1",
   };
 
-  const started = startWorker(deps, workerOptsFromConfig(config));
+  const started = startWorker(deps, opts);
 
-  // [the SIGTERM handler] — NFR-15 "a the worker drains in-flight jobs on
-  // SIGTERM within 60 s".
+  // [the SIGTERM handler] — NFR-15 "the worker drains in-flight jobs on
+  // SIGTERM within 60 s": stop dequeueing, finish in-flight within the
+  // budget, re-queue the incomplete ones atomically (ERROR_HANDLING §8).
   let shuttingDown = false;
   const onSigterm = async (signal: string) => {
     if (shuttingDown) return;
     shuttingDown = true;
-    console.error(`[worker] ${signal} received — a draining in-flight within the budget`);
+    console.error(`[worker] ${signal} received — draining in-flight within the budget`);
     try {
       await started.shutdown();
       await redis.quit();
@@ -112,7 +107,33 @@ export async function createWorkerRuntime(
   return { config, started, redis };
 }
 
-// A the entry point (a the `tsx src/index.ts` start).
+// A the real-provider wiring (the live-config path, TRD.md §9 "bounded
+// retry, then fall back to the configured secondary provider").
+function makeRealAiProviders(config: AppConfig): Partial<Record<ReviewTask, AIProvider>> {
+  const providers: Partial<Record<ReviewTask, AIProvider>> = {};
+  if (config.ai.OPENAI_API_KEY) {
+    const p = createOpenAIAdapter(config.ai.OPENAI_API_KEY);
+    providers["deep-review"] = p;
+    providers["security-review"] = p;
+  }
+  if (config.ai.ANTHROPIC_API_KEY) {
+    const p = createAnthropicAdapter(config.ai.ANTHROPIC_API_KEY);
+    if (!providers["risk-triage"]) providers["risk-triage"] = p;
+  }
+  if (config.ai.OLLAMA_BASE_URL) {
+    const p = createOllamaAdapter(config.ai.OLLAMA_BASE_URL);
+    if (!providers["deep-review"]) {
+      providers["deep-review"] = p;
+      providers["security-review"] = p;
+    }
+  }
+  // A the mock adapter is the deterministic fallback.
+  const mock = new MockAdapter("good");
+  if (!providers["summary"]) providers["summary"] = mock;
+  return providers;
+}
+
+// A the entry point (the `tsx src/index.ts` start).
 export async function main(): Promise<void> {
   const runtime = await createWorkerRuntime();
   console.error(
@@ -120,28 +141,10 @@ export async function main(): Promise<void> {
   );
 }
 
-// A the tsx start script runs this when imported as the main module.
+// A the tsx start script runs this when imported as a the main module.
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch((err) => {
     console.error(`[worker] failed to start: ${(err as Error).message}`);
     process.exit(1);
   });
-}
-
-// A the real-provider wiring (M4's @vercode/ai-providers adapters).
-function makeRealAiProviders(config: AppConfig): Partial<Record<ReviewTask, AIProvider>> {
-  const providers: Partial<Record<ReviewTask, AIProvider>> = {};
-  // A the providers come from the config + the BYOK key table. A the
-  // Ollama adapter is the self-hosted default; the OpenAI/Anthropic adapters
-  // are wired when their keys are present.
-  if (config.ai.OLLAMA_BASE_URL) {
-    const provider = createOllamaAdapter(config.ai.OLLAMA_BASE_URL);
-    providers["risk-triage"] = provider;
-    providers["deep-review"] = provider;
-    providers["security-review"] = provider;
-  }
-  // A the mock adapter is a the dev fallback (a deterministic).
-  const mock = new MockAdapter("good");
-  providers["summary"] = mock;
-  return providers;
 }

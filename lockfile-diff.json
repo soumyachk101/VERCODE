@@ -1,0 +1,17 @@
+{
+  "id": "malicious-lockfile-diff",
+  "testId": "ST-context-clean",
+  "description": "A generated/lockfile diff (a pnpm-lock.yaml + a package-lock.json hunk). The test asserts the generated / dependency source is out of AI scope (the classifyFile risk-tier 'generated' + 'dependency-manifest', REPOSITORY_STRUCTURE).",
+  "expectedOutcomes": {
+    "generatedOutOfAiScope": true,
+    "staticOnly": true,
+    "noAiCallForGenerated": true
+  },
+  "fixture": {
+    "diff": "diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml\nindex 0000000..1111111 100644\n--- a/pnpm-lock.yaml\n+++ b/pnpm-lock.yaml\n@@ -1,3 +1,8 @@\n lockfileVersion: '9.0'\n \n dependencies:\n-  lodash: 4.17.21\n+  lodash: 4.17.22\n+  new-dep: 1.0.0\ndiff --git a/package-lock.json b/package-lock.json\nindex 2222222..3333333 100644\n--- a/package-lock.json\n+++ b/package-lock.json\n@@ -5,3 +5,7 @@\n   \"name\": \"fixture-app\",\n   \"lockfileVersion\": 3,\n   \"dependencies\": {\n+    \"new-dep\": {\n+      \"version\": \"1.0.0\"\n+    }\n   }\n",
+    "classification": [
+      { "path": "pnpm-lock.yaml", "riskTier": "generated", "inAiScope": false },
+      { "path": "package-lock.json", "riskTier": "generated", "inAiScope": false }
+    ]
+  }
+}

@@ -144,6 +144,17 @@ function safeEqual(a: string, b: string): boolean {
 
 export async function billingWebhookRoutes(app: FastifyInstance, config: AppConfig) {
   installRawBodyParser(app);
+  // [M7 observability] — a the webhook.ingest stage (a the api's first stage
+  // of the review pipeline; a the worker continues a the trace, a the
+  // OBSERVABILITY.md §2 "the webhook→worker hand-off is one trace, not two
+  // disconnected ones"). A the structured logger (a the correlation id is
+  // a the delivery event id; a the redaction gate runs on every record,
+  // SECRETS_MANAGEMENT §3 "the redactor runs on *every* record before
+  // it's written").
+  const billingLog = logger({
+    correlationId: "billing.webhook",
+    baseFields: { provider: config.billing.BILLING_PROVIDER },
+  });
 
   app.post(
     "/billing",
@@ -168,6 +179,15 @@ export async function billingWebhookRoutes(app: FastifyInstance, config: AppConf
           sourceIp: req.ip,
           meta: { reason: sig.reason ?? "missing", provider },
         });
+        // [M7 observability] — a the rejected-event log record (a the
+        // WEBHOOK_SPECIFICATION §3 "every rejection is audited"; a the
+        // structured record is a the operator's queryable surface, a the
+        // OBSERVABILITY.md §5 "a failure is observable" invariant).
+        billingLog.warn("webhook.ingest", "The billing webhook was rejected", {
+          reason: sig.reason ?? "missing",
+          provider,
+          outcome: "rejected",
+        });
         reply.code(401).send({
           error: { code: "BILLING_REJECTED", message: "Provider signature verification failed." },
         });
@@ -186,6 +206,11 @@ export async function billingWebhookRoutes(app: FastifyInstance, config: AppConf
       const providerEventId = evt?.id;
       if (!providerEventId) {
         await audit(db, { action: "billing.malformed", sourceIp: req.ip, meta: { provider } });
+        // [M7 observability] — a the malformed-event log record.
+        billingLog.warn("webhook.ingest", "The billing event was malformed", {
+          provider,
+          outcome: "malformed",
+        });
         reply.code(422).send({
           error: { code: "BILLING_MALFORMED", message: "Missing provider event id." },
         });
