@@ -13,10 +13,20 @@ import {
   type RepoRuleLike,
   type ReviewPolicy,
 } from "@vercode/policy-engine";
-import type { PolicyState } from "../config.js";
 import type { CanonicalFinding } from "./review.js";
 
 export type { ReviewPolicy, OrgSettingsLike, RepoRuleLike };
+
+/**
+ * The defaults block the worker hands to the policy resolver (the platform
+ * defaults from config.limits; the durable rows override per-run).
+ */
+export interface PolicyDefaults {
+  confidenceFloor: number;
+  maxFiles: number;
+  maxLines: number;
+  suppressCategories: string[];
+}
 
 /**
  * Resolve the effective policy from the durable rows (org_settings +
@@ -25,7 +35,7 @@ export type { ReviewPolicy, OrgSettingsLike, RepoRuleLike };
  * default).
  */
 export function resolveWorkerPolicy(input: {
-  defaults: PolicyState;
+  defaults: PolicyDefaults;
   orgSettings?: OrgSettingsLike | null;
   repoRules?: RepoRuleLike[];
 }): ReviewPolicy {
