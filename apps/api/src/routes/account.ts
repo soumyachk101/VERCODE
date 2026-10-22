@@ -26,7 +26,7 @@ export async function accountRoutes(app: FastifyInstance) {
     const db = app.auth.db;
     const userId = req.user.userId;
     const sessions = await db.session.findMany({
-      where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
+      where: { userId, revokedAt: Prisma.DbNull, expiresAt: { gt: new Date() } },
       select: { id: true, userAgent: true, sourceIp: true, createdAt: true, expiresAt: true },
       orderBy: { createdAt: "desc" },
     });
