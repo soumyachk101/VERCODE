@@ -60,6 +60,17 @@ index 9a8b7c6..0f1e2d3 100644
 +}
 `;
 
+// The dev-stack's publish-recording seam (a the worker's
+// `MockGithubPublisher` writes here; a the smoke + the E2E read it back —
+// a the "a the mock side-effect is recorded" rule, E2E_TEST_PLAN §3).
+//
+// A the `PUBLISH_LOG` env (a the compose `worker-data` volume's
+// `/data/publishes.json`): when set, every `/review-publish` POST also
+// appends to the on-disk record (a the worker's in-memory record is
+// lost on restart; a the on-disk record is the smoke's read target).
+
+const PUBLISH_LOG = process.env.PUBLISH_LOG ?? "";
+
 const recordedPublishes: Array<Record<string, unknown>> = [];
 let eventCount = 0;
 
@@ -121,11 +132,28 @@ async function main(): Promise<void> {
 
     if (req.method === "POST" && path === "/review-publish") {
       const body = await readBody(req);
-      recordedPublishes.push({
+      const record = {
         ...body,
         recordedAt: new Date().toISOString(),
         recordedBy: "mock-github",
-      });
+      };
+      recordedPublishes.push(record);
+      // A the on-disk record (a the smoke + the E2E read it; a the worker's
+      // in-memory log is lost on restart, this one is not).
+      if (PUBLISH_LOG) {
+        try {
+          const fs = await import("node:fs");
+          const { dirname } = await import("node:path");
+          fs.mkdirSync(dirname(PUBLISH_LOG), { recursive: true });
+          const prev = fs.existsSync(PUBLISH_LOG)
+            ? JSON.parse(fs.readFileSync(PUBLISH_LOG, "utf8"))
+            : [];
+          prev.push(record);
+          fs.writeFileSync(PUBLISH_LOG, JSON.stringify(prev, null, 2));
+        } catch (err) {
+          console.warn(`mock-github: failed to write the on-disk record: ${String(err)}`);
+        }
+      }
       res.writeHead(200, { "content-type": "application/json" });
       res.end(JSON.stringify({ ok: true, recorded: recordedPublishes.length }));
       return;

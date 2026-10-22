@@ -295,7 +295,7 @@ describe("capture (OBSERVABILITY.md §4, a the PII-scrubbed Sentry stub)", () =>
     // The raw github pat is masked (a the generic high-entropy mask: the
     // ghp_ prefix is a high-entropy token → … + last-4, per redact.ts).
     expect(rec.message).not.toContain("ghp_16CharsOrMore0123456789abcdefghijklmnop");
-    expect(rec.message).toContain("...mnop");
+    expect(rec.message).toContain("ghp_...mnop");
   });
 
   it("a the scrub (a the public helper) masks a the secret shapes", () => {
