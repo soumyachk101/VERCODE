@@ -11,7 +11,7 @@
 // *verifiable* parts (a the JWT signing, a the token-exchange request shape)
 // that the mock-github stub can stand in for.
 
-import { createSign, createHmac } from "node:crypto";
+import { createHmac, createSign } from "node:crypto";
 import { z } from "zod";
 
 // The App's credentials (a SECRETS_MANAGEMENT.md §1 "a GITHUB_APP_ID + the
