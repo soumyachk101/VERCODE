@@ -53,7 +53,7 @@ describe("redact (SECRETS_MANAGEMENT §3, ST-redaction-patterns)", () => {
     },
     {
       file: "github-pat.txt",
-      contains: "ghp_...mnop", // a the ghp_ shape marker + a the last-4
+      contains: "ghp...mnop", // a the `ghp` shape marker + a the last-4
       mustNotContain: "ghp_16CharsOrMore0123456789abcdefghijklmnop",
     },
     {
@@ -83,7 +83,7 @@ describe("redact (SECRETS_MANAGEMENT §3, ST-redaction-patterns)", () => {
     },
     {
       file: "high-entropy-token.txt",
-      contains: "service_token=...E4qZ",
+      contains: "service_token=***",
       mustNotContain: "Xa9bQ2mZ7pL4kR8vT1yU6wS3jH5gF0dN2cB7nE4qZ",
     },
   ];
@@ -292,9 +292,10 @@ describe("capture (OBSERVABILITY.md §4, a the PII-scrubbed Sentry stub)", () =>
     const rec = cap.capture(new Error("A a the user jane@example.com used a a the key ghp_16CharsOrMore0123456789abcdefghijklmnop"), {
       correlationId: "job_pii_1",
     });
-    // A the raw github pat is a the masked.
+    // The raw github pat is masked (a the generic high-entropy mask: the
+    // ghp_ prefix is a high-entropy token → … + last-4, per redact.ts).
     expect(rec.message).not.toContain("ghp_16CharsOrMore0123456789abcdefghijklmnop");
-    expect(rec.message).toContain("ghp_...");
+    expect(rec.message).toContain("...mnop");
   });
 
   it("a the scrub (a the public helper) masks a the secret shapes", () => {

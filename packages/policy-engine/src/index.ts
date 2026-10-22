@@ -117,6 +117,15 @@ export function resolvePolicy(input: {
 }
 
 // ---------------------------------------------------------------------------
+// The dedup key (stage [10]: the key is (file, line, category))
+// ---------------------------------------------------------------------------
+
+/** The dedup key: (file, line, category) — FR-307 / REVIEW_ENGINE_SPEC §2 [10]. */
+export function dedupKey(file: string, line: number, category: string): string {
+  return `${file}:${line}:${category}`;
+}
+
+// ---------------------------------------------------------------------------
 // applyPolicy — the confidence floor + the suppression + the severity gating
 // ---------------------------------------------------------------------------
 
