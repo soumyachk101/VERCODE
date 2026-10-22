@@ -208,7 +208,7 @@ export interface Classification {
 }
 
 const SECURITY_PATTERNS: RegExp[] = [
-  /(^|\/)(auth|authentication|authorization|security|crypto|crypto(?!graph)|cipher|token|session|password|credential|jwt|oauth|keys?)([/\-.])/.i,
+  /(^|\/)(auth|authentication|authorization|security|crypto|cipher|token|session|password|credential|jwt|oauth|keys?)([/\-.])/.i,
   /\.(pem|crt|cer|key|p12)$/,
   /secret/i,
   /\b(api[-_]?key|apikey)\b/i,
