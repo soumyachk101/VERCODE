@@ -1,21 +1,19 @@
 // Fastify type augmentation: the `capability` + `public` keys on the route
-// schema config. Fastify ships a built-in `FastifySchema` with a
-// `config?: Record<string, any>` field — a module-augmenting
-// `RouteShorthandOptions` interface does NOT override it (the built-in wins).
-// So the route helpers' `config` is already `Record<string, any>` — no
-// augmentation needed for the *type*. What we need is a typed helper so the
-// *capability value* is checked, + the request-context augmentation.
+// schema `config`. Fastify 5's base `FastifySchema` has no `config` field —
+// it's a runtime feature (a per-route config object read off
+// `req.context.config`). This augmentation adds it so the typed helper + the
+// reads are checked.
 
 import type { Capability } from "../plugins/tenant.js";
 
-export const ROUTE = {
-  /** A public (no-session) route. */
-  public: (capability?: Capability) => ({ public: true, ...(capability ? { capability } : {}) }),
-  /** A tenant route requiring a capability. */
-  requires: (capability: Capability) => ({ capability }),
-} as const;
-
 declare module "fastify" {
+  interface FastifySchema {
+    config?: {
+      public?: boolean;
+      capability?: Capability;
+    };
+  }
+
   interface FastifyRequestContext {
     config: {
       public?: boolean;
