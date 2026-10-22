@@ -254,6 +254,13 @@ function basename(path: string): string {
   return i >= 0 ? path.slice(i + 1) : path;
 }
 
+function matchAny(patterns: readonly (RegExp | undefined)[], ...haystacks: string[]): boolean {
+  return patterns.some((re) => {
+    if (re === undefined) return false;
+    return haystacks.some((hay) => re.test(hay));
+  });
+}
+
 /**
  * Heuristic classification by path (and optionally content). The order
  * matters: dependency-manifest & generated are checked by exact name first
@@ -263,14 +270,13 @@ function basename(path: string): string {
 export function classifyFile(path: string, content?: string): Classification {
   const base = basename(path);
 
-  if (MANIFEST_PATTERNS.some((re) => re.test(base))) {
+  if (matchAny(MANIFEST_PATTERNS, base)) {
     return { riskTier: "dependency-manifest", inAiScope: true };
   }
-  if (GENERATED_PATTERNS.some((re) => re.test(path) || re.test(base))) {
+  if (matchAny(GENERATED_PATTERNS, path, base)) {
     return { riskTier: "generated", inAiScope: false };
   }
-  const isTestPath = TEST_PATTERNS.some((re) => re.test(path) || re.test(base));
-  if (isTestPath) {
+  if (matchAny(TEST_PATTERNS, path, base)) {
     return { riskTier: "test", inAiScope: true };
   }
   if (
@@ -279,10 +285,10 @@ export function classifyFile(path: string, content?: string): Classification {
   ) {
     return { riskTier: "generated", inAiScope: false };
   }
-  if (SECURITY_PATTERNS.some((re) => re.test(path) || re.test(base))) {
+  if (matchAny(SECURITY_PATTERNS, path, base)) {
     return { riskTier: "security-sensitive", inAiScope: true };
   }
-  if (DB_PATTERNS.some((re) => re.test(path) || re.test(base))) {
+  if (matchAny(DB_PATTERNS, path, base)) {
     return { riskTier: "db-touching", inAiScope: true };
   }
   return { riskTier: "other", inAiScope: true };

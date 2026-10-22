@@ -167,5 +167,7 @@ import { SeverityCounts } from "./SeverityMark";
 function SeverityCountInline({ counts }: { counts: Partial<Record<Severity, number>> }) {
   return <SeverityCounts counts={counts} />;
 }
+export type { HTMLAttributes };
+export type PanelProps = HTMLAttributes<HTMLDivElement>;
 
 export type { PanelProps } from "./panel-types";
