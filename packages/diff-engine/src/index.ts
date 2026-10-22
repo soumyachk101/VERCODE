@@ -206,44 +206,56 @@ export interface Classification {
   inAiScope: boolean;
 }
 
+// The patterns are written as a plain strings + `new RegExp` so a stray
+// compile-time regex quirk can't silently zero a whole list (the
+// matchAny gate above already guards against it, but a source-level string
+// is the stronger guarantee).
+
+function rx(source: string, flags = "i"): RegExp {
+  return new RegExp(source, flags);
+}
+
 const SECURITY_PATTERNS: RegExp[] = [
-  /^auth\b/.i,
+  rx(/(^|\/)(auth|authentication|authorization|security|crypto|cipher|token|session|password|credential|jwt|oauth|keys?)([\/\-.])/i.source),
+  rx(/\.(pem|crt|cer|key|p12)$/.source),
+  rx(/\bsecret\b/.source),
+  rx(/\b(api[-_]?key|apikey)\b/.source),
 ];
 
 const DB_PATTERNS: RegExp[] = [
-  /(^|\/)(db|database|databases|sql|repository|repositories|models?|migrations?|prisma)([/\-.])?$/i,
-  /\.(sql)$/,
-  /prisma(\/|\.schema)/i,
-  /\b(migrate|migration)\b/i,
+  rx(/(^|\/)(db|database|databases|sql|repository|repositories|models?|migrations?|prisma)([\/\-.])?$/i.source),
+  rx(/\.(sql)$/.source),
+  rx(/prisma([\/]|\.schema)/i.source),
+  rx(/\b(migrate|migration)\b/i.source),
 ];
 
 const GENERATED_PATTERNS: RegExp[] = [
-  /\.(min\.js|map|lock|snap|d\.ts|css|scss\.min)$/i,
-  /(^|\/)(dist|build|out|target|coverage|node_modules|vendor|generated|gen|\.next|\.nuxt|coverage)(\/|$)/i,
-  /(^|\/)(pnpm-lock|package-lock|yarn|bun|cargo|go|Gemfile)\.?(lock|sum)(\.lock)?$/,
-  /(^|\/)(poetry|uv)\.lock$/,
-  /^go\.mod$/,
-  /(\.pb\.|\.gen\.|_generated\.)/i,
+  rx(/\.(min\.js|map|lock|snap|d\.ts|css|scss\.min)$/.source),
+  rx(/(^|\/)(dist|build|out|target|coverage|node_modules|vendor|generated|gen|\.next|\.nuxt)(\/|$)/i.source),
+  rx(/(^|\/)(pnpm-lock|package-lock|yarn|bun|cargo|go|Gemfile)\.?(lock|sum)(\.lock)?$/i.source),
+  rx(/(^|\/)(poetry|uv)\.lock$/i.source),
+  rx(/^go\.mod$/),
+  rx(/(\.pb\.|\.gen\.|_generated\.)/i.source),
 ];
 
 const TEST_PATTERNS: RegExp[] = [
-  /\.(test|spec)\.[a-z]+$/i,
-  /^test_[^/]+$/,
-  /(^|\/)__tests__\//,
-  /(^|\/)tests?\//,
-  /_test\.go$/,
+  rx(/\.(test|spec)\.[a-z]+$/i.source),
+  rx(/^test_[^/]+$/.source),
+  rx(/(^|\/)__tests__\//.source),
+  rx(/(^|\/)tests?\//i.source),
+  rx(/_test\.go$/.source),
 ];
 
 const MANIFEST_PATTERNS: RegExp[] = [
-  /^package\.json$/,
-  /^composer\.json$/,
-  /^requirements\.txt$/,
-  /^pyproject\.toml$/,
-  /^setup\.(py|cfg)$/,
-  /^gemfile$/,
-  /^cargo\.toml$/,
-  /^go\.mod$/,
-  /^gradle\.properties$/,
+  rx(/^package\.json$/),
+  rx(/^composer\.json$/),
+  rx(/^requirements\.txt$/),
+  rx(/^pyproject\.toml$/),
+  rx(/^setup\.(py|cfg)$/.source),
+  rx(/^gemfile$/i),
+  rx(/^cargo\.toml$/i),
+  rx(/^go\.mod$/),
+  rx(/^gradle\.properties$/i),
 ];
 
 function basename(path: string): string {
