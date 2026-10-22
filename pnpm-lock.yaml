@@ -193,9 +193,15 @@ importers:
       '@vercode/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@vercode/diff-engine':
+        specifier: workspace:*
+        version: link:../../packages/diff-engine
       '@vercode/github':
         specifier: workspace:*
         version: link:../../packages/github
+      '@vercode/static-analysis':
+        specifier: workspace:*
+        version: link:../../packages/static-analysis
       bullmq:
         specifier: ^5.54.0
         version: 5.81.5
@@ -218,6 +224,22 @@ importers:
       vitest:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@22.20.5)(jiti@2.7.0)(jsdom@25.0.1)(lightningcss@1.32.0)(tsx@4.23.15)
+
+  packages/ai-providers:
+    dependencies:
+      '@vercode/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.20.5
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
 
   packages/config:
     dependencies:
