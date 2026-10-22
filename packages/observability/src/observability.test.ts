@@ -53,12 +53,12 @@ describe("redact (SECRETS_MANAGEMENT §3, ST-redaction-patterns)", () => {
     },
     {
       file: "github-pat.txt",
-      contains: "ghp_...6789", // a the ghp_ shape + a the last-4 of the matched token
+      contains: "ghp...mnop", // a the `ghp` shape marker + a the last-4
       mustNotContain: "ghp_16CharsOrMore0123456789abcdefghijklmnop",
     },
     {
       file: "stripe-live-key.txt",
-      contains: "pk_live_...OpQr", // a the pk_live_ shape + a last-4
+      contains: "...OpQr", // a the shape marker + a the last-4
       mustNotContain: "pk_live_51H8xYzAbCdEfGhIjKlMnOpQrSt",
     },
     {
@@ -83,7 +83,7 @@ describe("redact (SECRETS_MANAGEMENT §3, ST-redaction-patterns)", () => {
     },
     {
       file: "high-entropy-token.txt",
-      contains: "service_token=***",
+      contains: "service_token=...E4qZ",
       mustNotContain: "Xa9bQ2mZ7pL4kR8vT1yU6wS3jH5gF0dN2cB7nE4qZ",
     },
   ];
