@@ -1,0 +1,22 @@
+{
+  "id": "logic-bug-off-by-one-001",
+  "class": "logic-bug",
+  "language": "typescript",
+  "repo": "fixture-app (a synthetic, not a real customer repo)",
+  "diff": "diff --git a/src/loop/iterate.ts b/src/loop/iterate.ts\nindex 1111111..2222222 100644\n--- a/src/loop/iterate.ts\n+++ b/src/loop/iterate.ts\n@@ -1,4 +1,6 @@\n export function iterate<T>(arr: T[], fn: (x: T, i: number) => void) {\n-  for (let i = 0; i < arr.length; i++) {\n+  for (let i = 0; i <= arr.length; i++) {\n+    // process the element\n     fn(arr[i], i);\n   }\n }\n",
+  "headContext": "The change introduces an off-by-one: the loop bound `<= arr.length` runs one iteration too many, reading `arr[arr.length]` (undefined).",
+  "groundTruth": [
+    {
+      "file": "src/loop/iterate.ts",
+      "line": 3,
+      "severity": "high",
+      "category": "logic-bug",
+      "kind": "off-by-one",
+      "note": "The loop runs one iteration too many, processing an out-of-range index."
+    }
+  ],
+  "cleanAssertions": [
+    { "file": "src/loop/iterate.ts", "note": "No finding should anchor to a line that isn't the off-by-one." }
+  ],
+  "expectedVerdict": "needs_changes"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "logic-bug-clean-loop-003",
+  "class": "logic-bug",
+  "language": "typescript",
+  "repo": "fixture-app",
+  "diff": "diff --git a/src/loop/iterate-clean.ts b/src/loop/iterate-clean.ts\nnew file mode 100644\nindex 0000000..5555555\n--- /dev/null\n+++ b/src/loop/iterate-clean.ts\n@@ -0,0 +1,5 @@\n+export function iterate<T>(arr: T[], fn: (x: T, i: number) => void) {\n+  for (let i = 0; i < arr.length; i++) {\n+    fn(arr[i], i);\n+  }\n+}\n",
+  "headContext": "A correct loop (a the `< arr.length` bound, the in-range index) — the clean negative for the logic-bug class.",
+  "groundTruth": [],
+  "cleanAssertions": [
+    { "file": "src/loop/iterate-clean.ts", "note": "A correct loop — must NOT produce a finding." }
+  ],
+  "expectedVerdict": "likely_mergeable"
+}

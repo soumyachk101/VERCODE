@@ -1,0 +1,22 @@
+{
+  "id": "security-sql-injection-001",
+  "class": "security",
+  "language": "typescript",
+  "repo": "fixture-app",
+  "diff": "diff --git a/src/db/queries.ts b/src/db/queries.ts\nindex 6666666..7777777 100644\n--- a/src/db/queries.ts\n+++ b/src/db/queries.ts\n@@ -8,3 +8,7 @@\n function runQuery(sql: string) {\n   return db.query(sql);\n }\n+export function findUserById(id: number) {\n+  const q = \"SELECT * FROM users WHERE id = \" + id + \";\";\n+  return runQuery(q);\n+}\n",
+  "headContext": "The `findUserById` helper concatenates user-controlled input directly into a SQL string. A SQL-injection positive — the deterministic static-analysis rule `sql-concat` catches this (a Semgrep-derived high/security finding, UT-static-sql-01).",
+  "groundTruth": [
+    {
+      "file": "src/db/queries.ts",
+      "line": 11,
+      "severity": "high",
+      "category": "security",
+      "kind": "sql-injection",
+      "note": "User input concatenated into a SQL string — a the static-analysis `sql-concat` rule fires here (a deterministic finding, exempt from the confidence floor, ADR-005)."
+    }
+  ],
+  "cleanAssertions": [
+    { "file": "src/db/queries.ts", "note": "The `runQuery` helper itself (a the unchanged line) is not a finding." }
+  ],
+  "expectedVerdict": "high_risk"
+}

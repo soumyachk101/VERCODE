@@ -1,0 +1,13 @@
+{
+  "id": "security-clean-parameterized-002",
+  "class": "security",
+  "language": "typescript",
+  "repo": "fixture-app",
+  "diff": "diff --git a/src/db/queries-clean.ts b/src/db/queries-clean.ts\nnew file mode 100644\nindex 0000000..8888888\n--- /dev/null\n+++ b/src/db/queries-clean.ts\n@@ -0,0 +1,4 @@\n+export function findUserById(id: number) {\n+  // a parameterized query — no injection.\n+  return db.query('SELECT * FROM users WHERE id = ?', [id]);\n+}\n",
+  "headContext": "A parameterized query (a the `?` bind + a the array parameter) — the clean negative for the security class (a the static-analysis `sql-concat` rule's negation excludes it, UT-static-sql-02 \"a clean parameterized query → no finding\").",
+  "groundTruth": [],
+  "cleanAssertions": [
+    { "file": "src/db/queries-clean.ts", "note": "A parameterized query — must NOT produce a security finding." }
+  ],
+  "expectedVerdict": "likely_mergeable"
+}

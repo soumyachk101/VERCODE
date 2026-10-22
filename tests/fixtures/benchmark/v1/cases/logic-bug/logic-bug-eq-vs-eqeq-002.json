@@ -1,0 +1,22 @@
+{
+  "id": "logic-bug-eq-vs-eqeq-002",
+  "class": "logic-bug",
+  "language": "typescript",
+  "repo": "fixture-app",
+  "diff": "diff --git a/src/validate/isNumber.ts b/src/validate/isNumber.ts\nindex 3333333..4444444 100644\n--- a/src/validate/isNumber.ts\n+++ b/src/validate/isNumber.ts\n@@ -1,4 +1,5 @@\n export function isNumberish(v: unknown): boolean {\n-  return v === 0 ? false : typeof v === 'number' && isFinite(v);\n+  return v == 0 ? false : typeof v === 'number' && isFinite(v);\n }\n",
+  "headContext": "The `== 0` comparison coerces `\"\"` (empty string) and `[]` (empty array) to 0, so they now return false where `===` would have returned true for the `typeof` check. A logic-bug class.",
+  "groundTruth": [
+    {
+      "file": "src/validate/isNumber.ts",
+      "line": 2,
+      "severity": "medium",
+      "category": "logic-bug",
+      "kind": "loose-equality",
+      "note": "The `== 0` loose equality coerces empty string/array to 0 — the `v === 0` strict comparison was the intended check."
+    }
+  ],
+  "cleanAssertions": [
+    { "file": "src/validate/isNumber.ts", "note": "No finding on the unchanged `isFinite` check." }
+  ],
+  "expectedVerdict": "needs_changes"
+}
