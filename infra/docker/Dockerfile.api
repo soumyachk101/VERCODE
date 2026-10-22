@@ -83,4 +83,12 @@ HEALTHCHECK --interval=15s --timeout=5s --retries=5 \
   CMD node -e "fetch('http://127.0.0.1:4000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 # The server runs via tsx (a source-linked workspace — no separate bundle
 # step; the typecheck in the build stage is the gate).
+# A the dev-stack's placeholder value is committed on purpose (a dev
+# placeholder, not a credential — NFR-31 is about *real* secrets; a dev
+# stack has no real GitHub App to use). A prod deploy injects the real
+# secret from the platform store at runtime (a the compose file's
+# `environment:` overrides this default; a KMS-wrapped key would be
+# decrypted in-process at boot, never baked into an image).
+ENV GITHUB_APP_PRIVATE_KEY=dev-stack-placeholder-private-key-not-a-real-key
+ENV GITHUB_WEBHOOK_SECRET=test-webhook-secret-dev
 CMD ["node", "node_modules/.bin/tsx", "apps/api/src/main.ts"]
