@@ -207,10 +207,10 @@ export function githubWebhookRoutes(
           await handlePullRequest(db, queue, data as PullRequestEvent, reply, { deliveryId: headers.deliveryId });
           break;
         case "installation":
-          await handleInstallation(db, data as InstallationEvent, reply);
+          await handleInstallation(db, data as InstallationEvent, reply, { deliveryId: headers.deliveryId });
           break;
         case "installation_repositories":
-          await handleInstallationRepositories(db, data as InstallationRepositoriesEvent, reply);
+          await handleInstallationRepositories(db, data as InstallationRepositoriesEvent, reply, { deliveryId: headers.deliveryId });
           break;
         default:
           // A verified event in no known schema (unknown to the MVP set)

@@ -23,7 +23,7 @@ import { Table, TRow, TCell } from "@/components/Table";
 import { Pill } from "@/components/Pill";
 import { Button, TextButton } from "@/components/Button";
 import { ConfirmDialog } from "@/components/BlockError";
-import { Input, Label } from "@/components/controls";
+import { Input } from "@/components/controls";
 import { initials, personHue, relativeTime } from "@/lib/format";
 
 const ROLES = ["admin", "developer", "viewer"] as const;
