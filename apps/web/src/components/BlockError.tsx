@@ -81,7 +81,6 @@ export function ConfirmDialog({
   };
   return (
     <AlertDialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
-    <AlertDialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <AlertDialogPrimitive.Content
         className="popover-enter"
         style={{
