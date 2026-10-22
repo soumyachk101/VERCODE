@@ -4,7 +4,7 @@
 // test library, a deterministic signature, no live call)").
 //
 // It signs billing events with the *Stripe* scheme so the api's billing
-// webhook verifier can check them exactly as it checks a real Stripe
+// webhook verifier can check them exactly checks a real Stripe
 // delivery:
 //
 //   t=<unix seconds>,v1=<hex hmac_sha256(`${t}.${rawBody}`, STRIPE_WEBHOOK_SECRET)>
@@ -16,7 +16,7 @@
 // Endpoints:
 //   GET  /healthz     → { ok: true }
 //   POST /sign        → { body: "<the event json>", signature: "t=..,v1=.." }
-//   GET  /sign?body=  → the same, for a body supplied as a query param
+//   GET  /sign?body=  → the same, for a body supplied query param
 //   POST /event       → a canned `invoice.paid` event, signed + returned
 //   POST /reset       → clears the call log
 
@@ -35,7 +35,7 @@ const SECRET_FILE = join(here, "fixtures", "stripe-webhook-secret.json");
  * the signature is reproducible), never a real Stripe secret. The dev-stack
  * sets STRIPE_WEBHOOK_SECRET to the same value.
  */
-function loadSecret(): string {
+function loadSecret() {
   try {
     const parsed = JSON.parse(readFileSync(SECRET_FILE, "utf8")) as { secret?: string };
     if (typeof parsed.secret === "string" && parsed.secret.length > 0) return parsed.secret;
@@ -46,7 +46,7 @@ function loadSecret(): string {
 }
 
 /** The Stripe-style signature over `${timestamp}.${rawBody}`. */
-export function stripeSign(rawBody: string, secret: string, timestamp: number): string {
+export function stripeSign(rawBody: string, secret: string, timestamp: number) {
   const signed = `${timestamp}.${rawBody}`;
   const v1 = createHmac("sha256", secret).update(signed).digest("hex");
   return `t=${timestamp},v1=${v1}`;
@@ -54,7 +54,7 @@ export function stripeSign(rawBody: string, secret: string, timestamp: number): 
 
 const calls: Array<Record<string, unknown>> = [];
 
-function json(body: unknown, status = 200): Response {
+function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "content-type": "application/json" },

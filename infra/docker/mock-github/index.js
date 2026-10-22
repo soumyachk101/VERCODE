@@ -52,10 +52,10 @@ index 9a8b7c6..0f1e2d3 100644
 --- a/src/util/format.ts
 +++ b/src/util/format.ts
 @@ -1,4 +1,7 @@
- export function pad(n: number): string {
+ export function pad(n: number) {
    return String(n).padStart(2, "0");
  }
-+export function truncate(s: string, n: number): string {
++export function truncate(s: string, n: number) {
 +  return s.length > n ? s.slice(0, n - 1) + "…" : s;
 +}
 `;
@@ -77,10 +77,10 @@ let eventCount = 0;
 function readBody(req: Request): Promise<Record<string, unknown>> {
   return req
     .text()
-    .then((t) => (t ? (JSON.parse(t) as Record<string, unknown>) : {}));
+    .then((t) => (t ? (JSON.parse(t)<string, unknown>) : {}));
 }
 
-function json(body: unknown, status = 200): Response {
+function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "content-type": "application/json" },
