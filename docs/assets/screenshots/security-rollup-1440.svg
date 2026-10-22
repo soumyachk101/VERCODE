@@ -1,0 +1,132 @@
+<svg viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Security rollup mockup">
+  <defs>
+    <style>
+      .h1   { font: 700 24px 'Inter', 'Segoe UI', sans-serif; fill: #1a2b3c; }
+      .sub  { font: 400 13px 'Inter', sans-serif; fill: #64748b; }
+      .cell { font: 400 13px 'Inter', sans-serif; fill: #374151; }
+      .card-title { font: 600 13px 'Inter', sans-serif; fill: #374151; }
+      .gray { font: 400 12px 'Inter', sans-serif; fill: #94a3b8; }
+      .big { font: 700 30px 'Inter', sans-serif; fill: #1a2b3c; text-anchor: end; }
+    </style>
+  </defs>
+
+  <rect width="1440" height="900" fill="#f8fafc"/>
+  <rect x="0" y="0" width="240" height="900" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="24" y="38" font-size="15" font-weight="800" fill="#1a2b3c" font-family="Inter">VERCODE</text>
+  <rect x="16" y="58" width="208" height="34" rx="7" fill="#f1f5f9"/>
+  <text x="28" y="80" font-size="12" fill="#475569" font-family="Inter">Acme Corp ▾</text>
+  <g font-family="Inter" font-size="13" fill="#475569">
+    <text x="28" y="163">Overview</text>
+    <text x="28" y="191">Repositories</text>
+    <text x="28" y="219">Reviews</text>
+    <rect x="16" y="228" width="208" height="32" rx="6" fill="#eff6ff"/>
+    <text x="28" y="250" font-weight="600" fill="#1a2b3c">Security</text>
+    <text x="28" y="279">Usage & Billing</text>
+    <text x="28" y="307">Settings</text>
+  </g>
+
+  <text x="280" y="44" class="h1">Security</text>
+  <text x="280" y="70" class="sub">Unactioned findings above the confidence floor, last 30 days.</text>
+
+  <!-- Severity ladder -->
+  <rect x="280" y="96" width="1104" height="130" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <g>
+    <rect x="304" y="122" width="10" height="10" rx="1" fill="#dc2626"/>
+    <text x="326" y="132" class="gray">Critical</text>
+    <text x="440" y="150" class="big">2</text>
+    <rect x="500" y="122" width="10" height="10" rx="1" fill="#ea580c"/>
+    <text x="522" y="132" class="gray">High</text>
+    <text x="636" y="150" class="big">4</text>
+    <rect x="696" y="122" width="10" height="10" rx="1" fill="#f59e0b"/>
+    <text x="718" y="132" class="gray">Medium</text>
+    <text x="832" y="150" class="big">11</text>
+    <rect x="892" y="122" width="10" height="10" rx="1" fill="#94a3b8"/>
+    <text x="914" y="132" class="gray">Low</text>
+    <text x="1028" y="150" class="big">23</text>
+  </g>
+  <text x="304" y="200" class="gray">Window</text>
+  <rect x="360" y="182" width="76" height="26" rx="13" fill="#1a2b3c"/>
+  <text x="398" y="199" font-size="11" font-weight="500" fill="#ffffff" text-anchor="middle" font-family="Inter">30 days</text>
+  <rect x="444" y="182" width="70" height="26" rx="13" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="479" y="199" font-size="11" fill="#475569" text-anchor="middle" font-family="Inter">7 days</text>
+  <rect x="522" y="182" width="86" height="26" rx="13" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="565" y="199" font-size="11" fill="#475569" text-anchor="middle" font-family="Inter">24 hours</text>
+  <text x="1360" y="200" class="gray" text-anchor="end">Actioned rate 21% — up 4 pts vs prior 30 days</text>
+
+  <!-- Rollup table -->
+  <rect x="280" y="250" width="1104" height="330" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="304" y="282" class="card-title">Open high and critical findings</text>
+  <text x="304" y="312" class="gray">Severity</text>
+  <text x="366" y="312" class="gray">Title</text>
+  <text x="700" y="312" class="gray">Category</text>
+  <text x="830" y="312" class="gray">Repo</text>
+  <text x="980" y="312" class="gray">PR</text>
+  <text x="1050" y="312" class="gray">Actioned?</text>
+  <text x="1360" y="312" class="gray" text-anchor="end">Found</text>
+  <line x1="304" y1="326" x2="1360" y2="326" stroke="#e2e8f0"/>
+
+  <!-- rows -->
+  <g>
+    <rect x="304" y="342" width="10" height="10" rx="1" fill="#dc2626"/>
+    <text x="366" y="352" class="cell" font-weight="500">Unparameterized query built from request body</text>
+    <text x="700" y="352" class="gray">security</text>
+    <text x="830" y="352" class="cell">api-server</text>
+    <text x="980" y="352" class="cell" fill="#2563eb">#412</text>
+    <rect x="1050" y="336" width="120" height="22" rx="11" fill="#f1f5f9"/>
+    <text x="1062" y="351" font-size="11" fill="#475569" font-family="Inter">waiting on reviewer</text>
+    <text x="1360" y="352" class="gray" text-anchor="end">2 days ago</text>
+    <line x1="304" y1="370" x2="1360" y2="370" stroke="#f1f5f9"/>
+
+    <rect x="304" y="386" width="10" height="10" rx="1" fill="#dc2626"/>
+    <text x="366" y="396" class="cell" font-weight="500">Path traversal in the attachment download</text>
+    <text x="700" y="396" class="gray">security</text>
+    <text x="830" y="396" class="cell">api-server</text>
+    <text x="980" y="396" class="cell" fill="#2563eb">#377</text>
+    <rect x="1050" y="380" width="70" height="22" rx="11" fill="#ecfdf5"/>
+    <text x="1062" y="395" font-size="11" fill="#047857" font-family="Inter">actioned</text>
+    <text x="1360" y="396" class="gray" text-anchor="end">5 days ago</text>
+    <line x1="304" y1="414" x2="1360" y2="414" stroke="#f1f5f9"/>
+
+    <rect x="304" y="430" width="10" height="10" rx="1" fill="#ea580c"/>
+    <text x="366" y="440" class="cell" font-weight="500">Unhandled null on the retry path</text>
+    <text x="700" y="440" class="gray">logic-bug</text>
+    <text x="830" y="440" class="cell">api-server</text>
+    <text x="980" y="440" class="cell" fill="#2563eb">#412</text>
+    <rect x="1050" y="424" width="120" height="22" rx="11" fill="#f1f5f9"/>
+    <text x="1062" y="439" font-size="11" fill="#475569" font-family="Inter">waiting on reviewer</text>
+    <text x="1360" y="440" class="gray" text-anchor="end">2 days ago</text>
+    <line x1="304" y1="458" x2="1360" y2="458" stroke="#f1f5f9"/>
+
+    <rect x="304" y="474" width="10" height="10" rx="1" fill="#ea580c"/>
+    <text x="366" y="484" class="cell" font-weight="500">Hardcoded API key committed to the repo</text>
+    <text x="700" y="484" class="gray">secret</text>
+    <text x="830" y="484" class="cell">api-server</text>
+    <text x="980" y="484" class="cell" fill="#2563eb">#377</text>
+    <rect x="1050" y="468" width="70" height="22" rx="11" fill="#ecfdf5"/>
+    <text x="1062" y="483" font-size="11" fill="#047857" font-family="Inter">actioned</text>
+    <text x="1360" y="484" class="gray" text-anchor="end">6 days ago</text>
+    <line x1="304" y1="502" x2="1360" y2="502" stroke="#f1f5f9"/>
+
+    <rect x="304" y="518" width="10" height="10" rx="1" fill="#ea580c"/>
+    <text x="366" y="528" class="cell" font-weight="500">SSRF in the webhook target fetch</text>
+    <text x="700" y="528" class="gray">security</text>
+    <text x="830" y="528" class="cell">web-app</text>
+    <text x="980" y="528" class="cell" fill="#2563eb">#351</text>
+    <rect x="1050" y="512" width="120" height="22" rx="11" fill="#f1f5f9"/>
+    <text x="1062" y="527" font-size="11" fill="#475569" font-family="Inter">waiting on reviewer</text>
+    <text x="1360" y="528" class="gray" text-anchor="end">9 days ago</text>
+  </g>
+  <text x="304" y="562" class="gray">View all 6 findings →</text>
+
+  <!-- Trend -->
+  <rect x="280" y="604" width="1104" height="180" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="304" y="634" class="card-title">High and critical findings · last 30 days</text>
+  <line x1="340" y1="750" x2="1360" y2="750" stroke="#e2e8f0"/>
+  <polyline points="340,740 420,732 500,724 580,736 660,700 740,712 820,676 900,690 980,652 1060,664 1140,628 1220,640 1300,612 1360,620"
+            fill="none" stroke="#dc2626" stroke-width="2.5"/>
+  <circle cx="980" cy="652" r="4" fill="#dc2626"/>
+  <line x1="980" y1="646" x2="980" y2="622" stroke="#94a3b8"/>
+  <text x="988" y="618" class="gray">security findings trending up in api-server</text>
+  <text x="304" y="772" class="gray">Jan 23</text>
+  <text x="1360" y="772" class="gray" text-anchor="end">Feb 22</text>
+</svg>
