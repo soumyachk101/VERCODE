@@ -1,8 +1,8 @@
-<svg viewBox="0 0 1200 490" width="1200" height="490" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="VERCODE trust model and boundary architecture">
+<svg viewBox="0 0 1240 520" width="1240" height="520" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="VERCODE trust model and boundary architecture">
   <defs>
     <style>
       .tm-title    { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 800; fill: #0f172a; letter-spacing: -0.5px; }
-      .tm-sub      { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 500; fill: #475569; }
+      .tm-sub      { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 500; fill: #64748b; }
       .domain-head { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.8px; }
       .item-title  { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11.5px; font-weight: 700; fill: #0f172a; }
       .item-sub    { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 10px; fill: #64748b; }
@@ -12,159 +12,176 @@
     </style>
 
     <!-- Markers -->
-    <marker id="tArrowRed" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,1 L7,4 L0,7 Z" fill="#dc2626"/></marker>
+    <marker id="tArrowRed" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,1 L7,4 L0,7 Z" fill="#ef4444"/></marker>
     <marker id="tArrowBlue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,1 L7,4 L0,7 Z" fill="#2563eb"/></marker>
-    <marker id="tArrowGreen" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,1 L7,4 L0,7 Z" fill="#16a34a"/></marker>
+    <marker id="tArrowGreen" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,1 L7,4 L0,7 Z" fill="#10b981"/></marker>
 
     <!-- Shadow -->
     <filter id="tmShadow" x="-3%" y="-3%" width="106%" height="106%">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.05"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.04"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#0f172a" flood-opacity="0.02"/>
     </filter>
   </defs>
 
-  <!-- Background -->
-  <rect width="1200" height="490" fill="#f8fafc"/>
+  <!-- Clean Canvas Background -->
+  <rect width="1240" height="520" fill="#f8fafc"/>
 
-  <!-- Top Title -->
-  <text x="600" y="36" text-anchor="middle" class="tm-title">VERCODE — Trust Model &amp; Security Boundaries</text>
-  <text x="600" y="56" text-anchor="middle" class="tm-sub">Core Invariant: Repository content is treated strictly as <tspan font-weight="700" fill="#b91c1c">input</tspan>, never as <tspan font-weight="700" fill="#15803d">authority</tspan></text>
+  <!-- Top Title Bar -->
+  <g transform="translate(620, 36)">
+    <text x="0" y="0" text-anchor="middle" class="tm-title">VERCODE — Trust Model &amp; Security Boundaries</text>
+    <text x="0" y="22" text-anchor="middle" class="tm-sub">Core Invariant: Repository content is treated strictly as <tspan font-weight="700" fill="#b91c1c">input</tspan>, never as <tspan font-weight="700" fill="#15803d">authority</tspan></text>
+  </g>
 
   <!-- ========================================================================= -->
   <!-- DOMAIN 1: UNTRUSTED                                                       -->
   <!-- ========================================================================= -->
-  <rect x="35" y="76" width="340" height="270" rx="12" fill="#ffffff" stroke="#fca5a5" stroke-width="1.5" filter="url(#tmShadow)"/>
-  <rect x="47" y="88" width="165" height="22" rx="4" fill="#fee2e2"/>
-  <text x="129" y="103" text-anchor="middle" class="domain-head" fill="#991b1b">1. UNTRUSTED DOMAIN</text>
-  <text x="360" y="103" text-anchor="end" class="item-sub" fill="#dc2626" style="font-weight:600">External &amp; Adversarial</text>
+  <g filter="url(#tmShadow)">
+    <rect x="35" y="78" width="350" height="276" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.2"/>
+    <rect x="35" y="78" width="350" height="3" rx="1.5" fill="#ef4444"/>
+    <rect x="47" y="90" width="170" height="24" rx="5" fill="#fee2e2"/>
+    <text x="132" y="106" text-anchor="middle" class="domain-head" fill="#991b1b">1. UNTRUSTED DOMAIN</text>
+    <text x="372" y="106" text-anchor="end" class="item-sub" fill="#dc2626" style="font-weight:600">External &amp; Adversarial</text>
 
-  <!-- Item 1.1 -->
-  <rect x="47" y="120" width="316" height="46" rx="6" fill="#fef2f2" stroke="#fecaca" stroke-width="1"/>
-  <text x="60" y="137" class="item-title">PR Unified Diffs &amp; Code Content</text>
-  <text x="60" y="152" class="item-sub">Untrusted repository files · 1-hop AST imports</text>
+    <!-- Item 1.1 -->
+    <rect x="47" y="124" width="326" height="48" rx="6" fill="#fef2f2" stroke="#fecaca" stroke-width="1"/>
+    <text x="60" y="143" class="item-title">PR Unified Diffs &amp; Code Content</text>
+    <text x="60" y="159" class="item-sub">Untrusted repository files · 1-hop AST imports</text>
 
-  <!-- Item 1.2 -->
-  <rect x="47" y="174" width="316" height="46" rx="6" fill="#fef2f2" stroke="#fecaca" stroke-width="1"/>
-  <text x="60" y="191" class="item-title">PR Titles, Bodies &amp; Comments</text>
-  <text x="60" y="206" class="item-sub">Prompt injection attack surface · treated as data only</text>
+    <!-- Item 1.2 -->
+    <rect x="47" y="180" width="326" height="48" rx="6" fill="#fef2f2" stroke="#fecaca" stroke-width="1"/>
+    <text x="60" y="199" class="item-title">PR Titles, Bodies &amp; Comments</text>
+    <text x="60" y="215" class="item-sub">Prompt injection attack surface · treated as data only</text>
 
-  <!-- Item 1.3 -->
-  <rect x="47" y="228" width="316" height="46" rx="6" fill="#fef2f2" stroke="#fecaca" stroke-width="1"/>
-  <text x="60" y="245" class="item-title">Incoming Webhook Deliveries</text>
-  <text x="60" y="260" class="item-sub">Third-party network triggers · forge &amp; replay risks</text>
+    <!-- Item 1.3 -->
+    <rect x="47" y="236" width="326" height="48" rx="6" fill="#fef2f2" stroke="#fecaca" stroke-width="1"/>
+    <text x="60" y="255" class="item-title">Incoming Webhook Deliveries</text>
+    <text x="60" y="271" class="item-sub">Third-party network triggers · forge &amp; replay risks</text>
 
-  <!-- Item 1.4 -->
-  <rect x="47" y="282" width="316" height="46" rx="6" fill="#fef2f2" stroke="#fecaca" stroke-width="1"/>
-  <text x="60" y="299" class="item-title">Raw AI Provider Completions</text>
-  <text x="60" y="314" class="item-sub">Untrusted until Zod schema validation &amp; line anchoring</text>
+    <!-- Item 1.4 -->
+    <rect x="47" y="292" width="326" height="48" rx="6" fill="#fef2f2" stroke="#fecaca" stroke-width="1"/>
+    <text x="60" y="311" class="item-title">Raw AI Provider Completions</text>
+    <text x="60" y="327" class="item-sub">Untrusted until Zod schema validation &amp; line anchoring</text>
+  </g>
 
 
   <!-- ========================================================================= -->
   <!-- INGRESS GATE (BETWEEN DOMAIN 1 & 2)                                       -->
   <!-- ========================================================================= -->
-  <line x1="375" y1="211" x2="428" y2="211" stroke="#dc2626" stroke-width="2" marker-end="url(#tArrowRed)"/>
-  <rect x="382" y="175" width="40" height="72" rx="4" fill="#ffffff" stroke="#f87171" stroke-width="1.2"/>
-  <text x="402" y="193" text-anchor="middle" class="gate-txt" fill="#991b1b">H</text>
-  <text x="402" y="206" text-anchor="middle" class="gate-txt" fill="#991b1b">M</text>
-  <text x="402" y="219" text-anchor="middle" class="gate-txt" fill="#991b1b">A</text>
-  <text x="402" y="232" text-anchor="middle" class="gate-txt" fill="#991b1b">C</text>
+  <line x1="385" y1="216" x2="438" y2="216" stroke="#ef4444" stroke-width="2" marker-end="url(#tArrowRed)"/>
+  <rect x="392" y="180" width="40" height="72" rx="4" fill="#ffffff" stroke="#f87171" stroke-width="1.2"/>
+  <text x="412" y="198" text-anchor="middle" class="gate-txt" fill="#991b1b">H</text>
+  <text x="412" y="211" text-anchor="middle" class="gate-txt" fill="#991b1b">M</text>
+  <text x="412" y="224" text-anchor="middle" class="gate-txt" fill="#991b1b">A</text>
+  <text x="412" y="237" text-anchor="middle" class="gate-txt" fill="#991b1b">C</text>
 
 
   <!-- ========================================================================= -->
   <!-- DOMAIN 2: PLATFORM CORE                                                   -->
   <!-- ========================================================================= -->
-  <rect x="430" y="76" width="375" height="270" rx="12" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5" filter="url(#tmShadow)"/>
-  <rect x="442" y="88" width="185" height="22" rx="4" fill="#dbeafe"/>
-  <text x="534" y="103" text-anchor="middle" class="domain-head" fill="#1e40af">2. PLATFORM TRUSTED CORE</text>
-  <text x="793" y="103" text-anchor="end" class="item-sub" fill="#2563eb" style="font-weight:600">Zero-Trust Compute</text>
-
-  <!-- Item 2.1 -->
-  <rect x="442" y="120" width="351" height="46" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
-  <text x="455" y="137" class="item-title">Fastify API Ingress Gateway</text>
-  <text x="455" y="152" class="item-sub">HMAC verify · 5-min window · dedup (&lt;300ms, no LLM)</text>
-
-  <!-- Item 2.2 -->
-  <rect x="442" y="174" width="351" height="46" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
-  <text x="455" y="191" class="item-title">BullMQ Review Engine Worker</text>
-  <text x="455" y="206" class="item-sub">Deterministic-first · ESLint/Semgrep · schema-guarded AI</text>
-
-  <!-- Item 2.3 -->
-  <rect x="442" y="228" width="351" height="46" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
-  <text x="455" y="245" class="item-title">Managed State (PostgreSQL 16 &amp; Redis 7)</text>
-  <text x="455" y="260" class="item-sub">Persist-then-publish · session revocation · DLQ</text>
-
-  <!-- Item 2.4 -->
-  <rect x="442" y="282" width="351" height="46" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
-  <text x="455" y="299" class="item-title">Cloud Key Management (KMS)</text>
-  <text x="455" y="314" class="item-sub">App private key KMS-wrapped · BYOK AES-256-GCM ciphertexts</text>
-
-
-  <!-- ========================================================================= -->
-  <!-- TENANT GUARD (BETWEEN DOMAIN 2 & 3)                                       -->
-  <!-- ========================================================================= -->
-  <line x1="805" y1="211" x2="843" y2="211" stroke="#16a34a" stroke-width="2" marker-end="url(#tArrowGreen)"/>
-  <rect x="807" y="180" width="34" height="62" rx="4" fill="#ffffff" stroke="#86efac" stroke-width="1.2"/>
-  <text x="824" y="197" text-anchor="middle" class="gate-txt" fill="#15803d">R</text>
-  <text x="824" y="210" text-anchor="middle" class="gate-txt" fill="#15803d">B</text>
-  <text x="824" y="223" text-anchor="middle" class="gate-txt" fill="#15803d">A</text>
-  <text x="824" y="235" text-anchor="middle" class="gate-txt" fill="#15803d">C</text>
-
-
-  <!-- ========================================================================= -->
-  <!-- DOMAIN 3: TENANT ISOLATION                                                -->
-  <!-- ========================================================================= -->
-  <rect x="845" y="76" width="320" height="270" rx="12" fill="#ffffff" stroke="#86efac" stroke-width="1.5" filter="url(#tmShadow)"/>
-  <rect x="857" y="88" width="165" height="22" rx="4" fill="#dcfce7"/>
-  <text x="939" y="103" text-anchor="middle" class="domain-head" fill="#15803d">3. TENANT ISOLATION</text>
-  <text x="1153" y="103" text-anchor="end" class="item-sub" fill="#16a34a" style="font-weight:600">Per-Org Boundary</text>
-
-  <!-- Item 3.1 -->
-  <rect x="857" y="120" width="296" height="46" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
-  <text x="870" y="137" class="item-title">Leading org_id DB Index</text>
-  <text x="870" y="152" class="item-sub">Every tenant table index starts with org_id (no seq scans)</text>
-
-  <!-- Item 3.2 -->
-  <rect x="857" y="174" width="296" height="46" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
-  <text x="870" y="191" class="item-title">Scoped Repository Layer</text>
-  <text x="870" y="206" class="item-sub">orgId first argument on every query; missing = 500 error</text>
-
-  <!-- Item 3.3 -->
-  <rect x="857" y="228" width="296" height="46" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
-  <text x="870" y="245" class="item-title">Cross-Tenant 404 Guard</text>
-  <text x="870" y="260" class="item-sub">Cross-org access returns 404, never 403 (Zero Oracle)</text>
-
-  <!-- Item 3.4 -->
-  <rect x="857" y="282" width="296" height="46" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
-  <text x="870" y="299" class="item-title">Namespaced Redis Keys</text>
-  <text x="870" y="314" class="item-sub">All cache keys partitioned: org:{id}:repo:{id}</text>
-
-
-  <!-- ========================================================================= -->
-  <!-- 3 BOTTOM INVARIANT CARDS (GENEROUS PADDING, NO TEXT OVERFLOW)             -->
-  <!-- ========================================================================= -->
   <g filter="url(#tmShadow)">
-    <rect x="35" y="370" width="355" height="92" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.2"/>
-    <rect x="47" y="380" width="130" height="18" rx="3" fill="#fee2e2"/>
-    <text x="112" y="393" text-anchor="middle" class="gate-txt" fill="#991b1b">ZERO EXISTENCE ORACLE</text>
-    <text x="47" y="415" class="inv-h" fill="#0f172a">Cross-Tenant Requests Always Yield 404</text>
-    <text x="47" y="432" class="inv-b">A user requesting another org's resource receives 404 Not Found.</text>
-    <text x="47" y="447" class="inv-b">403 is reserved strictly for within-tenant capability denials.</text>
+    <rect x="440" y="78" width="385" height="276" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.2"/>
+    <rect x="440" y="78" width="385" height="3" rx="1.5" fill="#2563eb"/>
+    <rect x="452" y="90" width="190" height="24" rx="5" fill="#dbeafe"/>
+    <text x="547" y="106" text-anchor="middle" class="domain-head" fill="#1e40af">2. PLATFORM TRUSTED CORE</text>
+    <text x="813" y="106" text-anchor="end" class="item-sub" fill="#2563eb" style="font-weight:600">Zero-Trust Compute</text>
+
+    <!-- Item 2.1 -->
+    <rect x="452" y="124" width="361" height="48" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+    <text x="465" y="143" class="item-title">Fastify API Ingress Gateway</text>
+    <text x="465" y="159" class="item-sub">HMAC verify · 5-min window · dedup (&lt;300ms, zero LLM)</text>
+
+    <!-- Item 2.2 -->
+    <rect x="452" y="180" width="361" height="48" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+    <text x="465" y="199" class="item-title">BullMQ Review Engine Worker</text>
+    <text x="465" y="215" class="item-sub">Deterministic-first · ESLint/Semgrep · schema-guarded AI</text>
+
+    <!-- Item 2.3 -->
+    <rect x="452" y="236" width="361" height="48" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+    <text x="465" y="255" class="item-title">Managed State (PostgreSQL 16 &amp; Redis 7)</text>
+    <text x="465" y="271" class="item-sub">Persist-then-publish · session revocation · DLQ</text>
+
+    <!-- Item 2.4 -->
+    <rect x="452" y="292" width="361" height="48" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+    <text x="465" y="311" class="item-title">Cloud Key Management (KMS)</text>
+    <text x="465" y="327" class="item-sub">App private key KMS-wrapped · BYOK AES-256-GCM ciphertexts</text>
   </g>
 
+
+  <!-- ========================================================================= -->
+  <!-- EGRESS GATE (BETWEEN DOMAIN 2 & 3)                                        -->
+  <!-- ========================================================================= -->
+  <line x1="825" y1="216" x2="878" y2="216" stroke="#10b981" stroke-width="2" marker-end="url(#tArrowGreen)"/>
+  <rect x="832" y="180" width="40" height="72" rx="4" fill="#ffffff" stroke="#86efac" stroke-width="1.2"/>
+  <text x="852" y="198" text-anchor="middle" class="gate-txt" fill="#15803d">R</text>
+  <text x="852" y="211" text-anchor="middle" class="gate-txt" fill="#15803d">B</text>
+  <text x="852" y="224" text-anchor="middle" class="gate-txt" fill="#15803d">A</text>
+  <text x="852" y="237" text-anchor="middle" class="gate-txt" fill="#15803d">C</text>
+
+
+  <!-- ========================================================================= -->
+  <!-- DOMAIN 3: SANDBOXED & EXTERNAL                                            -->
+  <!-- ========================================================================= -->
   <g filter="url(#tmShadow)">
-    <rect x="415" y="370" width="370" height="92" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.2"/>
-    <rect x="427" y="380" width="135" height="18" rx="3" fill="#dbeafe"/>
-    <text x="494" y="393" text-anchor="middle" class="gate-txt" fill="#1e40af">SECRETS MASKING GATE</text>
-    <text x="427" y="415" class="inv-h" fill="#0f172a">Zero Plaintext Secrets in Logs &amp; Findings</text>
-    <text x="427" y="432" class="inv-b">Redaction filter gates every log line and stored finding payload.</text>
-    <text x="427" y="447" class="inv-b">App private keys &amp; BYOK keys stored encrypted under Cloud KMS.</text>
+    <rect x="880" y="78" width="325" height="276" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.2"/>
+    <rect x="880" y="78" width="325" height="3" rx="1.5" fill="#10b981"/>
+    <rect x="892" y="90" width="185" height="24" rx="5" fill="#dcfce7"/>
+    <text x="984" y="106" text-anchor="middle" class="domain-head" fill="#166534">3. EXECUTION SANDBOX</text>
+    <text x="1193" y="106" text-anchor="end" class="item-sub" fill="#16a34a" style="font-weight:600">Isolated &amp; Ephemeral</text>
+
+    <!-- Item 3.1 -->
+    <rect x="892" y="124" width="301" height="48" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+    <text x="905" y="143" class="item-title">Static Analysis Process Isolation</text>
+    <text x="905" y="159" class="item-sub">ESLint / Semgrep AST runners with memory &amp; CPU caps</text>
+
+    <!-- Item 3.2 -->
+    <rect x="892" y="180" width="301" height="48" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+    <text x="905" y="199" class="item-title">Ephemeral PR Test Sandbox (Phase 2)</text>
+    <text x="905" y="215" class="item-sub">gVisor / Firecracker microVM · untrusted code execution</text>
+
+    <!-- Item 3.3 -->
+    <rect x="892" y="236" width="301" height="48" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+    <text x="905" y="255" class="item-title">AI Provider Boundaries</text>
+    <text x="905" y="271" class="item-sub">Zero data retention headers · no model training (NFR-29)</text>
+
+    <!-- Item 3.4 -->
+    <rect x="892" y="292" width="301" height="48" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+    <text x="905" y="311" class="item-title">GitHub API Publication Egress</text>
+    <text x="905" y="327" class="item-sub">Short-lived installation tokens · scoped pull_requests:write</text>
   </g>
 
+
+  <!-- ========================================================================= -->
+  <!-- 3 BOTTOM INVARIANT CARDS                                                  -->
+  <!-- ========================================================================= -->
   <g filter="url(#tmShadow)">
-    <rect x="810" y="370" width="355" height="92" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.2"/>
-    <rect x="822" y="380" width="135" height="18" rx="3" fill="#dcfce7"/>
-    <text x="889" y="393" text-anchor="middle" class="gate-txt" fill="#15803d">AUTHORITATIVE BILLING</text>
-    <text x="822" y="415" class="inv-h" fill="#0f172a">Client Plan Claims are 100% Inert</text>
-    <text x="822" y="432" class="inv-b">A client claiming "I am on Team plan" has zero effect.</text>
-    <text x="822" y="447" class="inv-b">Only verified provider webhooks move the org_billing state machine.</text>
+    <!-- Inv 1 -->
+    <rect x="35" y="378" width="370" height="118" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.2"/>
+    <rect x="35" y="378" width="370" height="3" rx="1.5" fill="#ef4444"/>
+    <rect x="47" y="392" width="138" height="18" rx="4" fill="#fee2e2"/>
+    <text x="116" y="405" text-anchor="middle" class="inv-h" fill="#991b1b">INVARIANT 1: DATA ONLY</text>
+    <text x="47" y="428" class="item-title">Repository content is input, never authority.</text>
+    <text x="47" y="446" class="inv-b">• Prompt injection cannot alter pipeline control flow</text>
+    <text x="47" y="462" class="inv-b">• Model output validated strictly against Zod contracts</text>
+    <text x="47" y="478" class="inv-b">• Dropped or demoted if anchor is invalid in diff</text>
+
+    <!-- Inv 2 -->
+    <rect x="430" y="378" width="380" height="118" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.2"/>
+    <rect x="430" y="378" width="380" height="3" rx="1.5" fill="#2563eb"/>
+    <rect x="442" y="392" width="154" height="18" rx="4" fill="#dbeafe"/>
+    <text x="519" y="405" text-anchor="middle" class="inv-h" fill="#1e40af">INVARIANT 2: ISOLATION</text>
+    <text x="442" y="428" class="item-title">Multi-tenant isolation by construction.</text>
+    <text x="442" y="446" class="inv-b">• org_id leading index on every tenant table</text>
+    <text x="442" y="462" class="inv-b">• Cross-tenant queries return 404, never 403 (no oracle)</text>
+    <text x="442" y="478" class="inv-b">• Redis keys scoped strictly by org:repo:id</text>
+
+    <!-- Inv 3 -->
+    <rect x="835" y="378" width="370" height="118" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.2"/>
+    <rect x="835" y="378" width="370" height="3" rx="1.5" fill="#10b981"/>
+    <rect x="847" y="392" width="154" height="18" rx="4" fill="#dcfce7"/>
+    <text x="924" y="405" text-anchor="middle" class="inv-h" fill="#166534">INVARIANT 3: REDACTION</text>
+    <text x="847" y="428" class="item-title">Zero secrets stored or logged in plaintext.</text>
+    <text x="847" y="446" class="inv-b">• GitHub App private key wrapped in Cloud KMS</text>
+    <text x="847" y="462" class="inv-b">• BYOK keys encrypted with AES-256-GCM ciphertexts</text>
+    <text x="847" y="478" class="inv-b">• Pre-commit &amp; runtime redaction gates on logs</text>
   </g>
 </svg>

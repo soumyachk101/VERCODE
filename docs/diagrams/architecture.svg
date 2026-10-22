@@ -1,162 +1,119 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 660" width="1060" height="660" role="img" aria-label="VERCODE system architecture diagram" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 540" width="1020" height="540" role="img" aria-label="VERCODE system architecture" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
   <defs>
-    <marker id="dArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 0 1 L 9 5 L 0 9 z" fill="#38bdf8"/>
+    <style>
+      .t-main { font-size: 18px; font-weight: 800; fill: #0f172a; letter-spacing: -0.3px; }
+      .t-sub  { font-size: 11.5px; font-weight: 500; fill: #64748b; }
+      .h-card { font-size: 13px; font-weight: 700; fill: #0f172a; }
+      .b-card { font-size: 10.5px; fill: #475569; }
+      .pill   { font-size: 9.5px; font-weight: 700; }
+    </style>
+    <marker id="darr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
     </marker>
-    <marker id="dArrowAmber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 0 1 L 9 5 L 0 9 z" fill="#fbbf24"/>
-    </marker>
-    <marker id="dArrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 0 1 L 9 5 L 0 9 z" fill="#34d399"/>
-    </marker>
-    <marker id="dArrowPurple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 0 1 L 9 5 L 0 9 z" fill="#c084fc"/>
-    </marker>
+    <filter id="dShadow" x="-4%" y="-4%" width="108%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#0f172a" flood-opacity="0.02"/>
+    </filter>
   </defs>
 
-  <!-- Dark Background -->
-  <rect width="1060" height="660" fill="#0f172a"/>
+  <rect width="1020" height="540" fill="#f8fafc"/>
+  
+  <text x="40" y="38" class="t-main">VERCODE — System Architecture</text>
+  <text x="40" y="56" class="t-sub">Three stateless deployable units · Redis BullMQ queue buffer · PostgreSQL durable state</text>
 
-  <!-- Header -->
-  <text x="40" y="42" fill="#f8fafc" font-size="18" font-weight="800" letter-spacing="-0.3px">VERCODE — System Architecture</text>
-  <text x="40" y="60" fill="#94a3b8" font-size="11.5">Modular Monolith: 3 Deployables + Managed State + Shared Zod Contracts</text>
+  <!-- External Column -->
+  <g filter="url(#dShadow)">
+    <rect x="40" y="80" width="220" height="420" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.2"/>
+    <rect x="40" y="80" width="220" height="3" rx="1.5" fill="#ef4444"/>
+    <rect x="56" y="94" width="130" height="22" rx="4" fill="#fee2e2"/>
+    <text x="121" y="109" text-anchor="middle" fill="#991b1b" font-size="10.5" font-weight="800">EXTERNAL INGRESS</text>
 
-  <!-- GitHub External App (Top Left) -->
-  <rect x="40" y="85" width="200" height="90" rx="10" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
-  <text x="140" y="112" text-anchor="middle" fill="#fbbf24" font-size="14" font-weight="700">GitHub App Ingress</text>
-  <text x="140" y="132" text-anchor="middle" fill="#cbd5e1" font-size="11">HMAC-SHA256 Signed</text>
-  <text x="140" y="148" text-anchor="middle" fill="#94a3b8" font-size="10.5">5-min window · 24h dedup</text>
-  <text x="140" y="163" text-anchor="middle" fill="#f59e0b" font-size="10" font-weight="600">PR events &amp; installations</text>
+    <rect x="56" y="130" width="188" height="64" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="70" y="152" class="h-card">GitHub Webhooks</text>
+    <text x="70" y="170" class="b-card">PR opened / sync / review</text>
+    <text x="70" y="184" class="b-card">HMAC-SHA256 signed</text>
 
-  <!-- Fastify API Server (Top Center) -->
-  <rect x="350" y="85" width="240" height="100" rx="10" fill="#1e293b" stroke="#38bdf8" stroke-width="1.8"/>
-  <text x="470" y="112" text-anchor="middle" fill="#7dd3fc" font-size="14.5" font-weight="700">apps/api — Fastify 5</text>
-  <text x="470" y="131" text-anchor="middle" fill="#cbd5e1" font-size="11">auth · dashboard REST · webhooks</text>
-  <text x="470" y="147" text-anchor="middle" fill="#cbd5e1" font-size="11">verify signature + delivery dedup</text>
-  <rect x="365" y="156" width="210" height="18" rx="4" fill="#0369a1" fill-opacity="0.3"/>
-  <text x="470" y="169" text-anchor="middle" fill="#38bdf8" font-size="9.5" font-weight="700">NEVER RUNS REVIEW PIPELINE</text>
+    <rect x="56" y="210" width="188" height="64" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="70" y="232" class="h-card">Developer Browser</text>
+    <text x="70" y="250" class="b-card">Next.js 15 Dashboard UI</text>
+    <text x="70" y="264" class="b-card">Session cookie auth</text>
 
-  <!-- External Billing (Top Right) -->
-  <rect x="700" y="85" width="200" height="90" rx="10" fill="#1e293b" stroke="#cbd5e1" stroke-width="1.5"/>
-  <text x="800" y="112" text-anchor="middle" fill="#f1f5f9" font-size="14" font-weight="700">Stripe / Razorpay</text>
-  <text x="800" y="132" text-anchor="middle" fill="#cbd5e1" font-size="11">Verified billing webhooks</text>
-  <text x="800" y="148" text-anchor="middle" fill="#94a3b8" font-size="10.5">Idempotent on event_id</text>
-  <text x="800" y="163" text-anchor="middle" fill="#94a3b8" font-size="10">Client claims are inert</text>
+    <rect x="56" y="290" width="188" height="64" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="70" y="312" class="h-card">Billing Webhooks</text>
+    <text x="70" y="330" class="b-card">Stripe / Razorpay events</text>
+    <text x="70" y="344" class="b-card">Idempotent plan updates</text>
 
-  <!-- Next.js Dashboard UI (Middle Left) -->
-  <rect x="40" y="240" width="200" height="90" rx="10" fill="#1e293b" stroke="#818cf8" stroke-width="1.5"/>
-  <text x="140" y="267" text-anchor="middle" fill="#a5b4fc" font-size="14" font-weight="700">apps/web — Next.js 15</text>
-  <text x="140" y="287" text-anchor="middle" fill="#cbd5e1" font-size="11">App Router · Tailwind 4 · shadcn</text>
-  <text x="140" y="303" text-anchor="middle" fill="#94a3b8" font-size="10.5">Reviews, Security, Usage, Settings</text>
-  <text x="140" y="318" text-anchor="middle" fill="#818cf8" font-size="10" font-weight="600">Cookie session auth (HttpOnly)</text>
+    <rect x="56" y="370" width="188" height="110" rx="8" fill="#fef2f2" stroke="#fecaca" stroke-width="1"/>
+    <text x="70" y="392" class="h-card" fill="#991b1b">Zero-Trust Input</text>
+    <text x="70" y="412" class="b-card">• Repo diffs are data only</text>
+    <text x="70" y="430" class="b-card">• No tool execution access</text>
+    <text x="70" y="448" class="b-card">• Schema re-validation</text>
+    <text x="70" y="466" class="b-card">• Secret masking gate</text>
+  </g>
 
-  <!-- Redis Instance (MiddleCenter) -->
-  <rect x="350" y="240" width="240" height="90" rx="10" fill="#1e293b" stroke="#34d399" stroke-width="1.8"/>
-  <text x="470" y="267" text-anchor="middle" fill="#6ee7b7" font-size="14.5" font-weight="700">Redis 7 (BullMQ &amp; Cache)</text>
-  <text x="470" y="287" text-anchor="middle" fill="#cbd5e1" font-size="11">review-queue · retention-queue</text>
-  <text x="470" y="303" text-anchor="middle" fill="#cbd5e1" font-size="11">In-flight locks (SET NX) · DLQ</text>
-  <text x="470" y="318" text-anchor="middle" fill="#6ee7b7" font-size="10" font-weight="600">24h TTL PR diff cache</text>
+  <!-- Platform Core Column -->
+  <g filter="url(#dShadow)">
+    <rect x="300" y="80" width="420" height="420" rx="12" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.2"/>
+    <rect x="300" y="80" width="420" height="3" rx="1.5" fill="#2563eb"/>
+    <rect x="316" y="94" width="150" height="22" rx="4" fill="#dbeafe"/>
+    <text x="391" y="109" text-anchor="middle" fill="#1e40af" font-size="10.5" font-weight="800">PLATFORM CORE</text>
 
-  <!-- BullMQ Worker (Lower Center) -->
-  <rect x="350" y="390" width="240" height="110" rx="10" fill="#1e293b" stroke="#f472b6" stroke-width="1.8"/>
-  <text x="470" y="417" text-anchor="middle" fill="#f9a8d4" font-size="14.5" font-weight="700">apps/worker (Pipeline)</text>
-  <text x="470" y="437" text-anchor="middle" fill="#cbd5e1" font-size="11">BullMQ consumer · max concurrency 4</text>
-  <text x="470" y="453" text-anchor="middle" fill="#cbd5e1" font-size="11">Fetch diff → static → AI review</text>
-  <text x="470" y="469" text-anchor="middle" fill="#cbd5e1" font-size="11">validate → dedup → policy → publish</text>
-  <rect x="365" y="476" width="210" height="17" rx="3" fill="#be185d" fill-opacity="0.3"/>
-  <text x="470" y="488" text-anchor="middle" fill="#f472b6" font-size="9.5" font-weight="700">PERSIST-THEN-PUBLISH IN ONE TX</text>
+    <rect x="316" y="130" width="388" height="90" rx="8" fill="#f8fafc" stroke="#bfdbfe" stroke-width="1"/>
+    <text x="330" y="152" class="h-card" fill="#1d4ed8">apps/api (Fastify 5 Server)</text>
+    <text x="330" y="172" class="b-card">• Webhook receiver: verify + dedup &lt; 300 ms (202 Accepted)</text>
+    <text x="330" y="190" class="b-card">• Dashboard REST API + RBAC capability guards</text>
+    <text x="330" y="208" class="b-card" font-weight="700" fill="#b91c1c">• NEVER calls LLM or fetches diff on ingress path (T-10)</text>
 
-  <!-- PostgreSQL 16 (Lower Left) -->
-  <rect x="40" y="390" width="200" height="110" rx="10" fill="#1e293b" stroke="#60a5fa" stroke-width="1.5"/>
-  <text x="140" y="417" text-anchor="middle" fill="#93c5fd" font-size="14" font-weight="700">PostgreSQL 16</text>
-  <text x="140" y="437" text-anchor="middle" fill="#cbd5e1" font-size="11">Prisma ORM · JSONB findings</text>
-  <text x="140" y="453" text-anchor="middle" fill="#cbd5e1" font-size="11">Leading org_id on tenant tables</text>
-  <text x="140" y="469" text-anchor="middle" fill="#cbd5e1" font-size="11">Append-only audit_events</text>
-  <text x="140" y="488" text-anchor="middle" fill="#60a5fa" font-size="10" font-weight="600">Cross-tenant queries return 404</text>
+    <rect x="316" y="234" width="388" height="54" rx="8" fill="#fff7ed" stroke="#fed7aa" stroke-width="1"/>
+    <text x="330" y="254" class="h-card" fill="#c2410c">BullMQ review-queue (Redis 7)</text>
+    <text x="330" y="272" class="b-card">Carries { jobId } pointer only · concurrency: 4 workers per node</text>
 
-  <!-- Shared Packages Box (Right Column) -->
-  <rect x="660" y="240" width="360" height="260" rx="12" fill="#0b1120" stroke="#475569" stroke-width="1.2" stroke-dasharray="6 4"/>
-  <text x="840" y="266" text-anchor="middle" fill="#94a3b8" font-size="13" font-weight="700">packages/* (Shared Core Libraries)</text>
+    <rect x="316" y="302" width="388" height="180" rx="8" fill="#f8fafc" stroke="#fed7aa" stroke-width="1"/>
+    <text x="330" y="324" class="h-card" fill="#c2410c">apps/worker (BullMQ Review Consumer)</text>
+    <text x="330" y="344" class="b-card">1. Pre-flight quota check &amp; same-SHA idempotency</text>
+    <text x="330" y="362" class="b-card">2. Bounded diff fetch (max 60 files / 3,000 lines)</text>
+    <text x="330" y="380" class="b-card">3. Deterministic static analysis (ESLint + Semgrep AST)</text>
+    <text x="330" y="398" class="b-card">4. Task-routed schema-validated AI review pass</text>
+    <text x="330" y="416" class="b-card">5. Anchor check → dedup (file,line,cat) → 0.6 confidence floor</text>
+    <text x="330" y="434" class="b-card">6. Persist-then-Publish: write Postgres before GitHub call</text>
+    <text x="330" y="454" class="b-card" font-weight="700" fill="#0f766e">✓ Wall-clock budget: 240 s timeout with partial results</text>
+  </g>
 
-  <!-- Package Chips inside -->
-  <rect x="680" y="280" width="155" height="40" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
-  <text x="757" y="297" text-anchor="middle" fill="#f1f5f9" font-size="11" font-weight="700">contracts</text>
-  <text x="757" y="311" text-anchor="middle" fill="#94a3b8" font-size="9.5">Zod schemas (SSOT)</text>
+  <!-- External Integrations & Storage Column -->
+  <g filter="url(#dShadow)">
+    <rect x="760" y="80" width="220" height="420" rx="12" fill="#ffffff" stroke="#bbf7d0" stroke-width="1.2"/>
+    <rect x="760" y="80" width="220" height="3" rx="1.5" fill="#10b981"/>
+    <rect x="776" y="94" width="160" height="22" rx="4" fill="#dcfce7"/>
+    <text x="856" y="109" text-anchor="middle" fill="#166534" font-size="10.5" font-weight="800">SERVICES &amp; DATA</text>
 
-  <rect x="845" y="280" width="155" height="40" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
-  <text x="922" y="297" text-anchor="middle" fill="#f1f5f9" font-size="11" font-weight="700">diff-engine</text>
-  <text x="922" y="311" text-anchor="middle" fill="#94a3b8" font-size="9.5">Pure unified parser</text>
+    <rect x="776" y="130" width="188" height="64" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="790" y="152" class="h-card">PostgreSQL 16</text>
+    <text x="790" y="170" class="b-card">Tenant org_id leading</text>
+    <text x="790" y="184" class="b-card">Immutable audit_events</text>
 
-  <rect x="680" y="330" width="155" height="40" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
-  <text x="757" y="347" text-anchor="middle" fill="#f1f5f9" font-size="11" font-weight="700">static-analysis</text>
-  <text x="757" y="361" text-anchor="middle" fill="#94a3b8" font-size="9.5">ESLint + Semgrep</text>
+    <rect x="776" y="206" width="188" height="64" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="790" y="228" class="h-card">GitHub Platform</text>
+    <text x="790" y="246" class="b-card">Octokit App JWT auth</text>
+    <text x="790" y="260" class="b-card">Inline reviews + verdict</text>
 
-  <rect x="845" y="330" width="155" height="40" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
-  <text x="922" y="347" text-anchor="middle" fill="#f1f5f9" font-size="11" font-weight="700">review-engine</text>
-  <text x="922" y="361" text-anchor="middle" fill="#94a3b8" font-size="9.5">12-stage orchestrator</text>
+    <rect x="776" y="282" width="188" height="64" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="790" y="304" class="h-card">AI Gateways</text>
+    <text x="790" y="322" class="b-card">OpenAI · Anthropic · Ollama</text>
+    <text x="790" y="336" class="b-card">Zero-retention headers</text>
 
-  <rect x="680" y="380" width="155" height="40" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
-  <text x="757" y="397" text-anchor="middle" fill="#f1f5f9" font-size="11" font-weight="700">ai-providers</text>
-  <text x="757" y="411" text-anchor="middle" fill="#94a3b8" font-size="9.5">OpenAI · Anthropic · Ollama</text>
+    <rect x="776" y="358" width="188" height="64" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="790" y="380" class="h-card">Cloud KMS</text>
+    <text x="790" y="398" class="b-card">App key KMS-wrapped</text>
+    <text x="790" y="412" class="b-card">AES-256-GCM BYOK</text>
 
-  <rect x="845" y="380" width="155" height="40" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
-  <text x="922" y="397" text-anchor="middle" fill="#f1f5f9" font-size="11" font-weight="700">database</text>
-  <text x="922" y="411" text-anchor="middle" fill="#94a3b8" font-size="9.5">Prisma tenant repos</text>
+    <rect x="776" y="434" width="188" height="54" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="790" y="454" class="h-card">Observability</text>
+    <text x="790" y="470" class="b-card">Pino redact · OpenTelemetry</text>
+  </g>
 
-  <!-- AI Providers detail strip -->
-  <rect x="680" y="432" width="320" height="54" rx="6" fill="#1e293b" stroke="#f59e0b" stroke-width="1"/>
-  <text x="840" y="452" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="700">AI Model Routing &amp; Rate Table</text>
-  <text x="840" y="468" text-anchor="middle" fill="#cbd5e1" font-size="10">Triage (cheap) → Deep (strong) → Security Pass</text>
-  <text x="840" y="480" text-anchor="middle" fill="#94a3b8" font-size="9.5">Token usage &amp; USD cost tracking recorded per job</text>
-
-  <!-- Bottom Observability & Security Strip -->
-  <rect x="40" y="550" width="980" height="60" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1"/>
-  <text x="60" y="574" fill="#f1f5f9" font-size="12" font-weight="700">Cross-Cutting Infrastructure</text>
-  <text x="60" y="594" fill="#94a3b8" font-size="10.5">Sentry (error capture) · OpenTelemetry (tracing by jobId) · Pino (secret redaction gate) · Cloud KMS (BYOK AES-256-GCM encryption)</text>
-
-
-  <!-- ========================================================================= -->
-  <!-- PRECISE CONNECTORS (NO ORPHAN ARROWHEADS, NO OVERLAPPING SPAGHETTI)        -->
-  <!-- ========================================================================= -->
-
-  <!-- 1. GitHub App Webhook -> Fastify API -->
-  <line x1="240" y1="130" x2="341" y2="130" stroke="#f59e0b" stroke-width="1.8" marker-end="url(#dArrowAmber)"/>
-  <rect x="254" y="118" width="75" height="15" rx="3" fill="#0f172a" stroke="#f59e0b" stroke-width="0.8"/>
-  <text x="291" y="129" text-anchor="middle" fill="#fbbf24" font-size="9" font-weight="700">POST webhook</text>
-
-  <!-- 2. Billing Webhook -> Fastify API -->
-  <line x1="700" y1="130" x2="599" y2="130" stroke="#cbd5e1" stroke-width="1.8" marker-end="url(#dArrow)"/>
-  <rect x="618" y="118" width="65" height="15" rx="3" fill="#0f172a" stroke="#cbd5e1" stroke-width="0.8"/>
-  <text x="650" y="129" text-anchor="middle" fill="#cbd5e1" font-size="9" font-weight="700">billing event</text>
-
-  <!-- 3. Web UI Dashboard -> Fastify API -->
-  <path d="M 140,240 V 155 H 341" fill="none" stroke="#818cf8" stroke-width="1.8" marker-end="url(#dArrow)"/>
-  <rect x="180" y="145" width="95" height="16" rx="3" fill="#0f172a" stroke="#818cf8" stroke-width="0.8"/>
-  <text x="227" y="157" text-anchor="middle" fill="#a5b4fc" font-size="9" font-weight="700">REST + Cookie Auth</text>
-
-  <!-- 4. Fastify API -> Redis Queue (Enqueue) -->
-  <line x1="470" y1="185" x2="470" y2="231" stroke="#38bdf8" stroke-width="2" marker-end="url(#dArrow)"/>
-  <rect x="420" y="200" width="100" height="16" rx="3" fill="#0f172a" stroke="#38bdf8" stroke-width="0.8"/>
-  <text x="470" y="212" text-anchor="middle" fill="#38bdf8" font-size="9" font-weight="700">enqueue (review-queue)</text>
-
-  <!-- 5. Redis Queue -> Worker (Dequeue) -->
-  <line x1="470" y1="330" x2="470" y2="381" stroke="#34d399" stroke-width="2" marker-end="url(#dArrowGreen)"/>
-  <rect x="430" y="348" width="80" height="16" rx="3" fill="#0f172a" stroke="#34d399" stroke-width="0.8"/>
-  <text x="470" y="360" text-anchor="middle" fill="#6ee7b7" font-size="9" font-weight="700">dequeue job</text>
-
-  <!-- 6. Worker -> PostgreSQL 16 (Persist) -->
-  <line x1="350" y1="445" x2="249" y2="445" stroke="#60a5fa" stroke-width="1.8" marker-end="url(#dArrow)"/>
-  <rect x="257" y="434" width="85" height="15" rx="3" fill="#0f172a" stroke="#60a5fa" stroke-width="0.8"/>
-  <text x="300" y="445" text-anchor="middle" fill="#93c5fd" font-size="9" font-weight="700">persist findings/tx</text>
-
-  <!-- 7. Worker -> Shared Packages / Pipeline Engine -->
-  <line x1="590" y1="445" x2="651" y2="445" stroke="#f472b6" stroke-width="1.8" marker-end="url(#dArrowPurple)"/>
-  <rect x="600" y="434" width="45" height="15" rx="3" fill="#0f172a" stroke="#f472b6" stroke-width="0.8"/>
-  <text x="622" y="445" text-anchor="middle" fill="#f9a8d4" font-size="9" font-weight="700">executes</text>
-
-  <!-- 8. Worker -> GitHub REST (diff fetch & review publish) -->
-  <path d="M 400,390 V 360 H 280 V 170 H 249" fill="none" stroke="#fbbf24" stroke-width="1.8" stroke-dasharray="4 3" marker-end="url(#dArrowAmber)"/>
-  <rect x="260" y="270" width="82" height="25" rx="3" fill="#0f172a" stroke="#fbbf24" stroke-width="0.8"/>
-  <text x="301" y="281" text-anchor="middle" fill="#fbbf24" font-size="8.5" font-weight="700">diff fetch &amp;</text>
-  <text x="301" y="291" text-anchor="middle" fill="#fbbf24" font-size="8.5" font-weight="700">publish review</text>
+  <!-- Connectors -->
+  <line x1="244" y1="162" x2="294" y2="162" stroke="#64748b" stroke-width="1.5" marker-end="url(#darr)"/>
+  <line x1="510" y1="220" x2="510" y2="230" stroke="#64748b" stroke-width="1.5" marker-end="url(#darr)"/>
+  <line x1="510" y1="288" x2="510" y2="298" stroke="#64748b" stroke-width="1.5" marker-end="url(#darr)"/>
+  <line x1="704" y1="380" x2="754" y2="380" stroke="#64748b" stroke-width="1.5" marker-end="url(#darr)"/>
 </svg>
