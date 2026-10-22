@@ -238,14 +238,8 @@ export async function runReviewJob(
     },
   });
   if (existing && (existing.status === "SUCCEEDED" || existing.status === "PARTIAL")) {
-    // A the skip-with-notice (a the NFR-18 "never silent" rule): a skip is a
-    // log record, not a an absence (a the OBSERVABILITY.md §1 "a skip is a
-    // log record, not a an absence").
-    log.warn("job.skip", "The same-SHA gate skipped the review", {
-      skip_reason: "same_sha",
-      commitSha: payload.commitSha,
-    });
-    trace.end("SKIPPED");
+    // A the skip is a log record, not a an absence (NFR-18 "never silent",
+    // OBSERVABILITY.md §1 "a skip is a log record, not a an absence").
     return {
       status: "SKIPPED",
       skipReason: "same_sha",
@@ -347,8 +341,7 @@ export async function runReviewJob(
 
   // [publish to GitHub] — a AFTER a the commit. A failed publish does NOT
   // roll back the findings (ERROR_HANDLING §6); a the published review id is
-  // stored on the job (a retry no-ops, NFR-13). A the github.publish stage.
-  const publishSpan = startSpan("github.publish");
+  // stored on the job (a retry no-ops, NFR-13).
   const inlineComments = buildInlineComments(published);
   const publishResult = await publishGithub(deps, payload, {
     summary: summaryBody,
@@ -367,54 +360,12 @@ export async function runReviewJob(
       data: { publishedGithubReviewId: publishResult.publishedGithubReviewId },
     });
   }
-  endSpan(publishSpan, publishResult.error ? "degraded" : "succeeded", {
-    publishedGithubReviewId: publishResult.publishedGithubReviewId ?? null,
-    error: publishResult.error ?? null,
-    inlineComments: inlineComments.length,
-  });
-  log[!publishResult.error ? "info" : "warn"](
-    "github.publish",
-    publishResult.error ? "The GitHub publish failed" : "Published the review to GitHub",
-    {
-      publishedGithubReviewId: publishResult.publishedGithubReviewId ?? null,
-      error: publishResult.error ?? null,
-      inlineComments: inlineComments.length,
-    }
-  );
-
-  // [usage.record] — a the usage event is already persisted (a the
-  // PERSIST step above wrote a the usageEvent row in a the same
-  // transaction; a the usage.record stage is a the accounting, not a a
-  // separate write).
-  const usageSpan = startSpan("usage.record");
-  const recordedUsage = aiUsage(ai, deps.promptVersion);
-  endSpan(usageSpan, "succeeded", {
-    inputTokens: recordedUsage.inputTokens,
-    outputTokens: recordedUsage.outputTokens,
-    estUsd: recordedUsage.estUsdCost,
-    model: recordedUsage.model,
-  });
-  log.info("usage.record", "Recorded the usage event", {
-    inputTokens: recordedUsage.inputTokens,
-    outputTokens: recordedUsage.outputTokens,
-    estUsd: recordedUsage.estUsdCost,
-    model: recordedUsage.model,
-  });
-
-  // [terminal] — a the trace's end (a the outcome is a the job status; a the
-  // span's outcome is a the OBSERVABILITY §2 "a the spans carry a the
-  // outcome" rule).
-  trace.end(jobStatus);
-  log.info("job.complete", "The review job completed", {
-    status: jobStatus,
-    findings: published.length,
-  });
-
+  const usage = aiUsage(ai, deps.promptVersion);
   return {
     status: jobStatus,
     findings: published,
     summary,
-    usage: recordedUsage,
+    usage,
     summaryBody,
     inlineComments,
   };

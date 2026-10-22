@@ -227,6 +227,13 @@ export async function billingWebhookRoutes(app: FastifyInstance, config: AppConf
           targetId: providerEventId,
           meta: { type: evt?.type, provider },
         });
+        // [M7 observability] — a the replay log record (a the NFR-13 "a
+        // replay is a no-op" + a the operator's queryable surface).
+        billingLog.info("webhook.ingest", "The billing event was a replay", {
+          providerEventId,
+          provider,
+          outcome: "replay",
+        });
         reply.code(200).send({ ok: true, replay: true, eventId: providerEventId });
         return;
       }
