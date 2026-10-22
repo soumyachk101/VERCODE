@@ -1,30 +1,15 @@
 import {
   keepPreviousData,
   QueryClient,
-  QueryClientProvider,
   useMutation,
   useQuery,
   type UseQueryResult,
 } from "@tanstack/react-query";
 import { api } from "./api";
 import type {
-  AuditResponse,
-  BillingResponse,
-  GitHubInstall,
   Invitation,
-  JobDetail,
-  ListReviewsResponse,
-  Member,
-  OrgDetail,
-  OrgSettings,
   Profile,
-  ProvidersResponse,
-  ReposList,
-  ReviewFinding,
-  RulesResponse,
-  SecurityRollup,
   Session,
-  UsageResponse,
 } from "./types";
 
 export function createQueryClient(): QueryClient {
