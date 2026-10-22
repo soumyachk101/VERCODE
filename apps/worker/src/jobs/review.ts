@@ -248,7 +248,7 @@ export async function runReviewJob(
   const month = new Date().toISOString().slice(0, 7); // YYYY-MM
   const quota = await checkQuotaPlan(db, payload.orgId, org.plan, month);
   if (quota.over) {
-    return finishSkipped(deps, payload, "quota_exceeded", {
+    return finishSkipped(deps, payload, "quota_exceeded", month, {
       summaryBody: `Review skipped — org quota reached for ${month} (${quota.detail}). Upgrade or reduce review volume.`,
     });
   }

@@ -51,11 +51,55 @@
 // regression.
 // ---------------------------------------------------------------------------
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
 import type { PrismaClient, Organization, Membership, AuditEvent, Role } from "@prisma/client";
-import { buildTenantPlugin } from "../../apps/api/src/plugins/tenant.js";
+
+// ---------------------------------------------------------------------------
+// The mocked Prisma seam.
+//
+// `buildTenantPlugin` constructs its own `PrismaClient` inside the plugin
+// (plugins/tenant.ts § buildTenantPlugin), so an in-memory fake passed as a
+// dependency is not possible without editing product code. Instead we
+// `vi.mock("@prisma/client")` so the plugin's `new PrismaClient()` returns a
+// fake backed by per-test in-memory state. The `PrismaClient` export is
+// replaced by a factory that reads a module-level "current seed" so each test
+// can rebuild its own rows.
+// ---------------------------------------------------------------------------
+
+let CURRENT: TenantSeed;
+let CURRENT_STATE: TenantDbState;
+
+function makeFakePrismaClient() {
+  return {
+    membership: {
+      findFirst: async ({ where }: { where: { orgId: string; userId: string } }) =>
+        CURRENT_STATE.memberships.find((m) => m.orgId === where.orgId && m.userId === where.userId) ?? null,
+    },
+    organization: {
+      findFirst: async ({ where }: { where: { id?: string; slug?: string; status?: unknown } }) =>
+        CURRENT_STATE.orgs.find((o) => o.id === where.id && o.status !== "DELETED") ?? null,
+    },
+    auditEvent: {
+      create: async ({ data }: { data: Record<string, unknown> }) => {
+        const row = { id: `audit-${CURRENT_STATE.audits.length + 1}`, createdAt: new Date(), ...data } as unknown as AuditEvent;
+        CURRENT_STATE.audits.push(row);
+        return row;
+      },
+    },
+  } as unknown as PrismaClient;
+}
+
+vi.mock("@prisma/client", async () => {
+  const actual = await vi.importActual<Record<string, unknown>>("@prisma/client");
+  return {
+    ...actual,
+    PrismaClient: makeFakePrismaClient,
+  };
+});
+
+const { buildTenantPlugin } = await import("../../apps/api/src/plugins/tenant.js");
 
 // ---------------------------------------------------------------------------
 // The mocked Prisma surface (the pattern from apps/api/src/webhooks.test.ts:
