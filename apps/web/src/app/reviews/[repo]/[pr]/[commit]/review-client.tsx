@@ -89,11 +89,12 @@ function ReviewBody({ repo, prNumber, commitId }: { repo: string; prNumber: numb
   // the one-line finding (PAGE §3.3.1): "2 high findings — an SQL
   // injection and an unhandled null". A summary.topRisks pair, or a
   // "no findings" when the review was clean
+  const topRisks = summary?.topRisks ?? [];
   const oneLine =
-    summary && summary.topRisks.length > 0
-      ? `${summary.highSeverityCount} ${summary.highSeverityCount === 1 ? "finding" : "findings"} — ${summary.topRisks
-          .slice(0, 2)
-          .join(" and ")}`
+    topRisks.length > 0
+      ? `${summary?.highSeverityCount ?? topRisks.length} ${
+          (summary?.highSeverityCount ?? topRisks.length) === 1 ? "finding" : "findings"
+        } — ${topRisks.slice(0, 2).join(" and ")}`
       : findings.length === 0
         ? "No findings above the confidence floor"
         : `${findings.length} finding${findings.length === 1 ? "" : "s"} at ${findings[0]?.confidence?.toFixed(2) ?? "—"} confidence`;

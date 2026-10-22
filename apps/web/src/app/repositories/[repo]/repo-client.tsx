@@ -61,11 +61,10 @@ function RepoBody({ repo }: { repo: string }) {
   // the risk-trend chart: a findings-by-category series for 30 days. The
   // data comes from the API's /trends; when it's a flat zero line, the
   // chart draws flat (DESIGN_SYSTEM §6.5: a flat line tells the truth).
-  const catMap = new Map<string, Record<string, number | string>>();
+  const catMap = new Map<string, { date: string; [k: string]: number | string }>();
   for (const p of trendsQ.data ?? []) {
-    const row = catMap.get(p.date) ?? {};
-    row.date = p.date;
-    row[p.category] = (row[p.category] as number | undefined ?? 0) + p.count;
+    const row = catMap.get(p.date) ?? { date: p.date };
+    row[p.category] = (Number(row[p.category]) || 0) + p.count;
     catMap.set(p.date, row);
   }
   const series = Array.from(catMap.values());
