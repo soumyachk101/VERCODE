@@ -4,7 +4,7 @@
 
 import type { FastifyInstance } from "fastify";
 import { CreateOrgRequestSchema, CreateInvitationRequestSchema, ChangeRoleRequestSchema } from "@vercode/contracts";
-import { Role, Prisma, PrismaClient } from "@prisma/client";
+import { Role, Prisma } from "@prisma/client";
 
 export async function orgRoutes(app: FastifyInstance) {
   // A create org (the creator is the owner, AC-102). No tenancy (it's the

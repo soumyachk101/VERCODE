@@ -17,7 +17,7 @@
 
 import { Redis } from "ioredis";
 import type { RedisOptions } from "ioredis";
-import { Queue, type Job } from "bullmq";
+import { Queue } from "bullmq";
 
 // The queue names (the worker consumes these, T5.1: `review-queue` +
 // `retention-queue` + a `billing-queue`).

@@ -1,5 +1,5 @@
 // The worker bootstrap (M5 T5.1, TRD.md §7). The process is:
-//   1. Load the config (a loadConfig — a the only reader of env).
+//   1. Load the config (a the loadConfig — the only reader of env).
 //   2. Open the Redis + Postgres clients.
 //   3. Wire the seams (a the diff client, the publisher, the AI providers —
 //      the mock versions in dev, the Octokit/real-provider versions later).
@@ -11,17 +11,22 @@
 // USE_MOCK_AI=true, so a the pipeline is deterministic end-to-end.
 
 import * as IORedisNS from "ioredis";
-import type { Redis } from "ioredis";
+import type { Redis, RedisOptions } from "ioredis";
 import { loadConfig, type AppConfig } from "@vercode/config";
 import { getPrismaClient } from "@vercode/database";
+import type { AIProvider, ReviewTask } from "@vercode/ai-providers";
+import { createOllamaAdapter, MockAdapter } from "@vercode/ai-providers";
 import type { GithubDiffClient } from "@vercode/github";
+import {
+  resolvePolicy,
+} from "@vercode/policy-engine";
 import { makeMockGithubClient, MockGithubPublisher } from "./adapters/github-mock.js";
 import {
-  mockAiProviderFactory,
-  failingAiProviderFactory,
+  makeMockAiProviders,
+  makeFailingAiProviders,
 } from "./adapters/local.js";
 import { startWorker, type StartedWorker } from "./queues.js";
-import type { AiProviderFactory, WorkerDeps } from "./config.js";
+import type { WorkerDeps } from "./config.js";
 import { workerOptsFromConfig } from "./config.js";
 
 export interface WorkerRuntime {
@@ -34,7 +39,10 @@ export async function createWorkerRuntime(
   config: AppConfig = loadConfig()
 ): Promise<WorkerRuntime> {
   const db = getPrismaClient();
-  const redis = new IORedisNS.Redis(config.core.REDIS_URL, { maxRetriesPerRequest: null });
+  const redis = new IORedisNS.Redis(config.core.REDIS_URL, {
+    maxRetriesPerRequest: null,
+    ...({} as RedisOptions),
+  });
 
   // [the GithubDiffClient seam] — a the mock reads the diff fixtures (a no
   // network, a deterministic); a the Octokit client is a later leaf.
@@ -54,15 +62,17 @@ export async function createWorkerRuntime(
   // Ollama adapters; a the mock provider stays for a the deterministic runs
   // (TRD.md §18).
   const useMockAi = config.devMock.USE_MOCK_AI === "true";
-  const aiProviderFactories: AiProviderFactory[] = useMockAi
-    ? [mockAiProviderFactory, mockAiProviderFactory] // [primary, fallback]
-    : [failingAiProviderFactory, failingAiProviderFactory]; // a placeholder until M4 lands
+  const aiProviders: Partial<Record<ReviewTask, AIProvider>> = useMockAi
+    ? makeMockAiProviders()
+    : makeRealAiProviders(config);
+  const orgContext: WorkerDeps["orgContext"] = undefined;
 
   const deps: WorkerDeps = {
     db,
-    redis,
+    redis: redis as unknown as Redis,
     github,
-    aiProviderFactories,
+    aiProviders,
+    orgContext,
     publisher,
     providerPreference: config.ai.AI_DEFAULT_PROVIDER,
   };
@@ -99,10 +109,28 @@ export async function main(): Promise<void> {
   );
 }
 
-// A the tsx start script runs this when imported as a the main module.
+// A the tsx start script runs this when imported as the main module.
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch((err) => {
     console.error(`[worker] failed to start: ${(err as Error).message}`);
     process.exit(1);
   });
+}
+
+// A the real-provider wiring (M4's @vercode/ai-providers adapters).
+function makeRealAiProviders(config: AppConfig): Partial<Record<ReviewTask, AIProvider>> {
+  const providers: Partial<Record<ReviewTask, AIProvider>> = {};
+  // A the providers come from the config + the BYOK key table. A the
+  // Ollama adapter is the self-hosted default; the OpenAI/Anthropic adapters
+  // are wired when their keys are present.
+  if (config.ai.OLLAMA_BASE_URL) {
+    const provider = createOllamaAdapter(config.ai.OLLAMA_BASE_URL);
+    providers["risk-triage"] = provider;
+    providers["deep-review"] = provider;
+    providers["security-review"] = provider;
+  }
+  // A the mock adapter is a the dev fallback (a deterministic).
+  const mock = new MockAdapter("good");
+  providers["summary"] = mock;
+  return providers;
 }

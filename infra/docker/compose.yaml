@@ -1,0 +1,282 @@
+# ---------------------------------------------------------------------------
+# The VERCODE dev stack (DEPLOYMENT §2 "the dev topology").
+#
+#   postgres (16)  redis (7)  web  api  worker  mock-github  mock-ai  mock-billing
+#
+# The whole system runs LOCALLY with NO external credentials: the mock
+# GitHub / mock AI / mock billing stand in for the real integrations, so a
+# full end-to-end pipeline run is local (TRD §18 "the dev-stack"). The
+# mock flags are the ENVIRONMENT_VARIABLES §7 dev-only vars.
+#
+# THE SECRET RULE (SECRETS_MANAGEMENT §4, DEPLOYMENT §3 "no secret in an
+# image layer"): every credential below is a *dev placeholder* committed in
+# this file's defaults OR read from the host env. A real deploy injects the
+# real values from the platform secret store at runtime; nothing here is a
+# credential.
+#
+# The `smoke` target (DEPLOYMENT §2 "a smoke target (compose run smoke)
+# boots the stack + hits the health endpoints + runs one mock PR through the
+# pipeline"):
+#   docker compose -f infra/docker/compose.yaml run --rm smoke
+#
+# Ports (host → container):
+#   web 3000 → 3000   api 4000 → 4000   mock-github 8091   mock-ai 8092
+#   mock-billing 8093   postgres 5432   redis 6379
+# ---------------------------------------------------------------------------
+
+name: vercode
+
+# The shared env for the app services (the dev placeholders). A real deploy
+# overrides these with the secret store's values; the values here are the
+# documented dev defaults (ENVIRONMENT_VARIABLES.md §1–§7).
+x-app-env: &app-env
+  NODE_ENV: production
+  # The core (a the in-network hosts; a the host-mapped ports for a
+  # host-run api during development).
+  DATABASE_URL: postgresql://vercode:vercode@postgres:5432/vercode
+  REDIS_URL: redis://redis:6379
+  SESSION_SIGNING_KEY: dev-stack-session-signing-key-not-a-real-secret-0000
+  API_BASE_URL: http://localhost:4000
+  WEB_BASE_URL: http://localhost:3000
+  # The GitHub App (a the dev placeholders — a the mock GitHub is the
+  # actual integration in this stack).
+  GITHUB_APP_ID: "123456"
+  GITHUB_APP_PRIVATE_KEY: dev-stack-placeholder-private-key-not-a-real-key
+  GITHUB_WEBHOOK_SECRET: test-webhook-secret-dev
+  GITHUB_API_BASE: http://mock-github:8091
+  # The AI provider (a the mock adapter — a deterministic).
+  AI_DEFAULT_PROVIDER: mock
+  # The billing (a the Stripe test-mode signature source).
+  BILLING_PROVIDER: stripe
+  STRIPE_WEBHOOK_SECRET: whsec_test_vercode_dev_stack_secret
+  BILLING_CURRENCY: USD
+  # The observability (a the local defaults; a the Sentry DSNs are unset in
+  # dev — a the OTel collector isn't part of the dev stack).
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+  OTEL_SERVICE_NAME: vercode-dev
+  LOG_LEVEL: info
+  # The platform defaults + limits (ENVIRONMENT_VARIABLES §6).
+  PLATFORM_TOKEN_SPEND_CAP_USD: "100000"
+  DEFAULT_CONFIDENCE_FLOOR: "0.6"
+  REVIEW_WALL_CLOCK_BUDGET_MS: "240000"
+  REVIEW_MAX_FILES: "60"
+  REVIEW_MAX_LINES: "3000"
+  WORKER_CONCURRENCY: "4"
+  QUEUE_MAX_ATTEMPTS: "3"
+  # THE DEV-ONLY MOCK FLAGS (ENVIRONMENT_VARIABLES §7). A live deploy flips
+  # these to "false" + provides the real keys; a deploy that's "true" is a
+  # *dev/mock* deploy — the live pipeline is blocked (the unverified-
+  # integration rule, PHASE 10).
+  USE_MOCK_GITHUB: "true"
+  USE_MOCK_AI: "true"
+  USE_MOCK_BILLING: "true"
+
+services:
+  # --- the stateful deps ---------------------------------------------------
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: vercode
+      POSTGRES_PASSWORD: vercode
+      POSTGRES_DB: vercode
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vercode -d vercode"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # --- the migration runner (a one-shot; DEPLOYMENT §4 step 2) -------------
+
+  migrate:
+    image: postgres:16-alpine
+    profiles: ["migrate"]
+    environment:
+      DATABASE_URL: postgresql://vercode:vercode@postgres:5432/vercode
+      MIGRATIONS_DIR: /migrations
+    volumes:
+      - ./migrations:/migrations:ro
+      - ./migrate/migrate-entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  # --- the deployables -----------------------------------------------------
+
+  web:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.web
+    environment:
+      <<: *app-env
+      NODE_ENV: production
+      # A the browser-side API base (a the public origin — a NEXT_PUBLIC_* is
+      # inlined at build time; a the runtime env is a the server-side copy).
+      NEXT_PUBLIC_API_BASE: http://localhost:4000
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_started
+    healthcheck:
+      test:
+        ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  api:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.api
+    environment:
+      <<: *app-env
+      OTEL_SERVICE_NAME: vercode-api
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  worker:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.worker
+    environment:
+      <<: *app-env
+      OTEL_SERVICE_NAME: vercode-worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # A the SIGTERM drain (NFR-15) — a stop sends SIGTERM, a the worker
+    # drains in-flight within 60 s.
+    stop_grace_period: 70s
+    restart: unless-stopped
+
+  # --- the mock providers (a the deterministic stand-ins) -------------------
+
+  mock-github:
+    image: node:22-slim
+    working_dir: /app
+    command: ["node", "index.js"]
+    environment:
+      PORT: "8091"
+    volumes:
+      - ./mock-github:/app:ro
+    ports:
+      - "8091:8091"
+    healthcheck:
+      test:
+        ["CMD", "node", "-e", "fetch('http://127.0.0.1:8091/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  mock-ai:
+    image: node:22-slim
+    working_dir: /app
+    command: ["node", "index.js"]
+    environment:
+      PORT: "8092"
+    volumes:
+      - ./mock-ai:/app:ro
+    ports:
+      - "8092:8092"
+    healthcheck:
+      test:
+        ["CMD", "node", "-e", "fetch('http://127.0.0.1:8092/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  mock-billing:
+    image: node:22-slim
+    working_dir: /app
+    command: ["node", "index.js"]
+    environment:
+      PORT: "8093"
+    volumes:
+      - ./mock-billing:/app:ro
+    ports:
+      - "8093:8093"
+    healthcheck:
+      test:
+        ["CMD", "node", "-e", "fetch('http://127.0.0.1:8093/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  # --- the smoke target (DEPLOYMENT §2) ------------------------------------
+  #
+  # `docker compose -f infra/docker/compose.yaml run --rm smoke` — but a
+  # `run` starts the dependencies too, so the smoke target is a *one-shot
+  # script* that boots the stack (the `up -d` + the health wait) and then
+  # runs one mock PR through the pipeline. The script lives at
+  # infra/docker/smoke/smoke.sh and is mounted here.
+  #
+  # The `smoke` service below is the *runner* (a node image that curls the
+  # health endpoints + drives the mock PR). The script `smoke.sh` is the
+  # documented entry point (a `make smoke` → it boots the stack itself).
+  smoke:
+    image: node:22-slim
+    working_dir: /app
+    profiles: ["smoke"]
+    command: ["node", "smoke.js"]
+    environment:
+      API_BASE: http://api:4000
+      WEB_BASE: http://web:3000
+      MOCK_GITHUB_BASE: http://mock-github:8091
+      MOCK_AI_BASE: http://mock-ai:8092
+      MOCK_BILLING_BASE: http://mock-billing:8093
+      GITHUB_WEBHOOK_SECRET: test-webhook-secret-dev
+    volumes:
+      - ./smoke:/app:ro
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+      mock-github:
+        condition: service_healthy
+      mock-ai:
+        condition: service_healthy
+      mock-billing:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  redis-data:

@@ -4,8 +4,6 @@
 import type { FastifyInstance } from "fastify";
 import argon2 from "argon2";
 import { SignupRequestSchema, SigninRequestSchema } from "@vercode/contracts";
-import { Role, PrismaClient } from "@prisma/client";
-import { randomBytes } from "node:crypto";
 
 export async function authRoutes(app: FastifyInstance) {
   app.post("/signup", { schema: { body: SignupRequestSchema, config: { public: true } } }, async (req, reply) => {

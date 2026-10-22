@@ -115,5 +115,5 @@ Field-level catalog. PK/FK/index constraints are in `SCHEMA_REFERENCE.md` (Prism
 
 | Field | Rule |
 | --- | --- |
-| `kind` | `repo_content_purge` / `findings_expire` / `audit_expire` / `usage_expire` |
+| `kind` | `repo_content_purge` / `install_content_purge` / `findings_expire` / `audit_expire` / `usage_expire` (note: `repo_content_purge` and `install_content_purge` are both used for install-removal purges; see DATA_RETENTION §2) |
 | `status` | PENDING/DONE/FAILED; the retention queue processes PENDING in order of `run_at` |

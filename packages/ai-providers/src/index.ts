@@ -349,7 +349,7 @@ export function createAnthropicAdapter(apiKey: string, baseUrl = "https://api.an
 export function createOllamaAdapter(baseUrl = "http://localhost:11434"): AIProvider {
   return createFetchAdapter(
     "ollama",
-    (model, req) => `${baseUrl}/api/chat`,
+    (_model, _req) => `${baseUrl}/api/chat`,
     (model, req) => ({
       model,
       messages: req.messages.map((m) => ({ role: m.role, content: m.content })),

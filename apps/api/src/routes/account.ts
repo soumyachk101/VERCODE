@@ -2,7 +2,6 @@
 // API_SPECIFICATION.md "Auth & account"). Session-required.
 
 import type { FastifyInstance } from "fastify";
-import { Prisma } from "@prisma/client";
 
 export async function accountRoutes(app: FastifyInstance) {
   app.get("/", async (req, reply) => {
