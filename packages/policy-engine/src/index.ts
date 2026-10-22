@@ -167,7 +167,7 @@ export interface PolicyOutcome<T> {
  */
 export function applyPolicy<T extends PolicyFinding>(
   findings: T[],
-  policy: ReviewPolicy
+  policy: ReviewPolicy,
   minSeverity?: "low" | "medium" | "high" | "critical"
 ): PolicyOutcome<T> {
   const severityRank: Record<string, number> = { low: 1, medium: 2, high: 3, critical: 4 };
