@@ -430,40 +430,39 @@ describe("POST /webhooks/github (M3 T3.2)", () => {
   });
 
   it("ST-webhook-forged: a forged signature → 401 + a no queue write + a audit row", async () => {
-    seed = { delivery: { id: "delivery-row-1", deliveryId: "delivery-1", event: "pull_request", orgId: "org-1", installId: "install-1" } };
-    const { app: appF, queue: queueF, state: stF } = await buildGithubApp(seed);
+    // A fresh delivery id (a no pre-seeded row, a the forged event is a
+    // NEW delivery that fails layer 1). A the HMAC is computed with a
+    // wrong secret → a layer-1 reject.
     const body = prBody();
     const raw = JSON.stringify(body);
-    const res = await appF.inject({
+    const res = await app.inject({
       method: "POST",
       url: "/webhooks/github",
-      headers: { ...prHeaders(body, { "x-hub-delivery": "delivery-1" }), "x-hub-signature-256": sign(raw, "an-attacker-secret") },
+      headers: { ...prHeaders(body, { "x-hub-delivery": "delivery-forged" }), "x-hub-signature-256": sign(raw, "an-attacker-secret") },
       payload: raw,
     });
     expect(res.statusCode).toBe(401);
     expect(res.json().error.code).toBe("WEBHOOK_REJECTED");
     // A NO queue write (a the rejection happens before the enqueue).
-    expect(queueF.enqueued.length).toBe(0);
+    expect(queue.enqueued.length).toBe(0);
     // A the audit row (a the "a forged-webhook attempt is investigable").
-    expect(stF.audits.some((a) => a.action === "webhook.rejected")).toBe(true);
+    expect(state.audits.some((a) => a.action === "webhook.rejected")).toBe(true);
   });
 
   it("a stale timestamp → 401 + a audit (a ST-webhook-stale, a layer 2)", async () => {
-    seed = { delivery: { id: "delivery-row-1", deliveryId: "delivery-1", event: "pull_request", orgId: "org-1", installId: "install-1" } };
-    const { app: appS, queue: queueS, state: stS } = await buildGithubApp(seed);
     const body = prBody();
     const raw = JSON.stringify(body);
     const stale = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-    const res = await appS.inject({
+    const res = await app.inject({
       method: "POST",
       url: "/webhooks/github",
-      headers: { ...prHeaders(body, { "x-hub-delivery": "delivery-1" }), "x-hub-timestamp": stale, "x-hub-signature-256": sign(raw) },
+      headers: { ...prHeaders(body, { "x-hub-delivery": "delivery-stale" }), "x-hub-timestamp": stale, "x-hub-signature-256": sign(raw) },
       payload: raw,
     });
     expect(res.statusCode).toBe(401);
     expect(res.json().error.code).toBe("WEBHOOK_REJECTED");
-    expect(queueS.enqueued.length).toBe(0);
-    expect(stS.audits.some((a) => a.action === "webhook.rejected")).toBe(true);
+    expect(queue.enqueued.length).toBe(0);
+    expect(state.audits.some((a) => a.action === "webhook.rejected")).toBe(true);
   });
 
   it("ST-webhook-replay: a seen delivery id → 200 no-op (a the pipeline does NOT re-run)", async () => {
