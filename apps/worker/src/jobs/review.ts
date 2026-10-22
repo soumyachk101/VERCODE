@@ -69,6 +69,69 @@ import {
   resolveWorkerPolicy,
   type ReviewPolicy,
 } from "./policy.js";
+import { logger, tracer, capture, redact, type StructuredLogger, type Tracer, type TraceHandle, type SpanHandle } from "@vercode/observability";
+
+/**
+ * Build the per-job observability context (a the OBSERVABILITY.md §2 "a the
+ * review is a single trace with a span per stage"). The trace id = the
+ * job_id (a the correlation key, OBSERVABILITY.md §1 "a the correlation
+ * id (= the job_id)"). A the no-OTLP-endpoint tracer (a the in-memory
+ * spans array — a the queryable surface; a the OTel exporter is a later
+ * seam).
+ *
+ * A the redaction gate (SECRETS_MANAGEMENT §3 "a the redactor runs on
+ * *every* record before it's written"): a the logger's transport applies
+ * a the redactor to every record; a the stored finding payload is scrubbed
+ * before it's persisted (a the "a a secret that reaches a log is a
+ * released secret" invariant, extended to a the finding payload + a the
+ * capture).
+ *
+ * A the Sentry-style capture (a the OBSERVABILITY.md §4 "a a Sentry event
+ * that carries a a secret is a a leak"): a the PII-scrubbed
+ * captured-errors array — a terminal failure is captured with a the
+ * correlation id (a the job_id), not a returned to the client.
+ */
+export interface JobObservability {
+  /** A the trace handle (a the "one trace per pipeline" surface). */
+  trace: TraceHandle;
+  /** A the structured logger (a the correlation id = a the job_id). */
+  log: StructuredLogger;
+  /** A the Sentry-style PII-scrubbed capture (a the OBSERVABILITY.md §4). */
+  cap: ReturnType<typeof capture>;
+  /** A the PII + a the secret scrub (a SECRETS_MANAGEMENT §3 gate). */
+  scrub: (text: string) => string;
+}
+
+function makeJobObservability(
+  deps: WorkerDeps,
+  payload: ReviewJobPayload,
+): {
+  trace: TraceHandle;
+  log: StructuredLogger;
+  startSpan: (s: string, attrs?: Record<string, unknown>) => SpanHandle;
+  endSpan: (h: SpanHandle, outcome: string, attrs?: Record<string, unknown>) => void;
+  obs: JobObservability;
+} {
+  const trace = tracer();
+  const traceHandle = trace.startTrace(payload.jobId, "review.pipeline");
+  const log = logger({ correlationId: payload.jobId, orgId: payload.orgId });
+  const cap = capture();
+  const scrub = (t: string): string => redact(t).text;
+  const startSpan = (s: string, attrs?: Record<string, unknown>) => traceHandle.startSpan(s, attrs);
+  const endSpan = (h: SpanHandle, outcome: string, attrs?: Record<string, unknown>) => {
+    if (attrs) for (const [k, v] of Object.entries(attrs)) h.setAttribute(k, v);
+    h.end(outcome);
+  };
+  return { trace: traceHandle, log, startSpan, endSpan, obs: { trace: traceHandle, log, cap, scrub } };
+}
+import {
+  logger,
+  tracer,
+  redact,
+  type StructuredLogger,
+  type TraceHandle,
+  type SpanHandle,
+} from "@vercode/observability";
 
 // ---------------------------------------------------------------------------
 // The canonical finding (post-pipeline, pre-persist). Mirrors the contracts
@@ -183,6 +246,39 @@ export interface RunReviewOptions {
   attempt?: number;
   /** The transaction boundary (injected so tests can record the commit). */
   txFactory?: (fn: (tx: unknown) => Promise<unknown>) => Promise<unknown>;
+  /**
+   * The observability seam (OBSERVABILITY.md §2 "the review is a single
+   * trace with a span per stage"; the trace id = the job_id). Injected so
+   * the handler is testable without a global tracer; the default builds a
+   * no-OTLP tracer (the in-memory spans array is the queryable surface; the
+   * OTel exporter is a later seam). The redaction gate runs on every stored
+   * finding payload (SECRETS_MANAGEMENT §3 "a secret that reaches a log is
+   * a released secret", extended to the finding payload).
+   */
+  observability?: JobObservability;
+}
+
+export interface JobObservability {
+  trace: TraceHandle;
+  log: StructuredLogger;
+  startSpan: (stage: string, attrs?: Record<string, unknown>) => SpanHandle;
+  endSpan: (h: SpanHandle, outcome: string, attrs?: Record<string, unknown>) => void;
+  scrub: (text: string) => string;
+}
+
+/** Build the default observability context (no OTLP endpoint, in-memory). */
+export function makeJobObservability(payload: ReviewJobPayload): JobObservability {
+  const tracerInstance = tracer();
+  const trace = tracerInstance.startTrace(payload.jobId);
+  const log = logger({ correlationId: payload.jobId, orgId: payload.orgId });
+  const startSpan = (stage: string, attrs?: Record<string, unknown>) =>
+    trace.startSpan(stage, attrs);
+  const endSpan = (h: SpanHandle, outcome: string, attrs?: Record<string, unknown>) => {
+    if (attrs) for (const [k, v] of Object.entries(attrs)) h.setAttribute(k, v);
+    h.end(outcome);
+  };
+  const scrub = (text: string) => redact(text).text;
+  return { trace, log, startSpan, endSpan, scrub };
 }
 
 export async function runReviewJob(
