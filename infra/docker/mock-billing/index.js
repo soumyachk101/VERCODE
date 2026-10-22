@@ -37,7 +37,7 @@ const SECRET_FILE = join(here, "fixtures", "stripe-webhook-secret.json");
  */
 function loadSecret() {
   try {
-    const parsed = JSON.parse(readFileSync(SECRET_FILE, "utf8")) as { secret?: string };
+    const parsed = JSON.parse(readFileSync(SECRET_FILE, "utf8"));
     if (typeof parsed.secret === "string" && parsed.secret.length > 0) return parsed.secret;
   } catch {
     // fall through to the default below
