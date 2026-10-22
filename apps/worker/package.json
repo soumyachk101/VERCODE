@@ -20,6 +20,7 @@
     "@vercode/ai-providers": "workspace:*",
     "@vercode/review-engine": "workspace:*",
     "@vercode/policy-engine": "workspace:*",
+    "@vercode/observability": "workspace:*",
     "@prisma/client": "^5.22.0",
     "bullmq": "^5.54.0",
     "ioredis": "^5.6.0",

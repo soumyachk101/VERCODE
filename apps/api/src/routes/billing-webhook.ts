@@ -261,6 +261,14 @@ export async function billingWebhookRoutes(app: FastifyInstance, config: AppConf
           targetId: providerEventId,
           meta: { provider, customerId },
         });
+        // [M7 observability] — a the foreign-customer rejection log record
+        // (a the WEBHOOK_SPECIFICATION §2.3 "a foreign-customer event is
+        // rejected"; a the operator's queryable surface).
+        billingLog.warn("webhook.ingest", "The billing event was for an unknown customer", {
+          providerEventId,
+          provider,
+          outcome: "foreign_customer",
+        });
         reply.code(404).send({
           error: { code: "BILLING_CUSTOMER_NOT_FOUND", message: "Unknown provider customer." },
         });
@@ -293,6 +301,18 @@ export async function billingWebhookRoutes(app: FastifyInstance, config: AppConf
         sourceIp: req.ip,
         targetId: providerEventId,
         meta: { type, provider },
+      });
+
+      // [M7 observability] — a the verified-event log record (a the state
+      // move + a the receipt + a the audit; a the operator's queryable
+      // surface, a the OBSERVABILITY.md §5 "a failure is observable").
+      billingLog.info("webhook.ingest", "The billing event was verified + a state move applied", {
+        providerEventId,
+        provider,
+        type,
+        status: newStatus ?? "unchanged",
+        orgId: billing?.orgId ?? null,
+        outcome: "processed",
       });
 
       reply.code(200).send({ ok: true, eventId: providerEventId });
