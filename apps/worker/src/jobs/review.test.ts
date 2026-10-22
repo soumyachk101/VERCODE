@@ -1,32 +1,35 @@
 // UT-review-* (M5 T5.1/T5.2/T5.3) — a the review-job handler's invariants.
 //
-// A mocked-DB + mocked-provider test: no live Postgres/Redis/GitHub. A the DB
-// is a structural mock that records what a the persist-then-publish transaction
-// wrote, so a we can assert a the invariants:
+// A mocked-DB + mocked-provider test: no live Postgres/Redis/GitHub. A the
+// DB is a structural mock that records what a the persist-then-publish
+// transaction wrote, so a we can assert a the invariants:
 //   1. quota-exceeded → skipped, zero provider calls, notice posted
 //   2. provider-down → partial status, deterministic findings still publish
-//   3. same-SHA redelivery → no-op
+//   3. same-SHA redelivery → no-op (a the idempotency gate, ADR-007)
 //   4. publish failure → findings still persisted (a the persist-then-publish
 //      invariant, ERROR_HANDLING.md §6)
 //
-// A the pipeline is exercised end-to-end (dequeue → load → diff → static → AI →
-// validate → dedup → policy → summary → PERSIST → publish) with a the seams
-// injected, so a regression in any stage is caught here.
+// A the pipeline is exercised end-to-end (dequeue → load → diff → static →
+// AI → validate → dedup → policy → summary → PERSIST → publish) with a the
+// seams injected, so a regression in any stage is caught here.
 
 import { describe, it, expect } from "vitest";
 import {
   runReviewJob,
   checkQuotaPlan,
   validateFindings,
-  dedupFindings,
-  applyPolicy,
   type ReviewJobOutcome,
   type CanonicalFinding,
 } from "./review.js";
+import {
+  dedupFindings,
+  applyPolicy,
+  resolveWorkerPolicy,
+} from "./policy.js";
 import { parseUnifiedDiff, type ChangeSet } from "@vercode/diff-engine";
-import { mockAiProviderFactory, failingAiProviderFactory } from "../adapters/local.js";
-import { MockGithubPublisher } from "../adapters/github-mock.js";
-import type { WorkerDeps, ReviewJobPayload } from "../config.js";
+import { MockAdapter } from "@vercode/ai-providers";
+import { makeMockGithubClient, MockGithubPublisher } from "../adapters/github-mock.js";
+import type { ReviewJobPayload, WorkerDeps } from "../config.js";
 import type { DbClient } from "@vercode/database";
 import type { PRDiff } from "@vercode/github";
 import { FREE_QUOTA, DEVELOPER_QUOTA } from "@vercode/contracts";
@@ -97,10 +100,15 @@ interface MockDbConfig {
   orgPlan: "FREE" | "DEVELOPER" | "TEAM" | "ENTERPRISE";
   monthlyUsage: RecordedUsage[]; // a the pre-existing usage (a the quota gate)
   existingTerminalJob: boolean; // a the same-SHA idempotency gate
+  existingPublishedReviewId: string | null;
   repoFullName: string;
   suppressCategories: string[];
   confidenceFloorOverride: number | null;
-  orgSettings: { confidenceFloor: number | null } | null;
+  orgSettings: {
+    confidenceFloor: number | null;
+    maxFiles: number | null;
+    maxLines: number | null;
+  } | null;
 }
 
 function makeMockDb(config: Partial<MockDbConfig> = {}) {
@@ -108,6 +116,7 @@ function makeMockDb(config: Partial<MockDbConfig> = {}) {
     orgPlan: "DEVELOPER",
     monthlyUsage: [],
     existingTerminalJob: false,
+    existingPublishedReviewId: null,
     repoFullName: "acme/web",
     suppressCategories: [],
     confidenceFloorOverride: null,
@@ -115,7 +124,7 @@ function makeMockDb(config: Partial<MockDbConfig> = {}) {
     ...config,
   };
   const state = {
-    reviewJobs: [] as RecordedJob[],
+    reviewJobs: [] as Array<RecordedJob & { publishedGithubReviewId?: string }>,
     findings: [] as RecordedFinding[],
     usageEvents: [] as RecordedUsage[],
   };
@@ -131,6 +140,8 @@ function makeMockDb(config: Partial<MockDbConfig> = {}) {
               id: "settings-1",
               orgId: "org-1",
               confidenceFloor: self.orgSettings.confidenceFloor,
+              maxFiles: self.orgSettings.maxFiles,
+              maxLines: self.orgSettings.maxLines,
             }
           : null,
       }),
@@ -138,7 +149,12 @@ function makeMockDb(config: Partial<MockDbConfig> = {}) {
     repoRule: {
       findMany: async () =>
         self.suppressCategories.length > 0
-          ? [{ suppressCategories: self.suppressCategories, confidenceFloorOverride: self.confidenceFloorOverride }]
+          ? [
+              {
+                suppressCategories: self.suppressCategories,
+                confidenceFloorOverride: self.confidenceFloorOverride,
+              },
+            ]
           : [],
     },
     reviewJob: {
@@ -151,23 +167,35 @@ function makeMockDb(config: Partial<MockDbConfig> = {}) {
             prNumber: 42,
             commitSha: "a".repeat(40),
             status: "SUCCEEDED",
+            publishedGithubReviewId: self.existingPublishedReviewId,
+          };
+        }
+        if (state.reviewJobs.length > 0) {
+          const last = state.reviewJobs[state.reviewJobs.length - 1];
+          return {
+            id: "job-1",
+            status: last.status,
+            publishedGithubReviewId: last.publishedGithubReviewId,
           };
         }
         return null;
       },
       create: async (args: { data: Record<string, unknown> }) => {
-        const rec: RecordedJob = { status: args.data.status as string };
+        const rec: RecordedJob = {
+          status: args.data.status as string,
+          publishedGithubReviewId: args.data.publishedGithubReviewId as
+            | string
+            | undefined,
+        };
         state.reviewJobs.push(rec);
         return { id: "job-1", ...args.data };
       },
       update: async (args: { data: Record<string, unknown> }) => {
-        if (args.data.publishedGithubReviewId) {
-          const last = state.reviewJobs[state.reviewJobs.length - 1];
-          if (last) last.publishedGithubReviewId = args.data.publishedGithubReviewId as string;
-        }
-        if (args.data.status) {
-          const last = state.reviewJobs[state.reviewJobs.length - 1];
-          if (last) last.status = args.data.status as string;
+        const last = state.reviewJobs[state.reviewJobs.length - 1];
+        if (last) {
+          if (args.data.publishedGithubReviewId)
+            last.publishedGithubReviewId = args.data.publishedGithubReviewId as string;
+          if (args.data.status) last.status = args.data.status as string;
         }
         return { id: "job-1", ...args.data };
       },
@@ -229,29 +257,41 @@ function makeMockDb(config: Partial<MockDbConfig> = {}) {
 // A the deps builder — a the seams injected.
 // ---------------------------------------------------------------------------
 
-interface DepsConfig {
-  db: DbClient;
-  provider: "mock" | "fail";
-  publisher?: MockGithubPublisher;
+interface ProviderSpies {
+  deep: MockAdapter;
+  security?: MockAdapter;
 }
 
-function makeDeps(cfg: DepsConfig): WorkerDeps & { providerCalls: number } {
-  let providerCalls = 0;
-  const factory = (changeSet: ChangeSet) => {
-    providerCalls += 1;
-    return cfg.provider === "fail"
-      ? failingAiProviderFactory(changeSet)
-      : mockAiProviderFactory(changeSet);
-  };
+function makeDeps(cfg: {
+  db: DbClient;
+  scenario: "good" | "down";
+  publisher?: MockGithubPublisher;
+  spies?: ProviderSpies;
+}): WorkerDeps & { deepCalls: number; securityCalls: number } {
+  const deep =
+    cfg.spies?.deep ??
+    new MockAdapter(cfg.scenario);
+  const security =
+    cfg.spies?.security ??
+    new MockAdapter(cfg.scenario);
   return {
     db: cfg.db,
     redis: {} as never, // a the handler doesn't touch redis (a the lock is in queues.ts)
     github: { fetchPRDiff: async () => PR_DIFF },
-    aiProviderFactories: [factory, factory],
+    aiProviders: {
+      "deep-review": deep,
+      "security-review": security,
+    },
     publisher: cfg.publisher ?? new MockGithubPublisher(),
-    providerPreference: "mock",
-    get providerCalls() {
-      return providerCalls;
+    confidenceFloor: 0.6,
+    maxFiles: 60,
+    maxLines: 3000,
+    promptVersion: "test-v1",
+    get deepCalls() {
+      return deep.callCount;
+    },
+    get securityCalls() {
+      return security.callCount;
     },
   };
 }
@@ -268,7 +308,7 @@ const PAYLOAD: ReviewJobPayload = {
 // A the tests
 // ---------------------------------------------------------------------------
 
-describe("the review-job handler (M5 T5.1/T5.2/T5.3)", () => {
+describe("a the review-job handler (M5 T5.1/T5.2/T5.3)", () => {
   it("[1] a quota-exceeded job → skipped, zero provider calls, notice posted", async () => {
     // A the org is over its plan's reviews-per-month cap.
     const { dbClient, state } = makeMockDb({
@@ -276,15 +316,18 @@ describe("the review-job handler (M5 T5.1/T5.2/T5.3)", () => {
       monthlyUsage: [{ orgId: "org-1", reviewCount: FREE_QUOTA.reviewsPerMonth, estUsdCost: "0" }],
     });
     const publisher = new MockGithubPublisher();
-    const deps = makeDeps({ db: dbClient, provider: "mock", publisher });
+    const deps = makeDeps({ db: dbClient, scenario: "good", publisher });
 
     const result = await runReviewJob(deps, PAYLOAD);
 
     expect(result.status).toBe("SKIPPED");
     expect(result.skipReason).toBe("quota_exceeded");
-    expect(deps.providerCalls).toBe(0); // a zero AI provider calls
+    // A zero AI provider calls (NFR-18 / AC-402).
+    expect(deps.deepCalls).toBe(0);
+    expect(deps.securityCalls).toBe(0);
     expect(result.usage.inputTokens).toBe(0);
     expect(result.usage.outputTokens).toBe(0);
+    expect(result.findings.length).toBe(0);
     // A the skip is persisted (a the "never silent" rule) + a notice posted.
     expect(state.reviewJobs.some((j) => j.status === "SKIPPED")).toBe(true);
     expect(publisher.records.some((r) => r.summary.toLowerCase().includes("quota"))).toBe(true);
@@ -293,33 +336,37 @@ describe("the review-job handler (M5 T5.1/T5.2/T5.3)", () => {
   it("[2] a provider-down job → partial status, deterministic findings still publish", async () => {
     const { dbClient, state } = makeMockDb({ orgPlan: "DEVELOPER" });
     const publisher = new MockGithubPublisher();
-    const deps = makeDeps({ db: dbClient, provider: "fail", publisher });
+    const deps = makeDeps({ db: dbClient, scenario: "down", publisher });
 
     const result = await runReviewJob(deps, PAYLOAD);
 
     expect(result.status).toBe("PARTIAL");
     // A the deterministic (static) findings still publish (a ADR-005 "a a
     // provider outage still yields a useful, if partial, review").
-    const staticFindings = state.findings.filter((f) => f.source === "ESLINT" || f.source === "SEMGREP");
+    const staticFindings = state.findings.filter(
+      (f) => f.source === "ESLINT" || f.source === "SEMGREP"
+    );
     expect(staticFindings.length).toBeGreaterThan(0);
     // A the AI findings are absent (a the provider was down).
     expect(state.findings.filter((f) => f.source === "AI_DEEP").length).toBe(0);
+    expect(state.findings.filter((f) => f.source === "AI_SECURITY").length).toBe(0);
     // A a the usage event records the (zero) AI cost.
     expect(state.usageEvents.length).toBe(1);
     expect(Number(state.usageEvents[0].estUsdCost)).toBe(0);
     // A a the publish happened (a the partial review is posted).
-    expect(publisher.records.length).toBeGreaterThan(0);
-    expect(publisher.records[0].summary.toLowerCase()).toContain("degraded");
+    expect(publisher.records.length).toBe(1);
+    expect(publisher.records[0].summary.toLowerCase()).toContain("unavailable");
   });
 
   it("[3] a same-SHA redelivery → no-op (a the idempotency gate, ADR-007)", async () => {
     const { dbClient, state } = makeMockDb({
       orgPlan: "DEVELOPER",
       existingTerminalJob: true,
+      existingPublishedReviewId: "gh-review-123",
       monthlyUsage: [{ orgId: "org-1", reviewCount: 1, estUsdCost: "0.01" }],
     });
     const publisher = new MockGithubPublisher();
-    const deps = makeDeps({ db: dbClient, provider: "mock", publisher });
+    const deps = makeDeps({ db: dbClient, scenario: "good", publisher });
 
     const result = await runReviewJob(deps, PAYLOAD);
 
@@ -328,7 +375,8 @@ describe("the review-job handler (M5 T5.1/T5.2/T5.3)", () => {
     // A a no-op: no findings, no usage, no provider call, no publish.
     expect(state.findings.length).toBe(0);
     expect(state.usageEvents.length).toBe(0);
-    expect(deps.providerCalls).toBe(0);
+    expect(deps.deepCalls).toBe(0);
+    expect(deps.securityCalls).toBe(0);
     expect(publisher.records.length).toBe(0);
   });
 
@@ -336,7 +384,7 @@ describe("the review-job handler (M5 T5.1/T5.2/T5.3)", () => {
     const { dbClient, state } = makeMockDb({ orgPlan: "DEVELOPER" });
     const publisher = new MockGithubPublisher();
     publisher.failNext = () => new Error("GitHub 429 rate-limited");
-    const deps = makeDeps({ db: dbClient, provider: "mock", publisher });
+    const deps = makeDeps({ db: dbClient, scenario: "good", publisher });
 
     const result = await runReviewJob(deps, PAYLOAD);
 
@@ -379,40 +427,62 @@ describe("checkQuota (a the single enforcement point, plans.ts + usage_events)",
     const res = await checkQuotaPlan(dbClient, "org-1", "free", "2026-01");
     expect(res.over).toBe(true);
   });
+
+  it("developer plan has a separate cap (DEVELOPER_QUOTA)", async () => {
+    const { dbClient } = makeMockDb({
+      orgPlan: "DEVELOPER",
+      monthlyUsage: [
+        {
+          orgId: "org-1",
+          reviewCount: DEVELOPER_QUOTA.reviewsPerMonth,
+          estUsdCost: "0",
+        },
+      ],
+    });
+    const res = await checkQuotaPlan(dbClient, "org-1", "developer", "2026-01");
+    expect(res.over).toBe(true);
+  });
 });
 
-describe("the pure pipeline stages", () => {
+describe("a the pure pipeline stages (a the policy-engine-backed functions)", () => {
   it("a dedup collapses (file,line,category) to a the highest-confidence", () => {
     const out = dedupFindings([
       mkFinding({ confidence: 0.7 }),
       mkFinding({ confidence: 0.9 }),
       mkFinding({ confidence: 0.5 }),
     ]);
-    expect(out.length).toBe(1);
-    expect(out[0].confidence).toBe(0.9);
+    expect(out.deduped.length).toBe(1);
+    expect(out.deduped[0].confidence).toBe(0.9);
+    expect(out.droppedDeduped).toBe(2);
   });
 
   it("a policy exempts static findings from a the confidence floor", () => {
+    const policy = resolveWorkerPolicy({
+      defaults: { confidenceFloor: 0.6, maxFiles: 60, maxLines: 3000, suppressCategories: [] },
+    });
     const out = applyPolicy(
       [
         mkFinding({ source: "eslint", confidence: 0.1 }), // a static, exempt
         mkFinding({ source: "ai-deep", confidence: 0.5 }), // a below a the 0.6 floor
       ],
-      0.6,
+      policy,
       []
     );
     expect(out.published.length).toBe(1);
     expect(out.published[0].source).toBe("eslint");
-    expect(out.suppressedBelowFloor).toBe(1);
+    expect(out.belowFloor).toBe(1);
   });
 
   it("a policy applies per-repo suppression + a confidence floor override", () => {
+    const policy = resolveWorkerPolicy({
+      defaults: { confidenceFloor: 0.6, maxFiles: 60, maxLines: 3000, suppressCategories: [] },
+    });
     const out = applyPolicy(
       [
         mkFinding({ source: "eslint", confidence: 1, category: "security" }),
         mkFinding({ source: "ai-deep", confidence: 0.9, category: "performance" }),
       ],
-      0.6,
+      policy,
       [{ suppressCategories: ["security"], confidenceFloorOverride: 0.8 }]
     );
     // A the security finding is suppressed; a the performance (0.9 ≥ 0.8) survives.
@@ -426,9 +496,9 @@ describe("the pure pipeline stages", () => {
     const out = validateFindings(
       [
         // a line 2 is a the first added line in src/alpha.ts (a the
-        // `+const leaked...`).
+        // `+secret = ...`).
         mkFinding({ file: "src/alpha.ts", line: 2, source: "eslint", confidence: 1 }),
-        // a line 99 is not in a the diff → a anchor_failed.
+        // a line 99 is not in the diff → a anchor_failed.
         mkFinding({ file: "src/alpha.ts", line: 99, source: "ai-deep", confidence: 0.9 }),
       ],
       changeSet
@@ -444,15 +514,43 @@ describe("the pure pipeline stages", () => {
     const out = validateFindings(
       [
         mkFinding({ file: "src/alpha.ts", line: 2, source: "eslint", confidence: 1 }),
-        { ...mkFinding({ file: "src/alpha.ts", line: 2, source: "eslint", confidence: 1.5 }), category: "security" },
+        { ...mkFinding({ file: "src/alpha.ts", line: 2, source: "eslint", confidence: 1.5 }) },
       ],
       changeSet
     );
     expect(out.dropped.invalid).toBe(1); // a confidence 1.5 is out of [0,1]
   });
+
+  it("a validate drops a finding with a bad severity enum", () => {
+    const changeSet = parseUnifiedDiff(fixtureDiff);
+    const out = validateFindings(
+      [
+        {
+          ...mkFinding({ file: "src/alpha.ts", line: 2, source: "eslint", confidence: 1 }),
+          severity: "invalid" as never,
+        },
+      ],
+      changeSet
+    );
+    expect(out.dropped.invalid).toBe(1);
+    expect(out.valid.length).toBe(0);
+  });
+});
+
+describe("a the in-memory diff-client seam (USE_MOCK_GITHUB=true path)", () => {
+  it("a reads a the fixture diff + a the mock publisher records publishes", async () => {
+    const { dbClient } = makeMockDb({ orgPlan: "DEVELOPER" });
+    const publisher = new MockGithubPublisher();
+    const deps = makeDeps({ db: dbClient, scenario: "good", publisher });
+    const result = await runReviewJob(deps, PAYLOAD);
+    expect(result.status).toBe("SUCCEEDED");
+    expect(publisher.records.length).toBe(1);
+    expect(publisher.records[0].publishedGithubReviewId).toMatch(/^mock-review-/);
+  });
 });
 
 function mkFinding(partial: {
+  id?: string;
   source?: string;
   file?: string;
   line?: number;
@@ -460,10 +558,11 @@ function mkFinding(partial: {
   category?: string;
   title?: string;
   description?: string;
-  confidence?: number;
   suggestedFix?: string;
+  confidence?: number;
 }): CanonicalFinding {
   return {
+    id: partial.id ?? "f-test",
     source: (partial.source ?? "ai-deep") as never,
     file: partial.file ?? "src/alpha.ts",
     line: partial.line ?? 2,
@@ -476,3 +575,5 @@ function mkFinding(partial: {
     anchorStatus: "inline",
   };
 }
+
+export type { ReviewJobOutcome };
