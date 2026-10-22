@@ -7,13 +7,12 @@
 // named, in a confirmation dialog that names the object).
 import { useState } from "react";
 import { OrgPage } from "@/components/page";
-import { useOrgShell } from "@/components/OrgShell";
 import { useProfile, useSessions, useSignOutAll } from "@/lib/hooks";
 import { PageHead, SettingsSection } from "@/components/Settings";
 import { DataBlock, EmptyBlock } from "@/components/DataBlock";
 import { Button, TextButton } from "@/components/Button";
 import { ConfirmDialog } from "@/components/BlockError";
-import { VcToggle, Input, Label } from "@/components/controls";
+import { Input, Label } from "@/components/controls";
 import { useTheme } from "@/components/theme";
 import { relativeTime } from "@/lib/format";
 
@@ -26,7 +25,6 @@ export function AccountClient() {
 }
 
 function AccountBody() {
-  const s = useOrgShell();
   const profile = useProfile();
   const sessions = useSessions();
   const signOutAll = useSignOutAll();
@@ -35,7 +33,6 @@ function AccountBody() {
   const [pwSaved, setPwSaved] = useState(false);
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
   const { theme, setTheme } = useTheme();
-  const [deactive, setDeactive] = useState(false);
 
   const p = profile.data;
   const sess = sessions.data ?? [];
