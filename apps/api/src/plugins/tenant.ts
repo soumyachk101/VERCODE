@@ -108,7 +108,7 @@ export function buildTenantPlugin() {
               orgId,
               actorId: userId,
               action: "access.denied_capability",
-              meta: Prisma.inputToJson({ requested: required, role }),
+              meta: Prisma.inputJsonObject({ requested: required, role }),
             },
           })
           .catch(() => {
