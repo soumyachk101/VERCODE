@@ -1,209 +1,316 @@
-<svg viewBox="0 0 1200 820" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="VERCODE architecture diagram">
+<svg viewBox="0 0 1320 860" width="1320" height="860" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="VERCODE system architecture diagram">
   <defs>
     <style>
-      .label { font-family: 'SF Pro Display', 'Segoe UI', -apple-system, sans-serif; font-size: 13px; font-weight: 600; fill: #1a2b3c; }
-      .sub { font-family: 'SF Pro Text', 'Segoe UI', -apple-system, sans-serif; font-size: 10px; fill: #5a6b7c; }
-      .box-title { font-family: 'SF Pro Display', 'Segoe UI', -apple-system, sans-serif; font-size: 14px; font-weight: 700; }
-      .arrow { stroke-width: 1.8; fill: none; }
-      .flow-label { font-family: 'SF Pro Text', 'Segoe UI', -apple-system, sans-serif; font-size: 9px; font-weight: 600; fill: #4a5a6a; }
+      .title-main { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 800; fill: #0f172a; letter-spacing: -0.5px; }
+      .title-sub  { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 500; fill: #475569; }
+      .domain-tag { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 800; letter-spacing: 1px; }
+      .card-title { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 700; fill: #0f172a; }
+      .card-sub   { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 600; fill: #334155; }
+      .card-body  { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 10.5px; fill: #64748b; }
+      .badge-txt  { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 9.5px; font-weight: 700; }
+      .flow-txt   { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 9.5px; font-weight: 700; fill: #334155; }
+      .foot-txt   { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 600; fill: #475569; }
     </style>
-    <marker id="arrG" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#3a9d5c"/></marker>
-    <marker id="arrB" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#2563eb"/></marker>
-    <marker id="arrR" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#dc2626"/></marker>
-    <marker id="arrO" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ea580c"/></marker>
-    <marker id="arrP" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#7c3aed"/></marker>
-    <marker id="arrT" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#0d9488"/></marker>
+
+    <!-- Markers -->
+    <marker id="mRed" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,1 L7,4 L0,7 Z" fill="#dc2626"/></marker>
+    <marker id="mBlue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,1 L7,4 L0,7 Z" fill="#2563eb"/></marker>
+    <marker id="mOrange" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,1 L7,4 L0,7 Z" fill="#ea580c"/></marker>
+    <marker id="mGreen" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,1 L7,4 L0,7 Z" fill="#16a34a"/></marker>
+    <marker id="mPurple" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,1 L7,4 L0,7 Z" fill="#7c3aed"/></marker>
+    <marker id="mTeal" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,1 L7,4 L0,7 Z" fill="#0d9488"/></marker>
+
+    <!-- Filter for soft cards -->
+    <filter id="cardShadow" x="-4%" y="-4%" width="108%" height="108%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="1200" height="820" fill="#f8faff"/>
+  <rect width="1320" height="860" fill="#f8fafc"/>
 
-  <!-- Title -->
-  <text x="600" y="38" text-anchor="middle" class="box-title" fill="#1a2b3c" style="font-size:22px">VERCODE — System Architecture</text>
-  <text x="600" y="56" text-anchor="middle" class="sub">Three trust domains · two ingress points · no LLM on the webhook path</text>
+  <!-- Top Title Bar -->
+  <text x="660" y="38" text-anchor="middle" class="title-main">VERCODE — System Architecture</text>
+  <text x="660" y="58" text-anchor="middle" class="title-sub">Three Trust Domains · Constant-Latency Webhook Ingress · Deterministic-First Pipeline</text>
 
-  <!-- Trust domain labels -->
-  <rect x="20" y="76" width="370" height="700" rx="10" fill="#fef2f2" opacity="0.5" stroke="#fecaca" stroke-width="1" stroke-dasharray="5 4"/>
-  <text x="35" y="98" class="sub" fill="#991b1b" style="font-size:11px;font-weight:700">UNTRUSTED DOMAIN</text>
+  <!-- ========================================================================= -->
+  <!-- DOMAIN 1: UNTRUSTED DOMAIN (LEFT COLUMN)                                  -->
+  <!-- ========================================================================= -->
+  <rect x="30" y="78" width="350" height="725" rx="14" fill="#fef2f2" fill-opacity="0.6" stroke="#fecaca" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <rect x="46" y="92" width="170" height="22" rx="4" fill="#fee2e2"/>
+  <text x="131" y="107" text-anchor="middle" class="domain-tag" fill="#991b1b">UNTRUSTED DOMAIN</text>
 
-  <rect x="410" y="76" width="380" height="700" rx="10" fill="#eff6ff" opacity="0.5" stroke="#bfdbfe" stroke-width="1" stroke-dasharray="5 4"/>
-  <text x="425" y="98" class="sub" fill="#1e40af" style="font-size:11px;font-weight:700">PLATFORM (TRUSTED CORE)</text>
+  <!-- Card 1.1: GitHub App Webhooks -->
+  <g filter="url(#cardShadow)">
+    <rect x="50" y="128" width="310" height="96" rx="10" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+    <text x="70" y="152" class="card-title">GitHub App Webhooks</text>
+    <rect x="70" y="160" width="100" height="18" rx="4" fill="#fef2f2"/>
+    <text x="120" y="173" text-anchor="middle" class="badge-txt" fill="#dc2626">HMAC-SHA256 SIGNED</text>
+    <text x="70" y="194" class="card-body">PR opened, synchronize, review requested</text>
+    <text x="70" y="209" class="card-body">5-min timestamp window · 24h delivery dedup</text>
+  </g>
 
-  <rect x="810" y="76" width="370" height="700" rx="10" fill="#f0fdf4" opacity="0.5" stroke="#bbf7d0" stroke-width="1" stroke-dasharray="5 4"/>
-  <text x="825" y="98" class="sub" fill="#166534" style="font-size:11px;font-weight:700">EXTERNAL SERVICES</text>
+  <!-- Card 1.2: PR Content & Diffs -->
+  <g filter="url(#cardShadow)">
+    <rect x="50" y="244" width="310" height="96" rx="10" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+    <text x="70" y="268" class="card-title">Pull Request Content</text>
+    <rect x="70" y="276" width="130" height="18" rx="4" fill="#fef2f2"/>
+    <text x="135" y="289" text-anchor="middle" class="badge-txt" fill="#b91c1c">ADVERSARIAL INPUT</text>
+    <text x="70" y="310" class="card-body">Raw unified diffs · changed file bodies · title</text>
+    <text x="70" y="325" class="card-body">Treated strictly as data, never as control instructions</text>
+  </g>
 
-  <!-- ========== UNTRUSTED COLUMN ========== -->
+  <!-- Card 1.3: Raw AI Outputs -->
+  <g filter="url(#cardShadow)">
+    <rect x="50" y="360" width="310" height="96" rx="10" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+    <text x="70" y="384" class="card-title">AI Provider Responses</text>
+    <rect x="70" y="392" width="125" height="18" rx="4" fill="#fef2f2"/>
+    <text x="132" y="405" text-anchor="middle" class="badge-txt" fill="#b91c1c">UNTRUSTED STREAM</text>
+    <text x="70" y="426" class="card-body">Structured JSON completions from LLM</text>
+    <text x="70" y="441" class="card-body">Must pass Zod schema re-validation + anchor check</text>
+  </g>
 
-  <!-- GitHub App -->
-  <rect x="40" y="120" width="330" height="100" rx="10" fill="white" stroke="#dc2626" stroke-width="1.5"/>
-  <text x="205" y="148" text-anchor="middle" class="box-title" fill="#1a2b3c">GitHub App</text>
-  <text x="205" y="168" text-anchor="middle" class="sub">App JWT → Installation Tokens</text>
-  <text x="205" y="183" text-anchor="middle" class="sub">HMAC-SHA256 Signed Webhooks</text>
-  <text x="205" y="198" text-anchor="middle" class="sub">5-min window · 24h delivery-id dedup</text>
+  <!-- Card 1.4: Billing Webhook Ingress -->
+  <g filter="url(#cardShadow)">
+    <rect x="50" y="476" width="310" height="96" rx="10" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+    <text x="70" y="500" class="card-title">Billing Provider Webhooks</text>
+    <rect x="70" y="508" width="120" height="18" rx="4" fill="#fef2f2"/>
+    <text x="130" y="521" text-anchor="middle" class="badge-txt" fill="#b91c1c">STRIPE / RAZORPAY</text>
+    <text x="70" y="542" class="card-body">Checkout &amp; subscription status events</text>
+    <text x="70" y="557" class="card-body">Idempotent on event_id · client claims inert</text>
+  </g>
 
-  <!-- PR Content -->
-  <rect x="40" y="240" width="330" height="80" rx="10" fill="white" stroke="#dc2626" stroke-width="1.5"/>
-  <text x="205" y="268" text-anchor="middle" class="box-title" fill="#1a2b3c">PR Content</text>
-  <text x="205" y="288" text-anchor="middle" class="sub">Diff · files · body · comments · title</text>
-  <text x="205" y="303" text-anchor="middle" class="sub">Treated as untrusted data in the pipeline</text>
+  <!-- Card 1.5: User Browser Client -->
+  <g filter="url(#cardShadow)">
+    <rect x="50" y="592" width="310" height="96" rx="10" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+    <text x="70" y="616" class="card-title">Developer &amp; Org Members</text>
+    <rect x="70" y="624" width="115" height="18" rx="4" fill="#fef2f2"/>
+    <text x="127" y="637" text-anchor="middle" class="badge-txt" fill="#b91c1c">BROWSER CLIENT</text>
+    <text x="70" y="658" class="card-body">Dashboard access via Next.js web application</text>
+    <text x="70" y="673" class="card-body">Signed HTTP-only session cookie authentication</text>
+  </g>
 
-  <!-- AI Provider Output -->
-  <rect x="40" y="340" width="330" height="80" rx="10" fill="white" stroke="#dc2626" stroke-width="1.5"/>
-  <text x="205" y="368" text-anchor="middle" class="box-title" fill="#1a2b3c">AI Provider Output</text>
-  <text x="205" y="388" text-anchor="middle" class="sub">Structured findings (Zod-validated)</text>
-  <text x="205" y="403" text-anchor="middle" class="sub">No tool-calling path exists in review mode</text>
+  <text x="205" y="730" text-anchor="middle" class="card-body" fill="#991b1b" style="font-weight:700">▲ Ingress Boundary: HMAC Verification &amp; Authentication</text>
 
-  <!-- Billing Provider -->
-  <rect x="40" y="440" width="330" height="80" rx="10" fill="white" stroke="#dc2626" stroke-width="1.5"/>
-  <text x="205" y="468" text-anchor="middle" class="box-title" fill="#1a2b3c">Billing Provider</text>
-  <text x="205" y="488" text-anchor="middle" class="sub">Stripe / Razorpay Webhooks</text>
-  <text x="205" y="503" text-anchor="middle" class="sub">Signature-checked · event-id idempotent</text>
 
-  <!-- Webhook Ingress path labels -->
-  <text x="45" y="548" class="sub" fill="#991b1b" style="font-size:10px">▲ Ingress — two machine paths + one human path</text>
+  <!-- ========================================================================= -->
+  <!-- DOMAIN 2: PLATFORM CORE (CENTER COLUMN)                                   -->
+  <!-- ========================================================================= -->
+  <rect x="420" y="78" width="480" height="725" rx="14" fill="#eff6ff" fill-opacity="0.6" stroke="#bfdbfe" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <rect x="436" y="92" width="190" height="22" rx="4" fill="#dbeafe"/>
+  <text x="531" y="107" text-anchor="middle" class="domain-tag" fill="#1e40af">PLATFORM TRUSTED CORE</text>
 
-  <!-- ========== PLATFORM COLUMN ========== -->
+  <!-- Card 2.1: Fastify API Ingress -->
+  <g filter="url(#cardShadow)">
+    <rect x="440" y="128" width="440" height="140" rx="10" fill="#ffffff" stroke="#3b82f6" stroke-width="2"/>
+    <text x="460" y="153" class="card-title" fill="#1d4ed8">Fastify API (apps/api)</text>
+    <rect x="720" y="139" width="145" height="18" rx="4" fill="#eff6ff"/>
+    <text x="792" y="152" text-anchor="middle" class="badge-txt" fill="#2563eb">PORT 4000 · FASTIFY 5</text>
+    
+    <text x="460" y="176" class="card-body">• Webhook receiver: signature verify + delivery dedup (&lt; 300 ms)</text>
+    <text x="460" y="193" class="card-body">• Enqueues jobs to Redis — <tspan font-weight="700" fill="#b91c1c">NEVER runs pipeline or calls LLM</tspan></text>
+    <text x="460" y="210" class="card-body">• Tenant-scoped REST API for dashboard UI with RBAC capability guard</text>
+    <text x="460" y="227" class="card-body">• Auth service (Argon2id + session hash), rate limits, health probes</text>
 
-  <!-- Browser / Dashboard -->
-  <rect x="430" y="120" width="340" height="80" rx="10" fill="white" stroke="#2563eb" stroke-width="2"/>
-  <text x="600" y="148" text-anchor="middle" class="box-title" fill="#2563eb">Browser — Dashboard</text>
-  <text x="600" y="168" text-anchor="middle" class="sub">Next.js 15 · App Router · Tailwind 4 · shadcn/ui</text>
-  <text x="600" y="183" text-anchor="middle" class="sub">Session cookie (HttpOnly, Secure, SameSite=Lax)</text>
+    <rect x="460" y="238" width="400" height="20" rx="4" fill="#fef3c7" stroke="#fde68a" stroke-width="1"/>
+    <text x="660" y="252" text-anchor="middle" class="badge-txt" fill="#92400e">ISOLATION INVARIANT: NO LLM CALLS ON API HOT PATH (DoS DEFENSE)</text>
+  </g>
 
-  <!-- Fastify API -->
-  <rect x="430" y="230" width="340" height="130" rx="10" fill="white" stroke="#2563eb" stroke-width="2"/>
-  <text x="600" y="258" text-anchor="middle" class="box-title" fill="#2563eb">Fastify API</text>
-  <text x="600" y="278" text-anchor="middle" class="sub">• Auth (Argon2id + Redis sessions)</text>
-  <text x="600" y="293" text-anchor="middle" class="sub">• Dashboard REST (tenant-scoped)</text>
-  <text x="600" y="308" text-anchor="middle" class="sub">• Webhook ingress (GitHub + Billing)</text>
-  <text x="600" y="323" text-anchor="middle" class="sub">• Rate limits · Health endpoints</text>
-  <rect x="445" y="336" width="310" height="18" rx="4" fill="#fef3c7" opacity="0.7"/>
-  <text x="600" y="349" text-anchor="middle" class="sub" fill="#92400e" style="font-weight:700">Never runs the review pipeline</text>
+  <!-- Card 2.2: BullMQ Queues -->
+  <g filter="url(#cardShadow)">
+    <rect x="440" y="286" width="440" height="84" rx="10" fill="#ffffff" stroke="#ea580c" stroke-width="2"/>
+    <text x="460" y="311" class="card-title" fill="#c2410c">BullMQ Queue Engine (Redis 7)</text>
+    <rect x="735" y="297" width="130" height="18" rx="4" fill="#fff7ed"/>
+    <text x="800" y="310" text-anchor="middle" class="badge-txt" fill="#ea580c">ASYNC DECOUPLING</text>
 
-  <!-- Queue -->
-  <rect x="430" y="388" width="340" height="70" rx="10" fill="white" stroke="#ea580c" stroke-width="2"/>
-  <text x="600" y="416" text-anchor="middle" class="box-title" fill="#ea580c">BullMQ Queue (Redis 7)</text>
-  <text x="600" y="436" text-anchor="middle" class="sub">review-queue · durable · DLQ · backpressure</text>
-  <text x="600" y="451" text-anchor="middle" class="sub">KEDA autoscale trigger on queue lag</text>
+    <text x="460" y="333" class="card-body">• <tspan font-weight="700">review-queue</tspan>: payload carries only jobId pointer (never authz state)</text>
+    <text x="460" y="349" class="card-body">• Distributed in-flight locks (SET NX) · Dead Letter Queue (DLQ) · Backpressure</text>
+  </g>
 
-  <!-- Worker -->
-  <rect x="430" y="485" width="340" height="150" rx="10" fill="white" stroke="#ea580c" stroke-width="2"/>
-  <text x="600" y="513" text-anchor="middle" class="box-title" fill="#ea580c">BullMQ Worker</text>
-  <text x="600" y="533" text-anchor="middle" class="sub">dequeue → fetch diff → static analysis → AI review</text>
-  <text x="600" y="548" text-anchor="middle" class="sub">→ validate → dedup → policy → summary → publish</text>
-  <rect x="445" y="562" width="310" height="60" rx="6" fill="#fff7ed" stroke="#fed7aa" stroke-width="1"/>
-  <text x="600" y="580" text-anchor="middle" class="sub" fill="#9a3412">Pipeline stages:</text>
-  <text x="600" y="595" text-anchor="middle" class="sub" fill="#9a3412">classify → ESLint + Semgrep → OpenAI (task-routed)</text>
-  <text x="600" y="610" text-anchor="middle" class="sub" fill="#9a3412">→ Zod validate → dedup → confidence floor → summary</text>
+  <!-- Card 2.3: Worker Review Pipeline -->
+  <g filter="url(#cardShadow)">
+    <rect x="440" y="388" width="440" height="196" rx="10" fill="#ffffff" stroke="#ea580c" stroke-width="2"/>
+    <text x="460" y="413" class="card-title" fill="#c2410c">BullMQ Worker (apps/worker)</text>
+    <rect x="715" y="399" width="150" height="18" rx="4" fill="#fff7ed"/>
+    <text x="790" y="412" text-anchor="middle" class="badge-txt" fill="#c2410c">REVIEW PIPELINE RUNNER</text>
 
-  <!-- Data store row -->
-  <rect x="430" y="660" width="160" height="90" rx="10" fill="white" stroke="#7c3aed" stroke-width="2"/>
-  <text x="510" y="688" text-anchor="middle" class="box-title" fill="#7c3aed">PostgreSQL 16</text>
-  <text x="510" y="708" text-anchor="middle" class="sub">reviews · findings · orgs</text>
-  <text x="510" y="723" text-anchor="middle" class="sub">usage · audit · billing</text>
-  <text x="510" y="738" text-anchor="middle" class="sub" fill="#7c3aed" style="font-weight:700">Single source of truth</text>
+    <text x="460" y="433" class="card-body">• Loads durable state from Postgres · Enforces plan quota &amp; same-SHA gates</text>
+    <text x="460" y="448" class="card-body">• Wall-clock budget (240s) · Degrades to partial results if budget exceeded</text>
 
-  <rect x="610" y="660" width="160" height="90" rx="10" fill="white" stroke="#7c3aed" stroke-width="2"/>
-  <text x="690" y="688" text-anchor="middle" class="box-title" fill="#7c3aed">Redis 7</text>
-  <text x="690" y="708" text-anchor="middle" class="sub">sessions · queues · diff cache</text>
-  <text x="690" y="723" text-anchor="middle" class="sub">org-scoped · 24h TTL diff cache</text>
-  <text x="690" y="738" text-anchor="middle" class="sub" fill="#7c3aed" style="font-weight:700">Ephemeral by design</text>
+    <!-- Inner Pipeline Box -->
+    <rect x="455" y="457" width="410" height="92" rx="6" fill="#fffaf5" stroke="#fed7aa" stroke-width="1.2"/>
+    <text x="468" y="474" class="badge-txt" fill="#9a3412">12-STAGE ORCHESTRATION PIPELINE:</text>
+    <text x="468" y="492" class="card-body">1. Pre-flight quota &amp; same-SHA check  →  2. Bounded diff parse (diff-engine)</text>
+    <text x="468" y="508" class="card-body">3. Deterministic Static Analysis (ESLint + Semgrep) — authoritative</text>
+    <text x="468" y="524" class="card-body">4. Task-routed AI (Triage → Deep Review → Security Pass)</text>
+    <text x="468" y="540" class="card-body">5. Line anchor resolution → Dedup → Confidence Floor (0.6) → Summary</text>
 
-  <!-- ========== EXTERNAL COLUMN ========== -->
+    <text x="460" y="569" class="card-body" fill="#15803d" style="font-weight:700">✓ Persist-then-Publish: findings &amp; usage saved in DB before GitHub review call</text>
+  </g>
 
-  <!-- GitHub REST -->
-  <rect x="830" y="120" width="330" height="80" rx="10" fill="white" stroke="#166534" stroke-width="1.5"/>
-  <text x="995" y="148" text-anchor="middle" class="box-title" fill="#166534">GitHub REST API</text>
-  <text x="995" y="168" text-anchor="middle" class="sub">Fetch diff + bounded context</text>
-  <text x="995" y="183" text-anchor="middle" class="sub">Publish review + inline comments</text>
+  <!-- Data Layer: Postgres & Redis -->
+  <g filter="url(#cardShadow)">
+    <rect x="440" y="602" width="210" height="110" rx="10" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+    <text x="455" y="626" class="card-title" fill="#6d28d9">PostgreSQL 16</text>
+    <rect x="575" y="612" width="65" height="16" rx="3" fill="#f5f3ff"/>
+    <text x="607" y="624" text-anchor="middle" class="badge-txt" fill="#7c3aed">PRISMA</text>
+    <text x="455" y="648" class="card-body">• org_id leading index</text>
+    <text x="455" y="663" class="card-body">• review_jobs (SHA unique)</text>
+    <text x="455" y="678" class="card-body">• review_findings (JSONB)</text>
+    <text x="455" y="694" class="card-body">• append-only audit_events</text>
+  </g>
 
-  <!-- AI Provider -->
-  <rect x="830" y="230" width="330" height="80" rx="10" fill="white" stroke="#166534" stroke-width="1.5"/>
-  <text x="995" y="258" text-anchor="middle" class="box-title" fill="#166534">AI Provider</text>
-  <text x="995" y="278" text-anchor="middle" class="sub">OpenAI · Anthropic · Ollama</text>
-  <text x="995" y="293" text-anchor="middle" class="sub">Task-routed · token-budgeted</text>
-  <text x="995" y="308" text-anchor="middle" class="sub">No-training endpoint (NFR-29)</text>
+  <g filter="url(#cardShadow)">
+    <rect x="670" y="602" width="210" height="110" rx="10" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+    <text x="685" y="626" class="card-title" fill="#6d28d9">Redis 7 Instance</text>
+    <rect x="795" y="612" width="75" height="16" rx="3" fill="#f5f3ff"/>
+    <text x="832" y="624" text-anchor="middle" class="badge-txt" fill="#7c3aed">EPHEMERAL</text>
+    <text x="685" y="648" class="card-body">• Session tokens store</text>
+    <text x="685" y="663" class="card-body">• 24h TTL PR diff cache</text>
+    <text x="685" y="678" class="card-body">• BullMQ job state queues</text>
+    <text x="685" y="694" class="card-body">• In-flight lock keys (SET NX)</text>
+  </g>
 
-  <!-- Static Analysis -->
-  <rect x="830" y="340" width="330" height="80" rx="10" fill="white" stroke="#166534" stroke-width="1.5"/>
-  <text x="995" y="368" text-anchor="middle" class="box-title" fill="#166534">Static Analysis</text>
-  <text x="995" y="388" text-anchor="middle" class="sub">ESLint + Semgrep (deterministic)</text>
-  <text x="995" y="403" text-anchor="middle" class="sub">Runs as worker sub-process in MVP</text>
-  <text x="995" y="418" text-anchor="middle" class="sub" fill="#166534" style="font-weight:700">No production credentials</text>
+  <text x="660" y="730" text-anchor="middle" class="card-body" fill="#1e40af" style="font-weight:700">▲ Tenant Data Isolation: Every table carries org_id; cross-tenant yields 404</text>
 
-  <!-- Observability -->
-  <rect x="830" y="450" width="330" height="80" rx="10" fill="white" stroke="#0d9488" stroke-width="1.5"/>
-  <text x="995" y="478" text-anchor="middle" class="box-title" fill="#0d9488">Observability</text>
-  <text x="995" y="498" text-anchor="middle" class="sub">Sentry · OpenTelemetry · pino</text>
-  <text x="995" y="513" text-anchor="middle" class="sub">Correlation id end-to-end</text>
 
-  <!-- KMS -->
-  <rect x="830" y="560" width="330" height="70" rx="10" fill="white" stroke="#0d9488" stroke-width="1.5"/>
-  <text x="995" y="588" text-anchor="middle" class="box-title" fill="#0d9488">KMS + Secret Store</text>
-  <text x="995" y="608" text-anchor="middle" class="sub">App private key · BYOK master key · signing key</text>
-  <text x="995" y="623" text-anchor="middle" class="sub">AES-256-GCM wrapped · never in a DB column</text>
+  <!-- ========================================================================= -->
+  <!-- DOMAIN 3: EXTERNAL SERVICES & INTEGRATIONS (RIGHT COLUMN)                 -->
+  <!-- ========================================================================= -->
+  <rect x="940" y="78" width="350" height="725" rx="14" fill="#f0fdf4" fill-opacity="0.6" stroke="#bbf7d0" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <rect x="956" y="92" width="185" height="22" rx="4" fill="#dcfce7"/>
+  <text x="1048" y="107" text-anchor="middle" class="domain-tag" fill="#166534">EXTERNAL INTEGRATIONS</text>
 
-  <!-- ========== ARROWS ========== -->
+  <!-- Card 3.1: GitHub REST API -->
+  <g filter="url(#cardShadow)">
+    <rect x="960" y="128" width="310" height="96" rx="10" fill="#ffffff" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="980" y="152" class="card-title">GitHub REST &amp; GraphQL</text>
+    <rect x="980" y="160" width="115" height="18" rx="4" fill="#f0fdf4"/>
+    <text x="1037" y="173" text-anchor="middle" class="badge-txt" fill="#15803d">APP AUTHENTICATED</text>
+    <text x="980" y="194" class="card-body">Fetch PR diff (bounded: max 60 files / 3k lines)</text>
+    <text x="980" y="209" class="card-body">Publish verdict summary + validated inline comments</text>
+  </g>
 
-  <!-- Browser → API -->
-  <line x1="600" y1="200" x2="600" y2="228" class="arrow" stroke="#2563eb" marker-end="url(#arrB)"/>
-  <text x="612" y="218" class="flow-label" fill="#2563eb">REST + session cookie</text>
+  <!-- Card 3.2: Static Analysis Subprocesses -->
+  <g filter="url(#cardShadow)">
+    <rect x="960" y="244" width="310" height="96" rx="10" fill="#ffffff" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="980" y="268" class="card-title">Static Analysis Runners</text>
+    <rect x="980" y="276" width="135" height="18" rx="4" fill="#f0fdf4"/>
+    <text x="1047" y="289" text-anchor="middle" class="badge-txt" fill="#15803d">DETERMINISTIC CHECKS</text>
+    <text x="980" y="310" class="card-body">ESLint + Semgrep security &amp; logic AST scanning</text>
+    <text x="980" y="325" class="card-body">Zero LLM cost · exempt from confidence floor</text>
+  </g>
 
-  <!-- API → Queue -->
-  <line x1="600" y1="360" x2="600" y2="386" class="arrow" stroke="#ea580c" marker-end="url(#arrO)"/>
-  <text x="612" y="376" class="flow-label" fill="#ea580c">verify + enqueue</text>
+  <!-- Card 3.3: AI Providers -->
+  <g filter="url(#cardShadow)">
+    <rect x="960" y="360" width="310" height="96" rx="10" fill="#ffffff" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="980" y="384" class="card-title">AI Provider Gateways</text>
+    <rect x="980" y="392" width="140" height="18" rx="4" fill="#f0fdf4"/>
+    <text x="1050" y="405" text-anchor="middle" class="badge-txt" fill="#15803d">TASK-ROUTED ADAPTERS</text>
+    <text x="980" y="426" class="card-body">OpenAI (GPT-4o) · Anthropic · Local Ollama</text>
+    <text x="980" y="441" class="card-body">No-training headers (NFR-29) · token cost tracked</text>
+  </g>
 
-  <!-- Queue → Worker -->
-  <line x1="600" y1="458" x2="600" y2="483" class="arrow" stroke="#ea580c" marker-end="url(#arrO)"/>
-  <text x="612" y="474" class="flow-label" fill="#ea580c">dequeue</text>
+  <!-- Card 3.4: KMS & Secrets Store -->
+  <g filter="url(#cardShadow)">
+    <rect x="960" y="476" width="310" height="96" rx="10" fill="#ffffff" stroke="#0d9488" stroke-width="1.5"/>
+    <text x="980" y="500" class="card-title">KMS &amp; Key Management</text>
+    <rect x="980" y="508" width="130" height="18" rx="4" fill="#ccfbf1"/>
+    <text x="1045" y="521" text-anchor="middle" class="badge-txt" fill="#0f766e">ENCRYPTION AT REST</text>
+    <text x="980" y="542" class="card-body">GitHub App private key KMS-wrapped</text>
+    <text x="980" y="557" class="card-body">Tenant BYOK keys encrypted with AES-256-GCM</text>
+  </g>
 
-  <!-- Worker → PG -->
-  <line x1="530" y1="635" x2="510" y2="658" class="arrow" stroke="#7c3aed" marker-end="url(#arrP)"/>
-  <text x="472" y="650" class="flow-label" fill="#7c3aed">persist</text>
+  <!-- Card 3.5: Observability -->
+  <g filter="url(#cardShadow)">
+    <rect x="960" y="592" width="310" height="96" rx="10" fill="#ffffff" stroke="#0d9488" stroke-width="1.5"/>
+    <text x="980" y="616" class="card-title">Observability &amp; Telemetry</text>
+    <rect x="980" y="624" width="140" height="18" rx="4" fill="#ccfbf1"/>
+    <text x="1050" y="637" text-anchor="middle" class="badge-txt" fill="#0f766e">OPENTELEMETRY / SENTRY</text>
+    <text x="980" y="658" class="card-body">Pino JSON structured logs with secret redaction</text>
+    <text x="980" y="673" class="card-body">Trace correlation by review jobId across worker</text>
+  </g>
 
-  <!-- Worker → Redis -->
-  <line x1="670" y1="635" x2="690" y2="658" class="arrow" stroke="#7c3aed" marker-end="url(#arrP)"/>
-  <text x="695" y="650" class="flow-label" fill="#7c3aed">cache / state</text>
+  <text x="1115" y="730" text-anchor="middle" class="card-body" fill="#166534" style="font-weight:700">▲ Zero Plaintext Secrets: Masking gates run on every log &amp; trace</text>
 
-  <!-- GitHub webhook → API -->
-  <path d="M 370 160 C 400 160, 400 260, 428 260" class="arrow" stroke="#dc2626" marker-end="url(#arrR)"/>
-  <text x="405" y="152" text-anchor="middle" class="flow-label" fill="#dc2626">signed webhook</text>
 
-  <!-- API → GitHub REST -->
-  <path d="M 770 265 C 800 265, 800 160, 828 160" class="arrow" stroke="#166534" marker-end="url(#arrG)"/>
-  <text x="800" y="205" text-anchor="middle" class="flow-label" fill="#166534">diff fetch / publish</text>
+  <!-- ========================================================================= -->
+  <!-- CONNECTORS & ARROWS (CLEAR, ORTHOGONAL, ACCURATE)                         -->
+  <!-- ========================================================================= -->
 
-  <!-- Worker → AI Provider -->
-  <path d="M 770 525 C 800 525, 800 262, 828 262" class="arrow" stroke="#166534" marker-end="url(#arrG)"/>
-  <text x="800" y="400" text-anchor="middle" class="flow-label" fill="#166534">structured call</text>
+  <!-- 1. GitHub Webhook -> Fastify API (Direct Horizontal) -->
+  <line x1="360" y1="170" x2="432" y2="170" stroke="#dc2626" stroke-width="2" marker-end="url(#mRed)"/>
+  <rect x="372" y="157" width="54" height="16" rx="3" fill="#ffffff" stroke="#fca5a5" stroke-width="1"/>
+  <text x="399" y="169" text-anchor="middle" class="flow-txt" fill="#dc2626">verify</text>
 
-  <!-- Worker → Static Analysis -->
-  <path d="M 770 560 C 800 560, 800 378, 828 378" class="arrow" stroke="#166534" marker-end="url(#arrG)"/>
-  <text x="800" y="468" text-anchor="middle" class="flow-label" fill="#166534">deterministic findings</text>
+  <!-- 2. Billing Webhook -> Fastify API (Orthogonal channel at x=395) -->
+  <path d="M 360,524 H 395 V 210 H 432" fill="none" stroke="#dc2626" stroke-width="1.8" marker-end="url(#mRed)"/>
+  <rect x="367" y="400" width="56" height="16" rx="3" fill="#ffffff" stroke="#fca5a5" stroke-width="1"/>
+  <text x="395" y="412" text-anchor="middle" class="flow-txt" fill="#dc2626">billing</text>
 
-  <!-- Observability → Worker -->
-  <path d="M 830 485 C 800 485, 800 545, 772 545" class="arrow" stroke="#0d9488" marker-end="url(#arrT)"/>
-  <text x="800" y="530" text-anchor="middle" class="flow-label" fill="#0d9488">correlation ids</text>
+  <!-- 3. Browser Client -> Fastify API (Orthogonal channel at x=412) -->
+  <path d="M 360,640 H 412 V 240 H 432" fill="none" stroke="#2563eb" stroke-width="1.8" marker-end="url(#mBlue)"/>
+  <rect x="382" y="610" width="60" height="16" rx="3" fill="#ffffff" stroke="#bfdbfe" stroke-width="1"/>
+  <text x="412" y="622" text-anchor="middle" class="flow-txt" fill="#2563eb">session</text>
 
-  <!-- Billing webhook → API -->
-  <path d="M 370 480 C 400 480, 400 330, 428 330" class="arrow" stroke="#dc2626" marker-end="url(#arrR)"/>
-  <text x="405" y="455" text-anchor="middle" class="flow-label" fill="#dc2626">billing webhook</text>
+  <!-- 4. Fastify API -> BullMQ Queue (Vertical Center) -->
+  <line x1="660" y1="268" x2="660" y2="278" stroke="#ea580c" stroke-width="2.2" marker-end="url(#mOrange)"/>
 
-  <!-- KMS → API -->
-  <path d="M 830 590 C 800 590, 800 320, 772 320" class="arrow" stroke="#0d9488" marker-end="url(#arrT)"/>
-  <text x="800" y="565" text-anchor="middle" class="flow-label" fill="#0d9488">decrypt BYOK</text>
+  <!-- 5. BullMQ Queue -> Worker Pipeline (Vertical Center) -->
+  <line x1="660" y1="370" x2="660" y2="380" stroke="#ea580c" stroke-width="2.2" marker-end="url(#mOrange)"/>
 
-  <!-- Legend -->
-  <line x1="30" y1="808" x2="50" y2="808" stroke="#dc2626" stroke-width="2" marker-end="url(#arrR)"/>
-  <text x="54" y="812" class="sub">Ingress (untrusted → trusted)</text>
-  <line x1="190" y1="808" x2="210" y2="808" stroke="#2563eb" stroke-width="2" marker-end="url(#arrB)"/>
-  <text x="214" y="812" class="sub">Browser → API</text>
-  <line x1="290" y1="808" x2="310" y2="808" stroke="#ea580c" stroke-width="2" marker-end="url(#arrO)"/>
-  <text x="314" y="812" class="sub">Queue → Worker</text>
-  <line x1="400" y1="808" x2="420" y2="808" stroke="#7c3aed" stroke-width="2" marker-end="url(#arrP)"/>
-  <text x="424" y="812" class="sub">Data persist</text>
-  <line x1="500" y1="808" x2="520" y2="808" stroke="#166534" stroke-width="2" marker-end="url(#arrG)"/>
-  <text x="524" y="812" class="sub">External call</text>
-  <line x1="620" y1="808" x2="640" y2="808" stroke="#0d9488" stroke-width="2" marker-end="url(#arrT)"/>
-  <text x="644" y="812" class="sub">Observability / KMS</text>
+  <!-- 6. Worker -> PostgreSQL 16 (Vertical) -->
+  <line x1="545" y1="584" x2="545" y2="594" stroke="#7c3aed" stroke-width="2" marker-end="url(#mPurple)"/>
+  <rect x="510" y="582" width="70" height="15" rx="3" fill="#ffffff" stroke="#ddd6fe" stroke-width="1"/>
+  <text x="545" y="593" text-anchor="middle" class="flow-txt" fill="#7c3aed">persist tx</text>
+
+  <!-- 7. Worker -> Redis 7 (Vertical) -->
+  <line x1="775" y1="584" x2="775" y2="594" stroke="#7c3aed" stroke-width="2" marker-end="url(#mPurple)"/>
+  <rect x="742" y="582" width="66" height="15" rx="3" fill="#ffffff" stroke="#ddd6fe" stroke-width="1"/>
+  <text x="775" y="593" text-anchor="middle" class="flow-txt" fill="#7c3aed">cache / lock</text>
+
+  <!-- 8. Worker -> GitHub REST (Fetch Diff & Publish Review - Channel at x=895) -->
+  <path d="M 880,430 H 910 V 170 H 952" fill="none" stroke="#16a34a" stroke-width="1.8" marker-end="url(#mGreen)"/>
+  <rect x="880" y="270" width="60" height="26" rx="4" fill="#ffffff" stroke="#bbf7d0" stroke-width="1"/>
+  <text x="910" y="282" text-anchor="middle" class="flow-txt" fill="#16a34a">diff fetch</text>
+  <text x="910" y="293" text-anchor="middle" class="flow-txt" fill="#16a34a">&amp; publish</text>
+
+  <!-- 9. Worker -> Static Analysis (Runner invocation - Channel at x=925) -->
+  <path d="M 880,470 H 925 V 292 H 952" fill="none" stroke="#16a34a" stroke-width="1.8" marker-end="url(#mGreen)"/>
+  <rect x="898" y="340" width="54" height="16" rx="3" fill="#ffffff" stroke="#bbf7d0" stroke-width="1"/>
+  <text x="925" y="352" text-anchor="middle" class="flow-txt" fill="#16a34a">execute</text>
+
+  <!-- 10. Worker -> AI Providers (Direct / Low Channel at x=910) -->
+  <path d="M 880,510 H 910 V 408 H 952" fill="none" stroke="#16a34a" stroke-width="1.8" marker-end="url(#mGreen)"/>
+  <rect x="888" y="445" width="44" height="16" rx="3" fill="#ffffff" stroke="#bbf7d0" stroke-width="1"/>
+  <text x="910" y="457" text-anchor="middle" class="flow-txt" fill="#16a34a">LLM call</text>
+
+  <!-- 11. Worker -> KMS & Observability Telemetry -->
+  <path d="M 880,550 H 935 V 640 H 952" fill="none" stroke="#0d9488" stroke-width="1.8" marker-end="url(#mTeal)"/>
+  <rect x="912" y="585" width="46" height="16" rx="3" fill="#ffffff" stroke="#99f6e4" stroke-width="1"/>
+  <text x="935" y="597" text-anchor="middle" class="flow-txt" fill="#0d9488">telemetry</text>
+
+
+  <!-- ========================================================================= -->
+  <!-- BOTTOM LEGEND                                                             -->
+  <!-- ========================================================================= -->
+  <rect x="30" y="814" width="1260" height="32" rx="6" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+  <line x1="50" y1="830" x2="75" y2="830" stroke="#dc2626" stroke-width="2" marker-end="url(#mRed)"/>
+  <text x="82" y="834" class="foot-txt">Ingress (Webhook / External)</text>
+
+  <line x1="260" y1="830" x2="285" y2="830" stroke="#2563eb" stroke-width="2" marker-end="url(#mBlue)"/>
+  <text x="292" y="834" class="foot-txt">REST / Session Auth</text>
+
+  <line x1="435" y1="830" x2="460" y2="830" stroke="#ea580c" stroke-width="2" marker-end="url(#mOrange)"/>
+  <text x="467" y="834" class="foot-txt">Queue Job Enqueue / Dequeue</text>
+
+  <line x1="660" y1="830" x2="685" y2="830" stroke="#7c3aed" stroke-width="2" marker-end="url(#mPurple)"/>
+  <text x="692" y="834" class="foot-txt">Transactional Data Persistence</text>
+
+  <line x1="885" y1="830" x2="910" y2="830" stroke="#16a34a" stroke-width="2" marker-end="url(#mGreen)"/>
+  <text x="917" y="834" class="foot-txt">External Integrations &amp; Providers</text>
+
+  <line x1="1130" y1="830" x2="1155" y2="830" stroke="#0d9488" stroke-width="2" marker-end="url(#mTeal)"/>
+  <text x="1162" y="834" class="foot-txt">Telemetry &amp; KMS</text>
 </svg>
