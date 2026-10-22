@@ -218,15 +218,13 @@ export const KNOWN_VARS = [
   "USE_MOCK_BILLING",
 ] as const;
 
-function pick(env: NodeJS.ProcessEnv, _keys: string[] = []): Record<string, string> {
+function pick(env: NodeJS.ProcessEnv): Record<string, string | undefined> {
   // Read only the known vars (the "a variable not in the doc doesn't exist"
-  // gate). Unknown vars are not read (a secret that's not documented is not
-  // loaded — it can't leak through the config).
-  const out: Record<string, string> = {};
+  // gate). Unknown vars are not read (a secret that's not documented can't
+  // leak through the config).
+  const out: Record<string, string | undefined> = {};
   for (const key of KNOWN_VARS) {
-    if (env[key] !== undefined) {
-      out[key] = env[key];
-    }
+    out[key] = env[key];
   }
   return out;
 }
