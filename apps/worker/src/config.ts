@@ -77,6 +77,14 @@ export interface AiProvider {
   completeStructured(input: AiCompleteInput): Promise<AiCompleteResult>;
 }
 
+/**
+ * A provider factory: the pipeline constructs the provider per-review with the
+ * PR diff in hand (the mock provider needs it to anchor deterministic
+ * findings; the real @vercode/ai-providers adapters ignore it — they route by
+ * task + org context).
+ */
+export type AiProviderFactory = (diff: PRDiff) => AiProvider;
+
 export interface StaticAnalyzer {
   /** Deterministic findings — authoritative, exempt from the confidence floor (ADR-005). */
   runStatic(diff: PRDiff): Promise<
@@ -142,7 +150,12 @@ export interface WorkerDeps {
   redis: import("ioredis").Redis;
   github: GithubDiffClient;
   staticAnalyzer: StaticAnalyzer;
-  aiProviders: AiProvider[]; // [primary, secondary] — the fallback order
+  /**
+   * The AI provider factories, in fallback order [primary, secondary]
+   * (TRD.md §9 "bounded retry, then fall back to the configured secondary
+   * provider — one switch").
+   */
+  aiProviderFactories: AiProviderFactory[];
   diffEngine: DiffEngine;
   publisher: GithubPublisher;
   /** The provider to use first (config.ai.AI_DEFAULT_PROVIDER / org_settings.provider). */
