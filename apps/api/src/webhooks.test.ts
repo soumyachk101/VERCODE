@@ -109,13 +109,15 @@ interface Seed {
 export function mockPrisma(seed: Seed = {}) {
   const audits: AuditEvent[] = [];
   const retentionJobs: RetentionJob[] = [];
-  const billingEvents: BillingEvent[] = [seed.billingEvent as BillingEvent];
-  const orgBillings: OrgBilling[] = [seed.billingRow as OrgBilling];
+  // Only include the seeded rows (a undefined seed → a no row, a not a
+  // `[undefined]` array that breaks a the `.find` predicate).
+  const billingEvents: BillingEvent[] = seed.billingEvent ? [seed.billingEvent] : [];
+  const orgBillings: OrgBilling[] = seed.billingRow ? [seed.billingRow] : [];
   const jobs: ReviewJob[] = [...(seed.jobs ?? [])];
-  const installs: GithubInstall[] = [seed.install as GithubInstall];
-  const repos: GithubRepo[] = [seed.repo as GithubRepo];
-  const deliveries: WebhookDelivery[] = [seed.delivery as WebhookDelivery];
-  const orgs: Organization[] = [seed.org as Organization];
+  const installs: GithubInstall[] = seed.install ? [seed.install] : [];
+  const repos: GithubRepo[] = seed.repo ? [seed.repo] : [];
+  const deliveries: WebhookDelivery[] = seed.delivery ? [seed.delivery] : [];
+  const orgs: Organization[] = seed.org ? [seed.org] : [];
 
   const state = { audits, retentionJobs, billingEvents, orgBillings, jobs, installs, repos, deliveries, orgs };
 
