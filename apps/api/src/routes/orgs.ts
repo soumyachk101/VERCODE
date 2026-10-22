@@ -4,7 +4,7 @@
 
 import type { FastifyInstance } from "fastify";
 import { CreateOrgRequestSchema, CreateInvitationRequestSchema, ChangeRoleRequestSchema } from "@vercode/contracts";
-import { Role } from "@prisma/client";
+import { Role, Prisma, PrismaClient } from "@prisma/client";
 
 export async function orgRoutes(app: FastifyInstance) {
   // A create org (the creator is the owner, AC-102). No tenancy (it's the
@@ -176,7 +176,7 @@ export async function orgRoutes(app: FastifyInstance) {
 
       const targetRole = role.toUpperCase() as Role;
 
-      await db.$transaction(async (tx) => {
+      await db.$transaction(async (tx: PrismaClient) => {
         if (targetRole === Role.OWNER) {
           // An atomic owner-transfer: demote the current owner + promote the
           // target in one txn (a exactly-one-owner invariant).
