@@ -85,7 +85,7 @@ export function buildTenantPlugin() {
               orgId,
               actorId: userId,
               action: "access.denied_cross_tenant",
-              meta: { requested: req.route.url, role: "none" } as unknown as Prisma.InputJsonValue,
+              meta: { requested: req.url, role: "none" } as unknown as Prisma.InputJsonValue,
             },
           })
           .catch(() => {

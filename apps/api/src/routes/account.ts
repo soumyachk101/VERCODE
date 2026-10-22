@@ -7,7 +7,7 @@ import { Prisma } from "@prisma/client";
 export async function accountRoutes(app: FastifyInstance) {
   app.get("/", async (req, reply) => {
     const db = app.auth.db;
-    const userId = req.user.userId;
+    const userId = req.user.userId ?? "";
     if (!userId) {
       reply.code(401).send({ error: { code: "UNAUTHENTICATED", message: "No session." } });
       return;
@@ -25,7 +25,7 @@ export async function accountRoutes(app: FastifyInstance) {
 
   app.get("/sessions", async (req, reply) => {
     const db = app.auth.db;
-    const userId = req.user.userId;
+    const userId = req.user.userId ?? "";
     const sessions = await db.session.findMany({
       where: { userId, expiresAt: { gt: new Date() } },
       select: { id: true, userAgent: true, sourceIp: true, createdAt: true, expiresAt: true },
