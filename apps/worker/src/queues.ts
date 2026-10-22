@@ -192,7 +192,9 @@ export function startWorker(deps: WorkerDeps, opts: WorkerOptions): StartedWorke
     const budget = timeoutMs ?? opts.drainBudgetMs;
     const start = Date.now();
     while (Date.now() - start < budget) {
-      if (worker.getActiveCount() === 0) break;
+      // A wait for in-flight jobs to finish (a the drain, NFR-15).
+      const active = (await worker.getJobCounts("active")).active;
+      if (active === 0) break;
       await new Promise((r) => setTimeout(r, 250));
     }
     await worker.close();

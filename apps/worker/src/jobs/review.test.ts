@@ -16,7 +16,7 @@
 import { describe, it, expect } from "vitest";
 import {
   runReviewJob,
-  checkQuota,
+  checkQuotaPlan,
   validateFindings,
   dedupFindings,
   applyPolicy,
@@ -86,9 +86,9 @@ interface RecordedFinding {
 interface RecordedUsage {
   orgId: string;
   jobId?: string;
-  inputTokens: number;
-  outputTokens: number;
-  estUsdCost: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  estUsdCost?: string;
   model?: string;
   reviewCount?: number;
 }
