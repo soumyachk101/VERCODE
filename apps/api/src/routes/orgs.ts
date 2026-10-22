@@ -90,7 +90,7 @@ export async function orgRoutes(app: FastifyInstance) {
       include: { user: { select: { id: true, email: true, name: true } } },
     });
     reply.send({
-      members: members.map((m) => ({
+      members: members.map((m: { role: string; user: { id: string; email: string; name: string | null } }) => ({
         userId: m.user.id,
         email: m.user.email,
         name: m.user.name,

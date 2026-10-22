@@ -24,12 +24,13 @@ export function buildServer(opts: { config?: AppConfig; logger?: boolean } = {})
   // The error handler maps internal exceptions to a safe shape (a stack / env /
   // DB URL never reaches the client, ERROR_HANDLING.md §2 "Sanitization").
   app.setErrorHandler((err, _req, reply) => {
-    app.log.error({ err: err.message, code: err.code }, "request failed");
-    const status = typeof err.statusCode === "number" ? err.statusCode : 500;
+    const e = err as { message?: string; code?: string; statusCode?: number };
+    app.log.error({ err: e.message ?? "unknown", code: e.code }, "request failed");
+    const status = typeof e.statusCode === "number" ? e.statusCode : 500;
     reply.status(status).send({
       error: {
-        code: (err as { code?: string }).code ?? "INTERNAL_ERROR",
-        message: status >= 500 ? "Internal error" : err.message,
+        code: e.code ?? "INTERNAL_ERROR",
+        message: status >= 500 ? "Internal error" : e.message ?? "Request failed.",
       },
     });
   });
