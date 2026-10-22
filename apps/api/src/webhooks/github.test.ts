@@ -428,8 +428,8 @@ describe("IT-webhook-opened (a a signed opened event → 202 + a review_jobs row
     });
 
     expect(res.statusCode).toBe(200);
-    const json = res.json() as { alreadyReviewed: boolean; jobId: string };
-    expect(json.alreadyReviewed).toBe(true);
+    const json = res.json() as { dedup: boolean; jobId: string };
+    expect(json.dedup).toBe(true);
     expect(json.jobId).toBe("job-done");
     expect(queue.enqueued).toHaveLength(0);
   });
