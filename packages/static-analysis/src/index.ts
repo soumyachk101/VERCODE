@@ -82,7 +82,7 @@ const RULES: Rule[] = [
     category: "security",
     severity: "high",
     linePattern:
-      /\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER)\b\s*["'`][^"'`\n]*["'`]\s*\+/i,
+      /\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER)\b[^;+\n]{0,64}["'`]\s*\+/i,
     negation: /\$|\?|:param|prepared/i,
     suggestedFix: "Use a parameterized query (prepared statement) instead of string concatenation.",
   },
