@@ -38,6 +38,9 @@ importers:
       '@fastify/sensible':
         specifier: ^6.0.0
         version: 6.0.7
+      '@prisma/client':
+        specifier: ^5.22.0
+        version: 5.22.0(prisma@5.22.0)
       '@vercode/config':
         specifier: workspace:*
         version: link:../../packages/config
