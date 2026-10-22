@@ -7,10 +7,15 @@
 -- be driven end-to-end without hand-crafting the API's auth + org +
 -- connect flow.
 --
+-- The webhook's repo-resolution path (a PR event → the repo row) reads
+-- the `github_repos` row directly under the install's org — no member
+-- resolution (a the webhook route is public + HMAC, not session-scoped,
+-- WEBHOOK_SPECIFICATION §3 "the two public ingress routes"). The seed
+-- creates the three rows; an `installation.created` event (a the normal
+-- seeding path) would upsert the same rows in prod.
+--
 -- The slug is `smoke-demo` (a stable id so a re-run against an existing DB
--- finds the same row, not a 404). The accountLogin is set to the slug so
--- a future `installation` created webhook (a the normal seeding path)
--- resolves to the same org.
+-- finds the same row, not a 404).
 --
 -- A this seed is a dev-stack convenience, not a prod path — a prod deploy
 -- seeds the real org via the dashboard's onboarding (a the J1 journey,
@@ -22,7 +27,7 @@ VALUES ('smoke-demo-org', 'smoke-demo', 'Smoke Demo Org', 'FREE', 'ACTIVE', now(
 ON CONFLICT (slug) DO NOTHING;
 
 -- A the github install (a the `accountLogin` matches the org slug so a
--- real `installation.created` event would upsert onto the same row).
+-- real `installation.created` event upserts onto the same row).
 INSERT INTO github_installs (id, org_id, github_installation_id, account_type, account_login, status, created_at)
 VALUES ('smoke-demo-install', 'smoke-demo-org', '1', 'Organization', 'smoke-demo', 'ACTIVE', now())
 ON CONFLICT (org_id, github_installation_id) DO NOTHING;

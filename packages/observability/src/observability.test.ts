@@ -53,7 +53,7 @@ describe("redact (SECRETS_MANAGEMENT §3, ST-redaction-patterns)", () => {
     },
     {
       file: "github-pat.txt",
-      contains: "ghp...mnop", // a the `ghp` shape marker + a the last-4
+      contains: "ghp_...mnop", // the ghp_ shape marker + the last-4
       mustNotContain: "ghp_16CharsOrMore0123456789abcdefghijklmnop",
     },
     {
