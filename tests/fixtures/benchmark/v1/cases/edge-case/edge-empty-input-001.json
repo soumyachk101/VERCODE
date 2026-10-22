@@ -1,0 +1,22 @@
+{
+  "id": "edge-case-empty-input-001",
+  "class": "edge-case",
+  "language": "typescript",
+  "repo": "fixture-app",
+  "diff": "diff --git a/src/str/sum.ts b/src/str/sum.ts\nindex 9090909..11111111 100644\n--- a/src/str/sum.ts\n+++ b/src/str/sum.ts\n@@ -1,3 +1,5 @@\n export function sum(nums: number[]): number {\n-  return nums.reduce((a, b) => a + b, 0);\n+  if (nums.length === 0) return 0;\n+  return nums.reduce((a, b) => a + b, 0);\n }\n",
+  "headContext": "A empty/zero edge: the new `if (nums.length === 0)` guard handles the empty case explicitly. A the edge-case class — a the *handled* edge is the positive label (a the guard is correct, a a senior would note it).",
+  "groundTruth": [
+    {
+      "file": "src/str/sum.ts",
+      "line": 2,
+      "severity": "low",
+      "category": "edge-case",
+      "kind": "empty-input-handled",
+      "note": "The empty-input edge is now handled by the explicit guard (a low-severity note, a the correct behavior)."
+    }
+  ],
+  "cleanAssertions": [
+    { "file": "src/str/sum.ts", "note": "The `reduce` is correct for the non-empty case." }
+  ],
+  "expectedVerdict": "likely_mergeable"
+}
