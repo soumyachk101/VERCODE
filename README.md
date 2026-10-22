@@ -343,14 +343,49 @@ The dashboard is a first-class product surface, not just a bot output. All scree
 
 Screens are designed and verified at three widths: **1440** (primary), **768** (tablet), **390** (phone) — a `prefers-reduced-motion` context shows all content, and the top 5 journeys are navigable keyboard-only.
 
-| Screen | What it shows |
-| --- | --- |
-| **Overview** | First-run empty state → connected repos → review history + verdict rollup + quota strip (`Charts.plan` usage track) |
-| **PR Review Detail** | The review verdict + risk narrative, the findings list (severity / category / confidence / reason / suggested fix), the diff context, and the published inline-comment anchors |
-| **Security Rollup** | Filtered high / critical findings across the org; a finding opens the PR + diff context; the "actioned" rate updates live; per-repo category suppression is *effective*, not just saved |
-| **Usage + Quota** | The usage dashboard + the quota strip; an 80 % banner appears when the quota crosses; a `skipped: quota_exceeded` job has its "Quota reached" notice posted on the PR + **zero** AI tokens consumed (a DB assertion) |
-| **Audit Log** | Role changes, BYOK rotations, review skips, billing state transitions — each with the actor + source IP + timestamp (an append-only record, 180 d minimum floor) |
-| **Settings** | Confidence floor (a live-preview reflects it), per-repo rules, provider routing (a tier-gated row shows "Upgrade to use", not a working control), BYOK masked display (the raw key is never shown), theme toggle, session list |
+### Screen mockups (1440 px)
+
+Each mockup below is a reference SVG built from the page spec in `docs/DESIGN/PAGE_SPECIFICATIONS.md` — it captures the screen's blocks, data-source rule, and primary states, not a pixel-perfect render of the built app.
+
+**Overview** — the risk-posture verdict figure, the two attention queues, the plan quota strip, and the cost/usage mini.
+
+![Overview — 1440](docs/assets/screenshots/overview-1440.svg)
+
+**PR Review Detail** — the verdict header, the findings list (severity mark · title · category · file:line · confidence · source), the static-vs-AI split, the summary narrative, and the per-finding action.
+
+![PR Review Detail — 1440](docs/assets/screenshots/review-detail-1440.svg)
+
+**Security Rollup** — the severity ladder, the open high/critical findings table, the 30-day trend, and the "actioned" rate (the north-star metric).
+
+![Security Rollup — 1440](docs/assets/screenshots/security-rollup-1440.svg)
+
+**Usage & Billing** — the cost/PR blended figure, the reviews/day chart, the by-provider breakdown, the quota track, the invoices table, and the "Upgrading…" honest state.
+
+![Usage & Billing — 1440](docs/assets/screenshots/usage-1440.svg)
+
+**Repositories** — the connected-repos table (Reviews · Open high/critical · Last reviewed · Status) with search and status filters.
+
+![Repositories — 1440](docs/assets/screenshots/repositories-1440.svg)
+
+**Audit Log** — the append-only table (timestamp · actor · action verb · target · source IP) with no delete path, and the 180 d retention note.
+
+![Audit Log — 1440](docs/assets/screenshots/audit-log-1440.svg)
+
+**Settings · Rules & AI** — the confidence floor (with live preview), the suppressed categories, the per-repo overrides, the provider + task routing table (tier-gated rows say "Upgrade to use"), and the BYOK masked key + fallback provider.
+
+![Settings · Rules & AI — 1440](docs/assets/screenshots/settings-rules-1440.svg)
+
+### Screen reference
+
+| Screen | What it shows | Data source |
+| --- | --- | --- |
+| **Overview** | First-run empty state → connected repos → review history + verdict rollup + quota strip (`Charts.plan` usage track) | `GET /orgs/:id/security`, `GET /orgs/:id/usage?range=30d` |
+| **PR Review Detail** | The review verdict + risk narrative, the findings list (severity / category / confidence / reason / suggested fix), the diff context, and the published inline-comment anchors | `GET /orgs/:id/reviews`, `GET .../reviews/:pr/:commit` |
+| **Security Rollup** | Filtered high / critical findings across the org; a finding opens the PR + diff context; the "actioned" rate updates live; per-repo category suppression is *effective*, not just saved | `GET /orgs/:id/security` |
+| **Usage + Quota** | The usage dashboard + the quota strip; an 80 % banner appears when the quota crosses; a `skipped: quota_exceeded` job has its "Quota reached" notice posted on the PR + **zero** AI tokens consumed (a DB assertion) | `GET /orgs/:id/usage` |
+| **Audit Log** | Role changes, BYOK rotations, review skips, billing state transitions — each with the actor + source IP + timestamp (an append-only record, 180 d minimum floor) | `GET /orgs/:id/audit` (append-only, 180 d floor) |
+| **Repositories** | The connected-repos table + per-repo risk trend + open findings + last 5 reviews + the repo's rule state | `GET /orgs/:id/repositories` |
+| **Settings** | Confidence floor (a live-preview reflects it), per-repo rules, provider routing (a tier-gated row shows "Upgrade to use", not a working control), BYOK masked display (the raw key is never shown, FR-313), theme toggle, session list | `GET /orgs/:id/settings` |
 
 The three-width capture targets land in `docs/assets/screenshots/` as they are generated by the design CI gate (`inspect.mjs --app` at 1440 / 768 / 390).
 
