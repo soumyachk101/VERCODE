@@ -81,7 +81,12 @@ function coerceCategories(raw: unknown): FindingCategory[] {
  * a repo rule may not lower it below the platform's default).
  */
 export function resolvePolicy(input: {
-  defaults?: { confidenceFloor?: number; maxFiles?: number; maxLines?: number };
+  defaults?: {
+    confidenceFloor?: number;
+    maxFiles?: number;
+    maxLines?: number;
+    suppressCategories?: FindingCategory[];
+  };
   orgSettings?: OrgSettingsLike | null;
   repoRules?: RepoRuleLike[];
 }): ReviewPolicy {
@@ -90,6 +95,7 @@ export function resolvePolicy(input: {
   let maxFiles = defaults.maxFiles ?? 60;
   let maxLines = defaults.maxLines ?? 3000;
   const suppressed = new Set<string>();
+  for (const c of defaults.suppressCategories ?? []) suppressed.add(c);
 
   const settings = input.orgSettings;
   if (settings) {
@@ -161,7 +167,7 @@ export interface PolicyOutcome<T> {
  */
 export function applyPolicy<T extends PolicyFinding>(
   findings: T[],
-  policy: ReviewPolicy,
+  policy: ReviewPolicy
   minSeverity?: "low" | "medium" | "high" | "critical"
 ): PolicyOutcome<T> {
   const severityRank: Record<string, number> = { low: 1, medium: 2, high: 3, critical: 4 };
