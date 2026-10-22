@@ -16,7 +16,7 @@
 // (REVIEW_ENGINE_SPEC §5; ERROR_HANDLING.md §3).
 
 import { Worker, Queue, type Job, type Worker as BullWorker } from "bullmq";
-import type IORedis from "ioredis";
+import type { Redis } from "ioredis";
 import {
   QUEUES,
   type ReviewJobPayload,
@@ -41,7 +41,7 @@ export function backoffDelayMs(attemptsMade: number, maxAttempts = 3): number {
 // The queue constructors
 // ---------------------------------------------------------------------------
 
-export function makeReviewQueue(redis: IORedis): Queue {
+export function makeReviewQueue(redis: Redis): Queue {
   return new Queue(QUEUES.review, {
     connection: redis,
     defaultJobOptions: {
@@ -51,21 +51,21 @@ export function makeReviewQueue(redis: IORedis): Queue {
   });
 }
 
-export function makeRetentionQueue(redis: IORedis): Queue {
+export function makeRetentionQueue(redis: Redis): Queue {
   return new Queue(QUEUES.retention, {
     connection: redis,
     defaultJobOptions: { attempts: 3, backoff: { type: "exponential", delay: 1_000 } },
   });
 }
 
-export function makeBillingQueue(redis: IORedis): Queue {
+export function makeBillingQueue(redis: Redis): Queue {
   return new Queue(QUEUES.billing, {
     connection: redis,
     defaultJobOptions: { attempts: 3, backoff: { type: "exponential", delay: 1_000 } },
   });
 }
 
-export function makeDeadLetterQueue(redis: IORedis): Queue {
+export function makeDeadLetterQueue(redis: Redis): Queue {
   // A the DLQ never retries — a terminal failure is recorded, observable.
   return new Queue(QUEUES.deadLetter, {
     connection: redis,
@@ -80,7 +80,7 @@ export function makeDeadLetterQueue(redis: IORedis): Queue {
 export const IN_FLIGHT_LOCK_TTL_MS = 5 * 60_000; // a review wall-clock is 240 s; the lock outlives it
 
 export async function acquireInFlightLock(
-  redis: IORedis,
+  redis: Redis,
   key: string,
   token: string,
   ttlMs: number = IN_FLIGHT_LOCK_TTL_MS
@@ -91,7 +91,7 @@ export async function acquireInFlightLock(
   return res === "OK" ? true : "duplicate";
 }
 
-export async function releaseInFlightLock(redis: IORedis, key: string, token: string): Promise<void> {
+export async function releaseInFlightLock(redis: Redis, key: string, token: string): Promise<void> {
   // A only the lock *holder* may release it (a compare-and-del via a Lua
   // eval, so a late worker never unlocks a fresh holder's lock).
   await redis.eval(
@@ -160,12 +160,9 @@ export function startWorker(deps: WorkerDeps, opts: WorkerOptions): StartedWorke
   const worker = new Worker<ReviewJobPayload, unknown>(QUEUES.review, handle, {
     connection: redis,
     concurrency: opts.concurrency, // NFR-17
-    settings: {
-      retryLimitStrategy: () => opts.maxAttempts, // NFR-14
-    },
     // A the in-flight re-queue on SIGTERM (ERROR_HANDLING.md §8 "a job that
     // can't finish is re-queued atomically"): a an unfinished job is moved
-    // back to waiting (not lost).
+    // back to waiting (not lost). A the max retained jobs cap memory.
     removeOnComplete: 1_000,
     removeOnFail: 1_000,
   });
@@ -178,7 +175,7 @@ export function startWorker(deps: WorkerDeps, opts: WorkerOptions): StartedWorke
     if (job.attemptsMade >= opts.maxAttempts) {
       await enqueueDeadLetter(deadLetterQueue, {
         queue: QUEUES.review,
-        jobId: String(job.data?.jobId ?? job.id),
+        jobId: String((job.data as ReviewJobPayload | undefined)?.jobId ?? job.id),
         reason: "terminal_failure",
         payload: job.data,
         error: err.message,
