@@ -499,9 +499,7 @@ export function normalizeSecurity(r: unknown): NormalizedSecurity {
           windowDays:
             typeof actioned.windowDays === "number"
               ? actioned.windowDays
-              : typeof actioned.window_days === "number"
-                ? actioned.window_days
-                : undefined,
+              : undefined,
         }
       : null;
   const series = Array.isArray(o.series)
