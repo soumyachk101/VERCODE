@@ -95,7 +95,7 @@ export interface PolicyOutcome {
  */
 export function applyPolicy(
   findings: CanonicalFinding[],
-  policy: PolicyState,
+  policy: ReviewPolicy,
   repoRules: RepoRuleLike[] = []
 ): PolicyOutcome {
   const resolved = resolveWorkerPolicy({
