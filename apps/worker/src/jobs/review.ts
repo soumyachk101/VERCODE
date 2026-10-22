@@ -69,6 +69,68 @@ import {
   resolveWorkerPolicy,
   type ReviewPolicy,
 } from "./policy.js";
+import {
+  logger,
+  tracer,
+  capture,
+  redact,
+  type StructuredLogger,
+  type TraceHandle,
+  type SpanHandle,
+} from "@vercode/observability";
+
+// ---------------------------------------------------------------------------
+// The observability wiring (M7, OBSERVABILITY.md §1–§4 "a one trace per
+// pipeline" + a the redaction gate on every record + a the PII-scrubbed
+// capture). A the trace id = a the job_id (a the §2 "a the trace id = the
+// job_id"); a the correlation id = a the job_id (a the §1 "a the
+// correlation id (= the job_id)"). A the redaction gate (a the
+// SECRETS_MANAGEMENT §3 "a the redactor runs on *every* record before it's
+// written") is applied to the logger's records + the stored finding payload
+// + the capture's payload (a the "a secret that reaches a log is a released
+// secret" invariant).
+// ---------------------------------------------------------------------------
+
+export interface JobObservability {
+  /** A the trace handle (a the "one trace per pipeline" surface). */
+  trace: TraceHandle;
+  /** A the structured logger (a the correlation id = a the job_id). */
+  log: StructuredLogger;
+  /** A the span start (a the stage, a the OBSERVABILITY.md §2 "a a span per
+   * stage"). */
+  startSpan: (stage: string, attrs?: Record<string, unknown>) => SpanHandle;
+  /** A the span end (a the outcome + a the attributes, a the §2 "a the
+   * spans carry a the outcome" rule). */
+  endSpan: (h: SpanHandle, outcome: string, attrs?: Record<string, unknown>) => void;
+  /** A the PII + a the secret scrub (a SECRETS_MANAGEMENT §3 gate). */
+  scrub: (text: string) => string;
+  /** A the Sentry-style PII-scrubbed capture (a the OBSERVABILITY.md §4 "a a
+   * Sentry event that carries a secret is a leak"). */
+  cap: ReturnType<typeof capture>;
+}
+
+/**
+ * Build the default observability context (no OTLP endpoint, in-memory). A
+ * the trace id = a the job_id (OBSERVABILITY.md §2 "a the trace id = the
+ * job_id"); a the no-OTLP-endpoint tracer keeps a the spans in-memory (a the
+ * queryable surface; a the OTel exporter is a later seam).
+ */
+export function makeJobObservability(payload: ReviewJobPayload): JobObservability {
+  const traceHandle = tracer().startTrace(payload.jobId, "review.pipeline");
+  const log = logger({ correlationId: payload.jobId, orgId: payload.orgId });
+  const cap = capture();
+  return {
+    trace: traceHandle,
+    log,
+    startSpan: (s, attrs) => traceHandle.startSpan(s, attrs),
+    endSpan: (h, outcome, attrs) => {
+      if (attrs) for (const [k, v] of Object.entries(attrs)) h.setAttribute(k, v);
+      h.end(outcome);
+    },
+    scrub: (text) => redact(text).text,
+    cap,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // The canonical finding (post-pipeline, pre-persist). Mirrors the contracts
@@ -183,6 +245,15 @@ export interface RunReviewOptions {
   attempt?: number;
   /** The transaction boundary (injected so tests can record the commit). */
   txFactory?: (fn: (tx: unknown) => Promise<unknown>) => Promise<unknown>;
+  /**
+   * The observability context (OBSERVABILITY.md §2 "a the review is a single
+   * trace with a span per stage"; a the trace id = a the job_id; a the
+   * redaction gate on every record, SECRETS_MANAGEMENT §3). Injected so a
+   * the handler is testable without a global tracer; a the default builds a
+   * no-OTLP tracer (a the in-memory spans array is a the queryable surface;
+   * a the OTel exporter is a later seam).
+   */
+  observability?: JobObservability;
 }
 
 export async function runReviewJob(
@@ -195,6 +266,17 @@ export async function runReviewJob(
     opts.txFactory ??
     ((fn: (tx: unknown) => Promise<unknown>) =>
       db.$transaction((tx) => fn(tx) as Promise<unknown>));
+
+  // [M7 observability] — a the per-job context (a the trace + a the logger
+  // + a the capture + a the PII scrub). A the trace id = a the job_id
+  // (OBSERVABILITY.md §2 "a the trace id = the job_id"); a the correlation
+  // id = a the job_id (a the §1 "a the correlation id (= the job_id)"). A
+  // the redaction gate runs on a the logger's records + a the stored
+  // finding payload + a the capture's payload (SECRETS_MANAGEMENT §3 "a
+  // the redactor runs on *every* record before it's written"). A the
+  // injected `opts.observability` overrides the default (a the test seam).
+  const obs: JobObservability = opts.observability ?? makeJobObservability(payload);
+  const { trace: traceCtx, log, startSpan, endSpan, scrub } = obs;
 
   // [load the durable state] — the payload is a pointer.
   const { org, settings, repoRules } = await loadDurableState(db, payload);
@@ -219,6 +301,14 @@ export async function runReviewJob(
   const month = new Date().toISOString().slice(0, 7); // YYYY-MM
   const quota = await checkQuotaPlan(db, payload.orgId, org.plan, month);
   if (quota.over) {
+    // A skip is a log record, not a an absence (a the NFR-18 "never
+    // silent" rule, OBSERVABILITY.md §1 "a skip is a log record, not a an
+    // absence"): a the structured record with a the skip_reason.
+    log.warn("quota.gate", "The quota gate skipped the review", {
+      skip_reason: "quota_exceeded",
+      detail: quota.detail,
+    });
+    traceCtx.end("SKIPPED");
     return finishSkipped(deps, payload, "quota_exceeded", month, {
       summaryBody: `Review skipped — org quota reached for ${month} (${quota.detail}). Upgrade or reduce review volume.`,
     });
@@ -238,6 +328,13 @@ export async function runReviewJob(
     },
   });
   if (existing && (existing.status === "SUCCEEDED" || existing.status === "PARTIAL")) {
+    // A the skip-with-notice (a the NFR-18 "never silent" rule): a skip is
+    // a log record, not a an absence.
+    log.warn("job.skip", "The same-SHA gate skipped the review", {
+      skip_reason: "same_sha",
+      commitSha: payload.commitSha,
+    });
+    traceCtx.end("SKIPPED");
     return {
       status: "SKIPPED",
       skipReason: "same_sha",
@@ -249,18 +346,51 @@ export async function runReviewJob(
     };
   }
 
-  // [fetch the diff + parse it]
+  // [fetch the diff + parse it] — a the diff.fetch stage (a the worker's
+  // first stage after a the durable-state load + a the quota gate; a the
+  // api's webhook.ingest span is the trace's first, a this is the sibling,
+  // OBSERVABILITY.md §2 "the webhook→worker hand-off is one trace, not two
+  // disconnected ones").
+  const diffSpan = startSpan("diff.fetch");
   const pr = await fetchDiff(deps, payload);
   const changeSet = parseUnifiedDiff(pr.diff);
+  endSpan(diffSpan, "succeeded", { files: changeSet.files.length, commitSha: payload.commitSha });
+  log.info("diff.fetch", "Fetched the PR diff", {
+    files: changeSet.files.length,
+    commitSha: payload.commitSha,
+  });
 
-  // [deterministic static analysis] — the authoritative, floor-exempt pass.
+  // [deterministic static analysis] — a the authoritative, floor-exempt pass.
+  const staticSpan = startSpan("static.analyze");
   const staticResult = runStaticAnalysis(staticFileMap(changeSet, pr));
   const staticFindings = staticResult.findings;
+  endSpan(staticSpan, "succeeded", { findings: staticFindings.length });
+  log.info("static.analyze", "Ran the static analysis", { findings: staticFindings.length });
 
-  // [AI review] — the deep + security passes (a bounded retry + one
-  // fallback; a provider failure → partial, the deterministic findings
+  // [AI review] — a the deep + security passes (a bounded retry + a one
+  // fallback; a provider failure → partial, a the deterministic findings
   // still publish, ADR-005).
+  const aiSpan = startSpan("ai.review");
   const ai = await runAiStage(deps, changeSet);
+  endSpan(aiSpan, ai.ok ? "succeeded" : "degraded", {
+    model: ai.model,
+    inputTokens: ai.inputTokens,
+    outputTokens: ai.outputTokens,
+    estUsd: ai.estUsdCost,
+    promptVersion: deps.promptVersion,
+  });
+  log[ai.ok ? "info" : "warn"](
+    "ai.review",
+    ai.ok ? "Ran the AI stage" : "The AI stage degraded",
+    {
+      model: ai.model,
+      inputTokens: ai.inputTokens,
+      outputTokens: ai.outputTokens,
+      estUsd: ai.estUsdCost,
+      promptVersion: deps.promptVersion,
+      ok: ai.ok,
+    }
+  );
 
   // [merge]
   const merged: CanonicalFinding[] = [
@@ -270,9 +400,20 @@ export async function runReviewJob(
       : []),
   ];
 
-  // [validate] — the line-exists via resolveAnchor + the enums + the
-  // schema (invariants 1 + FR-306).
+  // [validate] — a the line-exists via resolveAnchor + a the enums + a the
+  // schema (invariants 1 + FR-306). A the findings.validate stage.
+  const validateSpan = startSpan("findings.validate");
   const { valid, dropped } = validateFindings(merged, changeSet);
+  endSpan(validateSpan, "succeeded", {
+    valid: valid.length,
+    droppedInvalid: dropped.invalid,
+    droppedAnchor: dropped.invalidAnchor,
+  });
+  log.info("findings.validate", "Validated the findings", {
+    valid: valid.length,
+    droppedInvalid: dropped.invalid,
+    droppedAnchor: dropped.invalidAnchor,
+  });
 
   // [dedup + policy]
   const { deduped, droppedDeduped } = dedupFindings(valid);
@@ -293,15 +434,24 @@ export async function runReviewJob(
   );
   const summaryBody = renderSummary(summary, ai.ok);
 
-  // [PERSIST] — the findings + the job state + the usage in ONE
-  // transaction (the persist-then-publish invariant, ERROR_HANDLING §6).
+  // [PERSIST] — a the findings + a the job state + a the usage in ONE
+  // transaction (a the persist-then-publish invariant, ERROR_HANDLING §6).
   const jobStatus: JobStatus = ai.ok ? "SUCCEEDED" : "PARTIAL";
+  const persistSpan = startSpan("findings.persist");
   await txFactory(async (tx) => {
     const t = tx as unknown as DbClient;
     const job = await upsertJob(t, payload, jobStatus, {
       usage: aiUsage(ai, deps.promptVersion),
     });
     for (const f of published) {
+      // A the redaction gate (SECRETS_MANAGEMENT §3 "a every stored finding
+      // payload is scrubbed before it's persisted"): a the finding's text
+      // fields are masked before they hit a the DB — a a secret in a the
+      // code sample the PR added is treated as untrusted data (a the §3
+      // "a a secret that reaches a log is a released secret" invariant,
+      // extended to a the finding payload).
+      const scrubbed = scrub(JSON.stringify(f));
+      const scrubbedFinding = JSON.parse(scrubbed) as typeof f;
       await t.reviewFinding.create({
         data: {
           jobId: job.id,
@@ -310,18 +460,21 @@ export async function runReviewJob(
           line: f.line,
           severity: mapSeverityToPrisma(f.severity),
           category: mapCategoryToPrisma(f.category),
-          title: f.title,
-          description: f.description,
-          suggestedFix: f.suggestedFix,
+          title: scrubbedFinding.title,
+          description: scrubbedFinding.description,
+          suggestedFix: scrubbedFinding.suggestedFix,
           confidence: f.confidence,
           anchorStatus: f.anchorStatus === "inline" ? "INLINE" : "ANCHOR_FAILED",
-          payload: JSON.parse(JSON.stringify(f)) as Prisma.InputJsonValue,
+          payload: JSON.parse(scrubbed) as Prisma.InputJsonValue,
         },
       });
     }
-    // The usage event — a single row per job, attributed to the org
-    // (REVIEW_ENGINE_SPEC §6 "the dashboard and the quota gate both read
-    // this single source").
+    // A the usage event — a single row per job, attributed to the org
+    // (REVIEW_ENGINE_SPEC §6 "a the dashboard and a the quota gate both read
+    // this single source"). A the usage.record stage (a the accounting is a
+    // the same transaction as a the job's terminal state, ERROR_HANDLING
+    // §6 "a a review that completed but 'forgot' to account is
+    // impossible").
     const u = aiUsage(ai, deps.promptVersion);
     await t.usageEvent.create({
       data: {
@@ -336,10 +489,15 @@ export async function runReviewJob(
       },
     });
   });
+  endSpan(persistSpan, "succeeded", { findings: published.length });
+  log.info("findings.persist", "Persisted the findings + a the usage event", {
+    findings: published.length,
+  });
 
-  // [publish to GitHub] — AFTER the commit. A failed publish does NOT roll
-  // back the findings (ERROR_HANDLING §6); the published review id is stored
-  // on the job (a retry no-ops, NFR-13).
+  // [publish to GitHub] — a AFTER a the commit. A failed publish does NOT
+  // roll back a the findings (ERROR_HANDLING §6); a the published review
+  // id is a the stored on a the job (a a retry no-ops, NFR-13).
+  const githubPublishSpan = startSpan("github.publish");
   const inlineComments = buildInlineComments(published);
   const publishResult = await publishGithub(deps, payload, {
     summary: summaryBody,
@@ -359,8 +517,48 @@ export async function runReviewJob(
       data: { publishedGithubReviewId: publishResult.publishedGithubReviewId },
     });
   }
+  endSpan(githubPublishSpan, publishResult.error ? "degraded" : "succeeded", {
+    publishedGithubReviewId: publishResult.publishedGithubReviewId ?? null,
+    error: publishResult.error ?? null,
+    inlineComments: inlineComments.length,
+  });
+  log[!publishResult.error ? "info" : "warn"](
+    "github.publish",
+    publishResult.error ? "The GitHub publish failed" : "Published the review to GitHub",
+    {
+      publishedGithubReviewId: publishResult.publishedGithubReviewId ?? null,
+      error: publishResult.error ?? null,
+      inlineComments: inlineComments.length,
+    }
+  );
 
+  // [usage.record] — a the accounting (a the usage event is already
+  // persisted in a the PERSIST transaction; a this stage is a the
+  // observability record, not a separate write).
+  const usageSpan = startSpan("usage.record");
   const usage = aiUsage(ai, deps.promptVersion);
+  endSpan(usageSpan, "succeeded", {
+    inputTokens: usage.inputTokens,
+    outputTokens: usage.outputTokens,
+    estUsd: usage.estUsdCost,
+    model: usage.model,
+  });
+  log.info("usage.record", "Recorded the usage event", {
+    inputTokens: usage.inputTokens,
+    outputTokens: usage.outputTokens,
+    estUsd: usage.estUsdCost,
+    model: usage.model,
+  });
+
+  // [terminal] — a the trace's end (a the outcome is a the job status; a the
+  // span carries a the outcome, OBSERVABILITY §2 "a the spans carry a the
+  // outcome" rule).
+  traceCtx.end(jobStatus);
+  log.info("job.complete", "The review job completed", {
+    status: jobStatus,
+    findings: published.length,
+  });
+
   return {
     status: jobStatus,
     findings: published,
