@@ -65,16 +65,15 @@ export async function createWorkerRuntime(
   const aiProviders: Partial<Record<ReviewTask, AIProvider>> = useMockAi
     ? makeMockAiProviders()
     : makeRealAiProviders(config);
-  const orgContext: WorkerDeps["orgContext"] = undefined;
 
   const deps: WorkerDeps = {
     db,
     redis: redis as unknown as Redis,
     github,
     aiProviders,
-    orgContext,
     publisher,
-    providerPreference: config.ai.AI_DEFAULT_PROVIDER,
+    confidenceFloor: config.limits.DEFAULT_CONFIDENCE_FLOOR,
+    promptVersion: "worker-v1",
   };
 
   const started = startWorker(deps, workerOptsFromConfig(config));
