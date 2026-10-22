@@ -6,15 +6,14 @@
 // lost").
 //
 // Retry: maxAttempts 3 (queue-level), exponential backoff 2^attempt seconds +
-// jitter; a job that exhausts its attempts is re-enqueued on
-// review-dead-letter with the failure reason (the worker does this itself in
-// a `failed` handler — the DLQ is our record, not BullMQ's failed set).
+// jitter (TRD.md §7); a job that exhausts its attempts is re-enqueued on
+// review-dead-letter with the failure reason (the worker does this in the
+// `failed` handler — the DLQ is our record, not BullMQ's failed set).
 //
 // In-flight lock: a Redis SET NX on lock:{org:repo:pr:sha} with a TTL. A
 // redelivered job that finds a *live* lock (another worker is mid-flight on
 // the same key) drops to the DLQ with reason `duplicate_in_flight`
-// (REVIEW_ENGINE_SPEC §5; ERROR_HANDLING.md §3 "a duplicate that finds a
-// live lock drops to the DLQ").
+// (REVIEW_ENGINE_SPEC §5; ERROR_HANDLING.md §3).
 
 import { Worker, Queue, type Job, type Worker as BullWorker } from "bullmq";
 import type IORedis from "ioredis";
@@ -38,16 +37,6 @@ export function backoffDelayMs(attemptsMade: number, maxAttempts = 3): number {
   return base + Math.floor(Math.random() * (base / 2)); // the jitter
 }
 
-/**
- * The per-attempt backoff delay (TRD.md §7 "exponential backoff 2^attempt * 1s
- * + jitter"): 2^attempt seconds + a random 0–50 % jitter.
- */
-export function backoffDelayMs(attemptsMade: number, maxAttempts = 3): number {
-  const attempt = Math.max(1, Math.min(attemptsMade, maxAttempts));
-  const base = 2 ** attempt * 1_000; // 2^attempt seconds
-  return base + Math.floor(Math.random() * (base / 2)); // the jitter
-}
-
 // ---------------------------------------------------------------------------
 // The queue constructors
 // ---------------------------------------------------------------------------
@@ -57,7 +46,7 @@ export function makeReviewQueue(redis: IORedis): Queue {
     connection: redis,
     defaultJobOptions: {
       attempts: 3, // NFR-14: the bounded retry
-      backoff: { type: "exponential", delay: 1_000 }, // + jitter per-attempt
+      backoff: { type: "exponential", delay: 1_000 },
     },
   });
 }
@@ -77,7 +66,7 @@ export function makeBillingQueue(redis: IORedis): Queue {
 }
 
 export function makeDeadLetterQueue(redis: IORedis): Queue {
-  // The DLQ never retries — a terminal failure is recorded, observable.
+  // A the DLQ never retries — a terminal failure is recorded, observable.
   return new Queue(QUEUES.deadLetter, {
     connection: redis,
     defaultJobOptions: { attempts: 1 },
@@ -96,15 +85,15 @@ export async function acquireInFlightLock(
   token: string,
   ttlMs: number = IN_FLIGHT_LOCK_TTL_MS
 ): Promise<true | "duplicate"> {
-  // SET key token PX ttl NX — atomic. A live lock (another worker holds it)
-  // returns "duplicate".
+  // A SET key token PX ttl NX — a atomic. A live lock (another worker holds
+  // it) returns "duplicate".
   const res = await redis.set(key, token, "PX", ttlMs, "NX");
   return res === "OK" ? true : "duplicate";
 }
 
 export async function releaseInFlightLock(redis: IORedis, key: string, token: string): Promise<void> {
-  // Only the lock *holder* may release it (a compare-and-del via a Lua eval,
-  // so a late worker never unlocks a fresh holder's lock).
+  // A only the lock *holder* may release it (a compare-and-del via a Lua
+  // eval, so a late worker never unlocks a fresh holder's lock).
   await redis.eval(
     `if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end`,
     1,
@@ -114,7 +103,7 @@ export async function releaseInFlightLock(redis: IORedis, key: string, token: st
 }
 
 // ---------------------------------------------------------------------------
-// The worker factory — builds the four queues + a BullMQ Worker on the
+// The worker factory — a builds the four queues + a BullMQ Worker on the
 // review-queue (retention/billing are consumed by the same process later; for
 // M5 the review pipeline is the only handler wired).
 // ---------------------------------------------------------------------------
@@ -159,36 +148,34 @@ export function startWorker(deps: WorkerDeps, opts: WorkerOptions): StartedWorke
     try {
       await runReviewJob(deps, payload, { attempt: job.attemptsMade });
       await releaseInFlightLock(redis, lockKey, token);
-      // BullMQ resolves the job (completed). The durable state is committed; a
-      // redelivery no-ops via the idempotency key (NFR-13).
+      // A BullMQ resolves the job (completed). The durable state is committed;
+      // a redelivery no-ops via the idempotency key (NFR-13).
     } catch (err) {
       // A transient failure: release the lock (the retry acquires a fresh one).
       await releaseInFlightLock(redis, lockKey, token);
-      throw err; // BullMQ retries per the backoff; the last attempt → DLQ.
+      throw err; // A BullMQ retries per the backoff; the last attempt → DLQ.
     }
   };
 
   const worker = new Worker<ReviewJobPayload, unknown>(QUEUES.review, handle, {
     connection: redis,
     concurrency: opts.concurrency, // NFR-17
-    // NFR-14: the per-attempt retry cap.
     settings: {
-      retryLimitStrategy: () => opts.maxAttempts,
+      retryLimitStrategy: () => opts.maxAttempts, // NFR-14
     },
     // A the in-flight re-queue on SIGTERM (ERROR_HANDLING.md §8 "a job that
-    // can't finish is re-queued atomically"): an unfinished job is moved back
-    // to waiting (not lost).
+    // can't finish is re-queued atomically"): a an unfinished job is moved
+    // back to waiting (not lost).
     removeOnComplete: 1_000,
     removeOnFail: 1_000,
   });
 
-  // The terminal-failure → DLQ hop (NFR-13/14 "terminal failures go to the
+  // A the terminal-failure → DLQ hop (NFR-13/14 "terminal failures go to the
   // DLQ with the reason"). A *transient* failure (attempts remaining) is
   // retried by BullMQ's backoff; this only fires after the last attempt.
   worker.on("failed", async (job, err) => {
     if (!job) return;
-    const isLastAttempt = job.attemptsMade >= opts.maxAttempts;
-    if (isLastAttempt) {
+    if (job.attemptsMade >= opts.maxAttempts) {
       await enqueueDeadLetter(deadLetterQueue, {
         queue: QUEUES.review,
         jobId: String(job.data?.jobId ?? job.id),
@@ -199,7 +186,7 @@ export function startWorker(deps: WorkerDeps, opts: WorkerOptions): StartedWorke
     }
   });
 
-  // The graceful shutdown (NFR-15, ERROR_HANDLING.md §8): stop dequeueing
+  // A the graceful shutdown (NFR-15, ERROR_HANDLING.md §8): stop dequeueing
   // (pause + no new grabs), let in-flight jobs finish within the budget, then
   // close. The drain budget is the 60 s; an overrun logs + exits (the durable
   // queue means no job is lost, only re-run).
