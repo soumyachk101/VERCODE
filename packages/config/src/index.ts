@@ -1,0 +1,180 @@
+// The typed env-var config (ENVIRONMENT_VARIABLES.md §9 "the config package is
+// the only reader of env; a variable not in the doc doesn't exist; loadConfig
+// validates the exact set, a missing/extra var is a startup error").
+//
+// This is M2's T2.1. It centralizes + types every env var the platform reads,
+// so a `process.env.X` outside this package is a lint defect (the rule in
+// ENVIRONMENT_VARIABLES.md §9 "a process.env.X outside config is a
+// review defect").
+
+import { z } from "zod";
+
+// ---------------------------------------------------------------------------
+// The per-section schemas (one per ENVIRONMENT_VARIABLES.md group)
+// ---------------------------------------------------------------------------
+
+const CoreSchema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  DATABASE_URL: z.string().min(1),
+  REDIS_URL: z.string().min(1),
+  SESSION_SIGNING_KEY: z.string().min(16),
+  API_BASE_URL: z.string().url(),
+  WEB_BASE_URL: z.string().url(),
+});
+export type CoreConfig = z.infer<typeof CoreSchema>;
+
+const GithubSchema = z.object({
+  GITHUB_APP_ID: z.string().min(1),
+  GITHUB_APP_PRIVATE_KEY: z.string().min(1),
+  GITHUB_WEBHOOK_SECRET: z.string().min(1),
+  GITHUB_API_BASE: z.string().url().default("https://api.github.com"),
+});
+export type GithubConfig = z.infer<typeof GithubSchema>;
+
+const AiSchema = z.object({
+  AI_DEFAULT_PROVIDER: z.enum(["openai", "anthropic", "ollama", "mock"]).default("mock"),
+  OPENAI_API_KEY: z.string().optional(),
+  ANTHROPIC_API_KEY: z.string().optional(),
+  OLLAMA_BASE_URL: z.string().optional(),
+  AI_FALLBACK_PROVIDER: z.enum(["openai", "anthropic", "ollama"]).optional(),
+});
+export type AiConfig = z.infer<typeof AiSchema>;
+
+const BillingSchema = z.object({
+  BILLING_PROVIDER: z.enum(["stripe", "razorpay"]).default("stripe"),
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  RAZORPAY_KEY_ID: z.string().optional(),
+  RAZORPAY_KEY_SECRET: z.string().optional(),
+  BILLING_CURRENCY: z.string().default("USD"),
+});
+export type BillingConfig = z.infer<typeof BillingSchema>;
+
+const ObservabilitySchema = z.object({
+  SENTRY_DSN_API: z.string().optional(),
+  SENTRY_DSN_WORKER: z.string().optional(),
+  SENTRY_DSN_WEB: z.string().optional(),
+  OTEL_EXPORTER_OTLP_ENDPOINT: z.string().optional(),
+  OTEL_SERVICE_NAME: z.string().optional(),
+  LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
+});
+export type ObservabilityConfig = z.infer<typeof ObservabilitySchema>;
+
+// The platform defaults + limits (ENVIRONMENT_VARIABLES.md §6 "these are
+// defaults — an org-level override is in the DB").
+const LimitsSchema = z.object({
+  PLATFORM_TOKEN_SPEND_CAP_USD: z.coerce.number().nonnegative().default(100000),
+  DEFAULT_CONFIDENCE_FLOOR: z.coerce.number().min(0).max(1).default(0.6),
+  REVIEW_WALL_CLOCK_BUDGET_MS: z.coerce.number().positive().default(240_000),
+  REVIEW_MAX_FILES: z.coerce.number().positive().default(60),
+  REVIEW_MAX_LINES: z.coerce.number().positive().default(3000),
+  WORKER_CONCURRENCY: z.coerce.number().positive().default(4),
+  QUEUE_MAX_ATTEMPTS: z.coerce.number().positive().default(3),
+});
+export type LimitsConfig = z.infer<typeof LimitsSchema>;
+
+const DevMockSchema = z.object({
+  USE_MOCK_GITHUB: z.enum(["true", "false"]).default("true"),
+  USE_MOCK_AI: z.enum(["true", "false"]).default("true"),
+  USE_MOCK_BILLING: z.enum(["true", "false"]).default("true"),
+});
+export type DevMockConfig = z.infer<typeof DevMockSchema>;
+
+// ---------------------------------------------------------------------------
+// The full config + the loader
+// ---------------------------------------------------------------------------
+
+export const AppConfigSchema = z.object({
+  core: CoreSchema,
+  github: GithubSchema,
+  ai: AiSchema,
+  billing: BillingSchema,
+  observability: ObservabilitySchema,
+  limits: LimitsSchema,
+  devMock: DevMockSchema,
+});
+export type AppConfig = z.infer<typeof AppConfigSchema>;
+
+/**
+ * Load + validate the config from an env record (default: process.env).
+ *
+ * Returns the parsed config or throws a descriptive error naming the missing
+ * var (ENVIRONMENT_VARIABLES.md §10 "a boot that can't resolve a required var
+ * fails fast, with the var named, not a mid-run crash").
+ */
+export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
+  const picked = pick(env, [
+    ...Object.keys({}) , // placeholder, see pick() below
+  ]);
+  // The core + github are required in every deploy; the rest have defaults.
+  const parsed = AppConfigSchema.safeParse(picked);
+  if (!parsed.success) {
+    const issues = parsed.error.issues
+      .map((i) => `  - ${i.path.join(".") || "(root)"}: ${i.message}`)
+      .join("\n");
+    throw new Error(`Invalid VERCODE config:\n${issues}`);
+  }
+  return parsed.data;
+}
+
+// The exact set of vars the config package reads (the "a variable not in the
+// doc doesn't exist" gate). A var outside this set is not read.
+const KNOWN_VARS = [
+  // core
+  "NODE_ENV",
+  "DATABASE_URL",
+  "REDIS_URL",
+  "SESSION_SIGNING_KEY",
+  "API_BASE_URL",
+  "WEB_BASE_URL",
+  // github
+  "GITHUB_APP_ID",
+  "GITHUB_APP_PRIVATE_KEY",
+  "GITHUB_WEBHOOK_SECRET",
+  "GITHUB_API_BASE",
+  // ai
+  "AI_DEFAULT_PROVIDER",
+  "OPENAI_API_KEY",
+  "ANTHROPIC_API_KEY",
+  "OLLAMA_BASE_URL",
+  "AI_FALLBACK_PROVIDER",
+  // billing
+  "BILLING_PROVIDER",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  "RAZORPAY_KEY_ID",
+  "RAZORPAY_KEY_SECRET",
+  "BILLING_CURRENCY",
+  // observability
+  "SENTRY_DSN_API",
+  "SENTRY_DSN_WORKER",
+  "SENTRY_DSN_WEB",
+  "OTEL_EXPORTER_OTLP_ENDPOINT",
+  "OTEL_SERVICE_NAME",
+  "LOG_LEVEL",
+  // limits
+  "PLATFORM_TOKEN_SPEND_CAP_USD",
+  "DEFAULT_CONFIDENCE_FLOOR",
+  "REVIEW_WALL_CLOCK_BUDGET_MS",
+  "REVIEW_MAX_FILES",
+  "REVIEW_MAX_LINES",
+  "WORKER_CONCURRENCY",
+  "QUEUE_MAX_ATTEMPTS",
+  // dev mock
+  "USE_MOCK_GITHUB",
+  "USE_MOCK_AI",
+  "USE_MOCK_BILLING",
+] as const;
+
+function pick(env: NodeJS.ProcessEnv, _keys: string[] = []): Record<string, string> {
+  // Read only the known vars (the "a variable not in the doc doesn't exist"
+  // gate). Unknown vars are not read (a secret that's not documented is not
+  // loaded — it can't leak through the config).
+  const out: Record<string, string> = {};
+  for (const key of KNOWN_VARS) {
+    if (env[key] !== undefined) {
+      out[key] = env[key];
+    }
+  }
+  return out;
+}
