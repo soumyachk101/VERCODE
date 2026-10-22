@@ -1,0 +1,26 @@
+{
+  "name": "vercode",
+  "version": "0.0.1",
+  "private": true,
+  "description": "VERCODE — AI-powered code-review SaaS (monorepo root)",
+  "type": "module",
+  "packageManager": "pnpm@9",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm -r --filter \".\"... dev",
+    "build": "pnpm -r build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint \"packages/**/*.ts\" \"apps/**/*.ts\" --max-warnings 0",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "eslint": "^9.17.0",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.18.0",
+    "vitest": "^3.0.0"
+  }
+}

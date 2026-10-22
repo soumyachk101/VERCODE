@@ -1,4 +1,26 @@
-.agents/
-.aider-desk/
-.claude/
-skills-lock.json
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+.next/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Coverage / tooling
+coverage/
+.turbo/
+
+# Agent/skill workspaces
+.taste-skill/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
