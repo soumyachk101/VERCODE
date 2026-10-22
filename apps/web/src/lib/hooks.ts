@@ -120,33 +120,36 @@ export function useFindings(orgId: string, jobId: string) {
     enabled: !!jobId,
   });
 }
-export function useSecurity(orgId: string, since?: string) {
+export function useSecurity(orgId?: string, since?: string) {
   return useQuery({
-    queryKey: ["org", orgId, "security", since],
+    queryKey: ["org", orgId ?? "none", "security", since],
     queryFn: () =>
       api.get<SecurityRollup & { items?: ReviewFinding[] }>(`/orgs/${orgId}/security`, {
         since,
       }),
     select: normalizeSecurity,
+    enabled: !!orgId,
     placeholderData: keepPreviousData,
   });
 }
-export function useTrends(orgId: string, params: { repoId?: string } = {}) {
+export function useTrends(orgId: string | undefined, params: { repoId?: string } = {}) {
   return useQuery({
-    queryKey: ["org", orgId, "trends", params],
+    queryKey: ["org", orgId ?? "none", "trends", params],
     queryFn: () =>
       api.get<import("./types").TrendsResponse>(`/orgs/${orgId}/trends`, {
         repoId: params.repoId,
         range: "30d",
       }),
     select: (r) => r?.series ?? [],
+    enabled: !!orgId,
   });
 }
-export function useUsage(orgId: string, range: "30d" | "90d" | "12mo" = "30d") {
+export function useUsage(orgId: string | undefined, range: "30d" | "90d" | "12mo" = "30d") {
   return useQuery({
-    queryKey: ["org", orgId, "usage", range],
+    queryKey: ["org", orgId ?? "none", "usage", range],
     queryFn: () => api.get<UsageResponse>(`/orgs/${orgId}/usage`, { range }),
     select: normalizeUsage,
+    enabled: !!orgId,
     placeholderData: keepPreviousData,
   });
 }
