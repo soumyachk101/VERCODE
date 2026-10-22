@@ -49,14 +49,14 @@ export function ByokField({
             type="button"
             aria-label="Copy BYOK last four"
             className="pressable"
-            style={{ color: "var(--faint)" }}
+            style={{ color: copied ? "var(--positive)" : "var(--faint)" }}
             onClick={async () => {
               await copyText(`sk-…${last4}`);
               setCopied(true);
               setTimeout(() => setCopied(false), 1200);
             }}
           >
-            <Copy size={14} aria-hidden="true" />
+            {copied ? "copied" : <Copy size={14} aria-hidden="true" />}
           </button>
         )}
         <span className="meta" style={{ fontSize: 11, color: active ? "var(--positive)" : "var(--negative)" }}>
