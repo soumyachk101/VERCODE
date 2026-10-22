@@ -896,3 +896,7 @@ function mapCategoryToPrisma(c: string): PrismaCategory {
 }
 
 export type { ChangeSet };
+
+// Re-export the policy helpers (a the test imports them from here, a they
+// live in the sibling module `./policy.js`).
+export { dedupFindings, applyPolicy } from "./policy.js";
