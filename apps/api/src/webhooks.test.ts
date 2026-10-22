@@ -646,8 +646,7 @@ describe("POST /webhooks/github installation events (M3 T3.3)", () => {
 
   it("a installation_repositories.added → a the repo upsert", async () => {
     const seed = openedSeed();
-    const seedDelivery = { delivery: { id: "delivery-row-1", deliveryId: "delivery-install-repos", event: "installation_repositories", orgId: "org-1", installId: "install-1" } };
-    const { app: app_, state: st } = await buildGithubApp({ ...seed, ...seedDelivery });
+    const { app: app_, state: st } = await buildGithubApp({ ...seed });
     const evt = {
       action: "added",
       installation: {

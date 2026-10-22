@@ -25,7 +25,6 @@ export function ByokField({
   onRevoke?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
-  const [revealKey, setRevealKey] = useState(false);
   const [newKey, setNewKey] = useState("");
 
   return (
