@@ -69,6 +69,43 @@ import {
   resolveWorkerPolicy,
   type ReviewPolicy,
 } from "./policy.js";
+import { logger, tracer, type StructuredLogger, type TraceHandle, type SpanHandle } from "@vercode/observability";
+
+// The per-job observability context (OBSERVABILITY.md §2: a trace per job,
+// a span per stage; the trace id = the job_id; the no-OTLP case keeps the
+// spans in-memory so they're the queryable surface).
+export interface JobObservability {
+  trace: TraceHandle;
+  log: StructuredLogger;
+  startSpan: (name: string, attrs?: Record<string, unknown>) => SpanHandle;
+  endSpan: (h: SpanHandle, outcome: string, attrs?: Record<string, unknown>) => void;
+  /** The PII + secret scrub (OBSERVABILITY.md §4 "the Sentry event is scrubbed"). */
+  scrub: (text: string) => string;
+  /** The captured-error record (the in-memory surface, the queryable). */
+  cap: { captured: unknown[] };
+}
+
+function makeJobObservability(payload: ReviewJobPayload): JobObservability {
+  const traceHandle = tracer().startTrace(payload.jobId);
+  const log = logger({ correlationId: payload.jobId, orgId: payload.orgId });
+  const scrub = (text: string) =>
+    text
+      .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, "[email-redacted]")
+      .replace(/ghp_[A-Za-z0-9]{8,}/g, "ghp_...")
+      .replace(/\bsk-[A-Za-z0-9_-]{8,}\b/g, "sk-...");
+  const cap: JobObservability["cap"] = { captured: [] };
+  return {
+    trace: traceHandle,
+    log,
+    startSpan: (s, attrs) => traceHandle.startSpan(s, attrs),
+    endSpan: (h, outcome, attrs) => {
+      if (attrs) for (const [k, v] of Object.entries(attrs)) h.setAttribute(k, v);
+      h.end(outcome);
+    },
+    scrub,
+    cap,
+  };
+}
 import { logger, tracer, capture, redact, type StructuredLogger, type TraceHandle, type SpanHandle } from "@vercode/observability";
 
 // ---------------------------------------------------------------------------
@@ -235,6 +272,15 @@ export interface RunReviewOptions {
   attempt?: number;
   /** The transaction boundary (injected so tests can record the commit). */
   txFactory?: (fn: (tx: unknown) => Promise<unknown>) => Promise<unknown>;
+  /**
+   * The observability context (OBSERVABILITY.md §2 "a the review is a single
+   * trace with a span per stage"; a the trace id = a the job_id; a the
+   * redaction gate on every record, SECRETS_MANAGEMENT §3). Injected so a
+   * the handler is testable without a global tracer; a the default builds a
+   * no-OTLP tracer (a the in-memory spans array is a the queryable surface;
+   * a the OTel exporter is a later seam).
+   */
+  observability?: JobObservability;
 }
 
 export async function runReviewJob(
