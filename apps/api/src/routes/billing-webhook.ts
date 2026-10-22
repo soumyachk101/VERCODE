@@ -30,6 +30,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { AppConfig } from "@vercode/config";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { logger } from "@vercode/observability";
 
 const AUDIT_ACTOR = "billing.webhook";
 

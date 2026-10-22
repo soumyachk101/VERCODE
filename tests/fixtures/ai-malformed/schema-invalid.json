@@ -1,0 +1,16 @@
+{
+  "id": "ai-malformed-schema-invalid",
+  "testId": "ST-ai-malformed",
+  "description": "A schema-invalid structured payload (a the mock provider returns a shape that isn't a findings object). A the engine's Zod re-validation drops it (invariant 1, AI_SYSTEM_DESIGN §1).",
+  "fixture": {
+    "providerId": "mock",
+    "scenario": "schema-invalid",
+    "content": "I found one issue. Here is my answer as prose instead of JSON, which the engine must drop.",
+    "expectedEngineBehavior": {
+      "zodReparseSucceeds": false,
+      "aiStageFails": true,
+      "droppedInvalid": 1,
+      "jobStatus": "partial"
+    }
+  }
+}

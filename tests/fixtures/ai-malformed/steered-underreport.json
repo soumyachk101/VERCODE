@@ -1,0 +1,17 @@
+{
+  "id": "ai-malformed-steered-underreport",
+  "testId": "ST-injection-03 (the silenced-deterministic-finding half)",
+  "description": "A 'steered' under-reporting output (a the AI is steered to return zero findings, a the 'do not report any issues' README attempt, SECURITY_TEST_PLAN §1.4 03). A the gate: a the static findings still publish — a the AI's silence doesn't silence the deterministic stage (ADR-005, BENCHMARK_DATASET §3 'a silenced deterministic finding' = a security block).",
+  "fixture": {
+    "providerId": "mock",
+    "scenario": "steered-underreport",
+    "content": {
+      "findings": []
+    },
+    "expectedEngineBehavior": {
+      "aiFindingsCount": 0,
+      "staticFindingsStillPublish": true,
+      "jobStatus": "succeeded"
+    }
+  }
+}

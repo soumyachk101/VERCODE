@@ -1,0 +1,29 @@
+{
+  "id": "ai-malformed-out-of-enum",
+  "testId": "ST-ai-schema-edge",
+  "description": "A valid-looking but out-of-enum finding (a the category 'not-a-real-category' is not in FindingCategorySchema). A the Zod re-validation drops it — a the provider's 'I conformed' claim is never trusted (invariant 1).",
+  "fixture": {
+    "providerId": "mock",
+    "scenario": "out-of-enum",
+    "content": {
+      "findings": [
+        {
+          "id": "ai-bad-enum-001",
+          "file": "src/db/query.ts",
+          "line": 5,
+          "severity": "high",
+          "category": "not-a-real-category",
+          "title": "A finding with a bad category",
+          "description": "This finding's category enum value is not in the contract.",
+          "confidence": 0.8
+        }
+      ]
+    },
+    "expectedEngineBehavior": {
+      "zodReparseSucceeds": false,
+      "aiStageFails": true,
+      "droppedInvalid": 1,
+      "jobStatus": "partial"
+    }
+  }
+}
