@@ -9,26 +9,30 @@
 // real-tool adapter can implement the same interface and slot in without
 // touching the caller (ADR-006's additive-leaf principle).
 //
-// Findings are emitted in the @vercode/contracts ReviewFinding shape with
-// source "eslint" | "semgrep", confidence 1.0 (deterministic rules — no
-// confidence floor applies, REVIEW_ENGINE_SPEC §2 stage [4]).
+// Findings are emitted in a shape that extends @vercode/contracts'
+// ReviewFinding with a `source` field ("eslint" | "semgrep"). Confidence is
+// always 1.0 (deterministic rules — no confidence floor applies,
+// REVIEW_ENGINE_SPEC §2 stage [4]).
 //
 // Resource caps: files over 2000 lines are flagged `huge` and skipped
 // (a pathological file is bounded, not a crash; UT-static-runner-01/02).
 
-import { z } from "zod";
+import {
+  ReviewFindingSchema,
+  type ReviewFinding,
+  type FindingSeverity,
+  type FindingCategory,
+} from "@vercode/contracts";
 
-// ---------------------------------------------------------------------------
-// The Finding shape (the @vercode/contracts ReviewFinding, re-exposed here)
-// ---------------------------------------------------------------------------
-
-// The contracts package owns the schema; re-import it under a short alias.
-// The findings produced here are validated against ReviewFindingSchema
-// before they leave this module (an invariant of the whole system: no
-// finding ever leaves a package unvalidated).
-import { ReviewFindingSchema, type ReviewFinding } from "@vercode/contracts";
-
-export type StaticFinding = ReviewFinding;
+/**
+ * A deterministic static-analysis finding. Extends ReviewFinding with the
+ * `source` field (the contract's FindingSourceSchema covers the enum values;
+ * `ReviewFindingSchema` itself does not carry the field, so this package
+ * adds it explicitly).
+ */
+export interface StaticFinding extends ReviewFinding {
+  source: "eslint" | "semgrep";
+}
 
 // ---------------------------------------------------------------------------
 // The analyzer seam — the interface a real ESLint/Semgrep adapter implements
@@ -36,17 +40,12 @@ export type StaticFinding = ReviewFinding;
 
 export interface AnalyzerResult {
   findings: StaticFinding[];
-  /** Files the analyzer skipped (e.g. over the line cap). */
+  /** Files the analyzer skipped (over the line cap, binary, etc.). */
   skipped: { path: string; reason: "huge" }[];
 }
 
 export interface Analyzer {
-  readonly id: "eslint" | "semgrep" | "pattern-engine";
-  /**
-   * Run over the changed files' contents.
-   * `files` is a path → content map (the worker fetches the head-SHA
-   * contents; the engine passes them in).
-   */
+  readonly id: string;
   analyze(
     files: Map<string, string>,
     caps?: { maxLines?: number }
@@ -55,71 +54,91 @@ export interface Analyzer {
 
 // ---------------------------------------------------------------------------
 // The built-in pattern rules (Semgrep-like, deterministic)
+//
+// Each rule:
+// - a line regex to match against source lines,
+// - a negation regex (when set, matching lines are NOT findings — this
+//   excludes parameterized queries from the SQL-concat rule),
+// - a category / severity / title.
 // ---------------------------------------------------------------------------
 
 export interface Rule {
   id: string;
+  title: string;
   description: string;
-  category: ReviewFinding["category"];
-  severity: ReviewFinding["severity"];
-  /** The regex to test against a single source line. */
+  category: FindingCategory;
+  severity: FindingSeverity;
   linePattern: RegExp;
-  /** Optional: when set, the rule only applies to files whose path matches. */
-  fileFilter?: RegExp;
-  /** Optional: a negation pattern — lines matching this do NOT trigger the rule. */
   negation?: RegExp;
+  suggestedFix?: string;
 }
 
 const RULES: Rule[] = [
   {
     id: "sql-concat",
-    description: "SQL string concatenation (injection risk)",
+    title: "SQL string concatenation (injection risk)",
+    description:
+      "SQL query is built by string concatenation, which allows SQL injection. Use parameterized queries instead.",
     category: "security",
     severity: "high",
     linePattern:
-      /\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC)\b[^\n]*["'`][^"'`\n]*["'`]\s*[+\+]\s*[^\n]*$/i,
-    negation: /\$|\?|:param|::|prepared/i,
-  },
-  {
-    id: "sql-concat-2",
-    description: "SQL string concatenation via template literal interpolation",
-    category: "security",
-    severity: "high",
-    linePattern:
-      /["'`]SELECT\s[^"'`\n]*["'`]\s*[\+]\s*["'`]?|["'`]INSERT\s[^"'`\n]*["'`]\s*[\+]\s*["'`]?|["'`]UPDATE\s[^"'`\n]*["'`]\s*[\+]\s*["'`]?|["'`]DELETE\s[^"'`\n]*["'`]\s*[\+]\s*["'`]?/i,
-    negation: /\$|\?|:param/i,
+      /\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER)\b\s*["'`][^"'`\n]*["'`]\s*\+/i,
+    negation: /\$|\?|:param|prepared/i,
+    suggestedFix: "Use a parameterized query (prepared statement) instead of string concatenation.",
   },
   {
     id: "sql-template-injection",
-    description: "SQL query built with template-literal interpolation",
+    title: "SQL query with template-literal interpolation",
+    description:
+      "SQL query is built with a template literal that interpolates user input. Use a parameterized query instead.",
     category: "security",
     severity: "high",
-    linePattern:
-      /[`"]\s*(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER)\s[^`" ]*\$\{/i,
-    negation: /\?|\$[a-zA-Z]/,
+    linePattern: /[`"]\s*(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER)\s[^`"\n]*\$\{/i,
+    suggestedFix: "Use a parameterized query instead of template-literal string interpolation.",
   },
   {
     id: "eval-usage",
-    description: "eval() / exec() — code injection risk",
+    title: "eval() or new Function() — code injection risk",
+    description:
+      "eval() and new Function() execute arbitrary code from strings, which is a critical injection vulnerability when input is not fully trusted.",
     category: "security",
     severity: "critical",
-    linePattern: /\beval\s*\(|\bnew\s+Function\s*\(|\bexec\s*\(\s*["'`]/i,
+    linePattern: /\beval\s*\(|\bnew\s+Function\s*\(/i,
+    suggestedFix: "Avoid eval()/new Function(). Use a safe alternative (structured data, whitelist, or a constrained parser).",
+  },
+  {
+    id: "exec-string",
+    title: "child_process.exec with dynamic string",
+    description:
+      "child_process.exec called with a string that may contain untrusted input — command injection risk.",
+    category: "security",
+    severity: "high",
+    linePattern: /\bexec\s*\(\s*["'`][^"'`\n]*["'`]\s*\+/i,
+    suggestedFix: "Use execFile or spawn with an argument array instead of exec with a concatenated string.",
   },
   {
     id: "hardcoded-secret",
-    description: "Hardcoded secret or API key in source",
+    title: "Hardcoded secret or API key in source",
+    description:
+      "A secret-looking value is hardcoded in source. Secrets should be loaded from environment variables or a secret store.",
     category: "security",
     severity: "critical",
     linePattern:
-      /\b(password|passwd|pwd|secret|api[-_]?key|access[-_]?key|token|private[-_]?key)\s*[:=]\s*["'][^"'\s]{8,}["']/i,
+      /\b(password|passwd|pwd|secret|api[-_]?key|access[-_]?key|auth[-_]?token|private[-_]?key)\s*[:=]\s*["'][^"'\s]{8,}["']/i,
+    suggestedFix: "Move the value to an environment variable or secret store; never commit secrets to source.",
   },
   {
     id: "missing-await",
-    description: "Await missing on a promise-returning call (likely a bug)",
+    title: "Missing await on a promise-returning call",
+    description:
+      "A promise-returning function is called without await. The result may be used before it resolves, causing a logic bug.",
     category: "logic-bug",
     severity: "medium",
+    // A .then/.catch/.finally chain assigned or used without an enclosing
+    // async/await context — a heuristic, not exhaustive.
     linePattern:
-      /^\s*(const|let|var)\s+\w+\s*=\s*[^;]*\.(then|catch|finally)\b|^\s*\w+\s*\([^)]*\)\s*\.then\s*\(/,
+      /^\s*(?:const|let|var)\s+\w+\s*=\s*[\w$.]+\s*\(\s*(?:(?:async\s+\w+\s+\(\)|[\w$]+\s+\([^)]*\)))?\s*\)\s*\.then\s*\(/i,
+    suggestedFix: "Add `await` before the promise-returning call, or handle the promise explicitly.",
   },
 ];
 
@@ -127,10 +146,10 @@ const RULES: Rule[] = [
 // The built-in pattern engine (implements Analyzer)
 // ---------------------------------------------------------------------------
 
-const DEFAULT_MAX_LINES = 2000;
+export const DEFAULT_MAX_LINES = 2000;
 
 export class PatternEngineAnalyzer implements Analyzer {
-  readonly id = "pattern-engine" as const;
+  readonly id = "pattern-engine";
 
   analyze(files: Map<string, string>, caps?: { maxLines?: number }): AnalyzerResult {
     const maxLines = caps?.maxLines ?? DEFAULT_MAX_LINES;
@@ -144,29 +163,23 @@ export class PatternEngineAnalyzer implements Analyzer {
         continue;
       }
       for (const rule of RULES) {
-        if (rule.fileFilter && !rule.fileFilter.test(path)) continue;
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i];
           if (!rule.linePattern.test(line)) continue;
           if (rule.negation && rule.negation.test(line)) continue;
-          // A rule may have a global negation: skip lines that look like a
-          // parameterized query.
-          if (rule.negation?.test(line)) continue;
-          const findingId = `static-${rule.id}-${path}:${i + 1}`;
-          const parsed = ReviewFindingSchema.safeParse({
-            id: findingId,
+          const finding: StaticFinding = {
+            id: `static-${rule.id}-${path}:${i + 1}`,
             file: path,
             line: i + 1,
             severity: rule.severity,
             category: rule.category,
-            title: rule.description,
-            description: `${rule.description} at ${path}:${i + 1}`,
+            title: rule.title,
+            description: rule.description,
+            suggestedFix: rule.suggestedFix,
             confidence: 1.0,
-            source: this.id === "pattern-engine" ? "semgrep" : this.id,
-          } satisfies Record<string, unknown>);
-          if (parsed.success) {
-            findings.push(parsed.data as StaticFinding);
-          }
+            source: "semgrep" as const,
+          };
+          findings.push(finding);
         }
       }
     }
@@ -176,37 +189,35 @@ export class PatternEngineAnalyzer implements Analyzer {
 
 // ---------------------------------------------------------------------------
 // Public entry points (the task spec's `runESLint` / `runSemgrep` signatures)
+//
+// The MVP pattern engine is used for both — the labels "eslint" and
+// "semgrep" are what the engine's merge step expects. A future real-tool
+// adapter would implement Analyzer and slot in here.
 // ---------------------------------------------------------------------------
 
-// The "eslint" source — a lightweight rules check (MVP: same pattern engine,
-// labelled "eslint"). A real ESLint adapter would slot in here.
 export function runESLint(
   files: Map<string, string>,
   caps?: { maxLines?: number }
 ): AnalyzerResult {
-  const engine = new PatternEngineAnalyzer();
-  const result = engine.analyze(files, caps);
-  // Relabel the source for ESLint-style findings.
+  const result = new PatternEngineAnalyzer().analyze(files, caps);
   result.findings = result.findings.map((f) => ({ ...f, source: "eslint" as const }));
   return result;
 }
 
-// The "semgrep" source — the pattern engine as Semgrep-equivalent.
 export function runSemgrep(
   files: Map<string, string>,
   caps?: { maxLines?: number }
 ): AnalyzerResult {
-  const engine = new PatternEngineAnalyzer();
-  return engine.analyze(files, caps);
+  return new PatternEngineAnalyzer().analyze(files, caps);
 }
 
-// A single convenience function: run all deterministic checks, return findings.
+/**
+ * Run the full deterministic pass (all rules, both sources merged).
+ * This is the convenience entry the worker calls.
+ */
 export function runStaticAnalysis(
   files: Map<string, string>,
   caps?: { maxLines?: number }
 ): AnalyzerResult {
-  const engine = new PatternEngineAnalyzer();
-  return engine.analyze(files, caps);
+  return new PatternEngineAnalyzer().analyze(files, caps);
 }
-
-export { z };
