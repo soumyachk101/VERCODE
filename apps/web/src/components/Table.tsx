@@ -10,7 +10,6 @@ export function Table({
   caption,
   head,
   children,
-  rightCols = [],
   className,
 }: {
   /** the caption is visually muted but present in the DOM */
@@ -18,8 +17,6 @@ export function Table({
   /** the header cells (sentence case, 12px grey) */
   head: { label: string; align?: "left" | "right"; width?: number | string }[];
   children: ReactNode;
-  /** the column keys that hold numbers / actions (right-aligned tabular) */
-  rightCols?: string[];
   className?: string;
 }) {
   return (

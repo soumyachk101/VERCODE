@@ -199,7 +199,6 @@ export function CategoryTrendChart({
   ariaLabel: string;
   height?: number;
 }) {
-  const top = categories[0];
   const tone = (i: number) =>
     i === 0 ? ACCENT : `color-mix(in srgb, var(--control) ${70 - i * 20}%, var(--surface))`;
   const shown = categories.slice(0, 4);
