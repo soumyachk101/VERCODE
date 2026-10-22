@@ -358,7 +358,7 @@ describe("checkQuota (a the single enforcement point, plans.ts + usage_events)",
       orgPlan: "FREE",
       monthlyUsage: [{ orgId: "org-1", reviewCount: FREE_QUOTA.reviewsPerMonth, estUsdCost: "0" }],
     });
-    const res = await checkQuota(dbClient, { id: "org-1", plan: "FREE" as never }, "2026-01");
+    const res = await checkQuotaPlan(dbClient, "org-1", "free", "2026-01");
     expect(res.over).toBe(true);
   });
 
@@ -367,7 +367,7 @@ describe("checkQuota (a the single enforcement point, plans.ts + usage_events)",
       orgPlan: "FREE",
       monthlyUsage: [{ orgId: "org-1", reviewCount: FREE_QUOTA.reviewsPerMonth - 1, estUsdCost: "0" }],
     });
-    const res = await checkQuota(dbClient, { id: "org-1", plan: "FREE" as never }, "2026-01");
+    const res = await checkQuotaPlan(dbClient, "org-1", "free", "2026-01");
     expect(res.over).toBe(false);
   });
 
@@ -376,7 +376,7 @@ describe("checkQuota (a the single enforcement point, plans.ts + usage_events)",
       orgPlan: "FREE",
       monthlyUsage: [{ orgId: "org-1", reviewCount: 1, estUsdCost: String(FREE_QUOTA.tokenSpendCapMonthlyUsd) }],
     });
-    const res = await checkQuota(dbClient, { id: "org-1", plan: "FREE" as never }, "2026-01");
+    const res = await checkQuotaPlan(dbClient, "org-1", "free", "2026-01");
     expect(res.over).toBe(true);
   });
 });
