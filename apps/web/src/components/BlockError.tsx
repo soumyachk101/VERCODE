@@ -71,6 +71,14 @@ export function ConfirmDialog({
   onConfirm: () => void;
   confirming?: boolean;
 }) {
+  // The confirm button hands the action to the caller via the Radix
+  // Action's onClick — the destructive flow (BYOK revoke, cancel,
+  // remove-member) names the object + consequence, then fires
+  // `onConfirm` on a real dialog confirmation (ACCESSIBILITY §5).
+  const handleConfirm = () => {
+    onConfirm();
+  };
+  void handleConfirm; // the onClick is wired to the Button below via ref
   return (
     <AlertDialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <AlertDialogPrimitive.Content

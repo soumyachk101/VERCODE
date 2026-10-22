@@ -455,13 +455,17 @@ async function handlePullRequest(
   // The enqueue (the payload is ONLY the pointer + correlation — the
   // worker re-reads the org/quota/settings, SERVICE_BOUNDARIES "a job
   // payload is a pointer, not an authority").
+  // A the payload is ONLY the pointer + a the 4 correlation fields (a no
+  // deliveryId, a no diff, a no findings: a the receipt row already
+  // carries the delivery id for the replay-dedup; a the queue payload is
+  // the minimal worker re-read key, a SERVICE_BOUNDARIES "a job payload
+  // is a pointer, not an authority").
   const payload: ReviewJobPayload = {
     jobId: job.id,
     orgId: org.id,
     repoId: repo.id,
     prNumber: evt.number,
     commitSha,
-    deliveryId: ctx.deliveryId,
   };
   const enq = await queue.enqueue(payload as unknown as Record<string, unknown>);
 

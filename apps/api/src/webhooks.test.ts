@@ -586,18 +586,16 @@ describe("POST /webhooks/github (M3 T3.2)", () => {
   it("an unknown install (a a verified event we never recorded) → 404 + a audit", async () => {
     // A a PR event for an installation we have no row for (a the "no
     // existence oracle" — a 404, a not a 200, a the sender can notice).
-    seed = { delivery: { id: "delivery-row-1", deliveryId: "delivery-unknown", event: "pull_request", orgId: "org-1", installId: "install-1" } };
-    const { app: appU, queue: queueU, state: stU } = await buildGithubApp(seed);
     const body = prBody({ installation: { id: 555 } });
-    const res = await appU.inject({
+    const res = await app.inject({
       method: "POST",
       url: "/webhooks/github",
       headers: prHeaders(body, { "x-hub-delivery": "delivery-unknown" }),
       payload: JSON.stringify(body),
     });
     expect(res.statusCode).toBe(404);
-    expect(queueU.enqueued.length).toBe(0);
-    expect(stU.audits.some((a) => a.action === "webhook.unknown_install")).toBe(true);
+    expect(queue.enqueued.length).toBe(0);
+    expect(state.audits.some((a) => a.action === "webhook.unknown_install")).toBe(true);
   });
 });
 
