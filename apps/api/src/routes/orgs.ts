@@ -176,7 +176,7 @@ export async function orgRoutes(app: FastifyInstance) {
 
       const targetRole = role.toUpperCase() as Role;
 
-      await db.$transaction(async (tx: PrismaClient) => {
+      await db.$transaction(async (tx) => {
         if (targetRole === Role.OWNER) {
           // An atomic owner-transfer: demote the current owner + promote the
           // target in one txn (a exactly-one-owner invariant).
