@@ -35,6 +35,7 @@ import type {
   OrgSettings,
   Plan,
   RepoRule,
+  Prisma,
 } from "@prisma/client";
 import type { PRDiff } from "@vercode/github";
 import type { DbClient } from "@vercode/database";
@@ -104,7 +105,7 @@ export interface ReviewJobOutcome {
 // ---------------------------------------------------------------------------
 
 export interface DurableState {
-  org: Org;
+  org: Organization;
   settings: OrgSettings | undefined;
   repoRules: RepoRule[];
 }
@@ -115,7 +116,11 @@ export async function loadDurableState(db: DbClient, payload: ReviewJobPayload):
     include: { settings: true },
   });
   if (!org) throw new Error(`org ${payload.orgId} not found or deleted`);
-  const settings = org.settings as OrgSettings | undefined;
+  // The settings relation is a 1:1 (org_settings.org_id is unique) — an
+  // array-shaped include returns at most one row.
+  const settings = (org.settings as unknown as OrgSettings[] | OrgSettings | null)?.[0] as
+    | OrgSettings
+    | undefined;
   const repoRules = await db.repoRule.findMany({
     where: { orgId: payload.orgId, repoId: payload.repoId },
     orderBy: { version: "desc" },
@@ -141,7 +146,8 @@ export async function runReviewJob(
   const { db } = deps;
   const txFactory =
     opts.txFactory ??
-    ((fn: (tx: DbClient) => Promise<unknown>) => db.$transaction(fn));
+    ((fn: (tx: unknown) => Promise<unknown>) =>
+      db.$transaction((tx) => fn(tx as unknown) as Promise<unknown>));
 
   // [load the durable state] — the payload is a pointer.
   const { org, settings, repoRules } = await loadDurableState(db, payload);
@@ -156,7 +162,7 @@ export async function runReviewJob(
   // quota (plans.ts quota + the usage_events monthly aggregate) → skipped
   // quota_exceeded, ZERO AI tokens consumed, a notice posted.
   const month = new Date().toISOString().slice(0, 7); // YYYY-MM
-  const quota = await checkQuota(db, org, month);
+  const quota = await checkQuotaPlan(db, org.id, org.plan.toLowerCase() as ContractPlan, month);
   if (quota.over) {
     return finishSkipped(deps, payload, "quota_exceeded", {
       summaryBody: `Review skipped — org quota reached for ${month} (${quota.detail}). Upgrade or reduce review volume.`,
@@ -305,14 +311,16 @@ export interface QuotaState {
   detail: string;
 }
 
-export async function checkQuota(
+/** The org-level quota check (a the plan is the contracts Plan enum). */
+export async function checkQuotaPlan(
   db: DbClient,
-  org: { id: string; plan: Plan },
+  orgId: string,
+  plan: ContractPlan,
   month: string
 ): Promise<QuotaState> {
-  const quota = planQuota(org.plan.toLowerCase() as ContractPlan);
+  const quota = planQuota(plan);
   const totals = await db.usageEvent.aggregate({
-    where: { orgId: org.id, month },
+    where: { orgId, month },
     _sum: { reviewCount: true, estUsdCost: true },
   });
   const reviews = Number(totals._sum?.reviewCount ?? 0);

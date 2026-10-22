@@ -15,8 +15,9 @@
 // No secret ever reaches a log line (SECRETS_MANAGEMENT §5 / a the redaction
 // gate): a log carries the `jobId` + a correlation ids only.
 
-import IORedis, { type RedisOptions } from "ioredis";
-import { Queue } from "bullmq";
+import Redis from "ioredis";
+import type { RedisOptions } from "ioredis";
+import { Queue, type Job } from "bullmq";
 
 // The queue names (the worker consumes these, T5.1: `review-queue` +
 // `retention-queue` + a `billing-queue`).
@@ -85,7 +86,7 @@ export class BullQueue implements Enqueueable {
   }
 
   private async probeAndBuild(redisUrl: string): Promise<void> {
-    const conn = new IORedis(redisUrl, {
+    const conn = new Redis(redisUrl, {
       lazyConnect: true,
       maxRetriesPerRequest: 1,
       enableOfflineQueue: false,
@@ -146,8 +147,9 @@ export class BullQueue implements Enqueueable {
   /** A the graceful shutdown (a close the queue + a the underlying conn). */
   async close(): Promise<void> {
     if (this.queue) {
+      const client = this.queue.client;
+      if (client instanceof Redis) await client.quit().catch(() => {});
       await this.queue.close();
-      await this.queue.client?.quit().catch(() => {});
     }
   }
 }
@@ -180,5 +182,5 @@ export function createInMemoryQueue(): InMemoryQueue {
 }
 
 export default BullQueue;
-export { IORedis, type RedisOptions };
+export { Redis, type RedisOptions };
 export { Queue as BullMQQueue } from "bullmq";
