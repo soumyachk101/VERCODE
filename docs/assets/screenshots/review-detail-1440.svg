@@ -1,0 +1,119 @@
+<svg viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PR review detail mockup">
+  <defs>
+    <style>
+      .h1   { font: 700 24px 'Inter', 'Segoe UI', sans-serif; fill: #1a2b3c; }
+      .sub  { font: 400 13px 'Inter', sans-serif; fill: #64748b; }
+      .cell { font: 400 13px 'Inter', sans-serif; fill: #374151; }
+      .mono { font: 400 12px ui-monospace, 'SF Mono', Menlo, monospace; fill: #475569; }
+      .card-title { font: 600 13px 'Inter', sans-serif; fill: #374151; }
+      .gray { font: 400 12px 'Inter', sans-serif; fill: #94a3b8; }
+    </style>
+  </defs>
+
+  <rect width="1440" height="900" fill="#f8fafc"/>
+
+  <!-- Sidebar -->
+  <rect x="0" y="0" width="240" height="900" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="24" y="38" font-size="15" font-weight="800" fill="#1a2b3c" font-family="Inter">VERCODE</text>
+  <rect x="16" y="58" width="208" height="34" rx="7" fill="#f1f5f9"/>
+  <text x="28" y="80" font-size="12" fill="#475569" font-family="Inter">Acme Corp ▾</text>
+  <g font-family="Inter" font-size="13" fill="#475569">
+    <text x="28" y="163">Overview</text>
+    <text x="28" y="191">Repositories</text>
+    <rect x="16" y="200" width="208" height="32" rx="6" fill="#eff6ff"/>
+    <text x="28" y="222" font-weight="600" fill="#1a2b3c">Reviews</text>
+    <text x="28" y="251">Security</text>
+    <text x="28" y="279">Usage &amp; Billing</text>
+    <text x="28" y="307">Settings</text>
+  </g>
+
+  <!-- Header -->
+  <text x="280" y="44" class="h1">Add idempotency key to payment webhook</text>
+  <text x="280" y="70" class="sub">acme-corp/api-server · PR #412 · commit a3f91c2 · published to GitHub 2 min ago</text>
+  <rect x="1200" y="26" width="184" height="34" rx="7" fill="#2563eb"/>
+  <text x="1292" y="48" font-size="13" font-weight="600" fill="#ffffff" text-anchor="middle" font-family="Inter">Re-review</text>
+
+  <!-- Verdict header -->
+  <rect x="280" y="96" width="1104" height="86" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="304" y="132" font-size="24" font-weight="700" fill="#1a2b3c" font-family="Inter">Needs changes</text>
+  <rect x="520" y="116" width="9" height="9" rx="1" fill="#dc2626"/>
+  <rect x="535" y="116" width="9" height="9" rx="1" fill="#ea580c"/>
+  <rect x="550" y="116" width="9" height="9" rx="1" fill="#ea580c"/>
+  <rect x="565" y="116" width="9" height="9" rx="1" fill="#f59e0b"/>
+  <text x="304" y="158" class="sub">2 high findings — an SQL injection and an unhandled null</text>
+  <text x="1360" y="132" class="cell" text-anchor="end">$0.18</text>
+  <text x="1360" y="158" class="gray" text-anchor="end">View on GitHub →</text>
+
+  <!-- Filter row -->
+  <text x="280" y="212" class="gray">Severity:</text>
+  <rect x="340" y="196" width="54" height="24" rx="12" fill="#1a2b3c"/>
+  <text x="367" y="212" font-size="11" font-weight="500" fill="#ffffff" text-anchor="middle" font-family="Inter">All</text>
+  <rect x="402" y="196" width="62" height="24" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="433" y="212" font-size="11" fill="#475569" text-anchor="middle" font-family="Inter">Critical</text>
+  <rect x="472" y="196" width="54" height="24" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="499" y="212" font-size="11" fill="#475569" text-anchor="middle" font-family="Inter">High</text>
+  <rect x="534" y="196" width="66" height="24" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="567" y="212" font-size="11" fill="#475569" text-anchor="middle" font-family="Inter">Medium</text>
+
+  <!-- Findings list -->
+  <rect x="280" y="236" width="1104" height="336" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+
+  <!-- Finding row 1 -->
+  <rect x="280" y="236" width="1104" height="56" fill="#ffffff"/>
+  <line x1="280" y1="292" x2="1384" y2="292" stroke="#f1f5f9"/>
+  <rect x="304" y="259" width="9" height="9" rx="1" fill="#dc2626"/>
+  <text x="326" y="268" class="cell" font-weight="500">Unparameterized query built from request body</text>
+  <text x="326" y="285" class="gray">security</text>
+  <text x="470" y="285" class="mono">payments.ts:84</text>
+  <text x="600" y="285" class="gray">confidence 0.82</text>
+  <text x="760" y="268" class="gray">from static analysis</text>
+  <text x="1384" y="268" class="cell" text-anchor="end" fill="#2563eb">Accept · Dismiss · Mark fixed</text>
+
+  <!-- Finding row 2 -->
+  <line x1="280" y1="348" x2="1384" y2="348" stroke="#f1f5f9"/>
+  <rect x="304" y="315" width="9" height="9" rx="1" fill="#ea580c"/>
+  <text x="326" y="324" class="cell" font-weight="500">Unhandled null on the retry path</text>
+  <text x="326" y="341" class="gray">logic-bug</text>
+  <text x="470" y="341" class="mono">webhook.ts:132</text>
+  <text x="600" y="341" class="gray">confidence 0.74</text>
+  <text x="760" y="324" class="gray">from AI</text>
+  <text x="1384" y="324" class="cell" text-anchor="end" fill="#2563eb">Accept · Dismiss · Mark fixed</text>
+
+  <!-- Finding row 3 -->
+  <line x1="280" y1="404" x2="1384" y2="404" stroke="#f1f5f9"/>
+  <rect x="304" y="371" width="9" height="9" rx="1" fill="#f59e0b"/>
+  <text x="326" y="380" class="cell" font-weight="500">Missing rate limit on the public endpoint</text>
+  <text x="326" y="397" class="gray">reliability</text>
+  <text x="470" y="397" class="mono">router.ts:51</text>
+  <text x="600" y="397" class="gray">confidence 0.61</text>
+  <text x="760" y="380" class="gray">from AI</text>
+  <text x="1384" y="380" class="cell" text-anchor="end" fill="#2563eb">Accept · Dismiss · Mark fixed</text>
+
+  <!-- Finding row 4 -->
+  <line x1="280" y1="460" x2="1384" y2="460" stroke="#f1f5f9"/>
+  <rect x="304" y="427" width="9" height="9" rx="1" fill="#f59e0b"/>
+  <text x="326" y="436" class="cell" font-weight="500">Deprecated crypto function still in use</text>
+  <text x="326" y="453" class="gray">maintenance</text>
+  <text x="470" y="453" class="mono">token.ts:22</text>
+  <text x="600" y="453" class="gray">confidence 0.58</text>
+  <text x="760" y="436" class="gray">from static analysis</text>
+  <text x="1384" y="436" class="cell" text-anchor="end" fill="#2563eb">Accept · Dismiss · Mark fixed</text>
+
+  <!-- Finding row 5 -->
+  <line x1="280" y1="516" x2="1384" y2="516" stroke="#f1f5f9"/>
+  <rect x="304" y="483" width="9" height="9" rx="1" fill="#94a3b8"/>
+  <text x="326" y="492" class="cell" font-weight="500">Unused import</text>
+  <text x="326" y="509" class="gray">style</text>
+  <text x="470" y="509" class="mono">index.ts:3</text>
+  <text x="600" y="509" class="gray">confidence 0.55</text>
+  <text x="760" y="492" class="gray">from static analysis</text>
+  <text x="1384" y="492" class="cell" text-anchor="end" fill="#2563eb">Accept · Dismiss · Mark fixed</text>
+  <text x="304" y="556" class="gray">expand to see the diff context</text>
+
+  <!-- Summary narrative -->
+  <rect x="280" y="596" width="1104" height="130" rx="12" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="304" y="626" class="card-title">Summary</text>
+  <text x="304" y="654" class="cell">Two high-severity issues stand out: a query built directly from the request body, and a</text>
+  <text x="304" y="674" class="cell">retry path that dereferences a possibly-null response. Both are localized and the</text>
+  <text x="304" y="694" class="cell">suggested fixes are small; the rest of the diff is clean. Recommend changes before merge.</text>
+</svg>
