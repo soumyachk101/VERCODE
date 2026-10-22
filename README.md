@@ -546,4 +546,4 @@ The PR lane runs typecheck + lint + unit + integration (reduced) + security (red
 
 ## License
 
-VERCODE is released under the **MIT License**.
+The license is not yet specified in the repo (no `LICENSE` file is present). The project is intended for open-source release — add a license file (e.g. `LICENSE`) before publishing.

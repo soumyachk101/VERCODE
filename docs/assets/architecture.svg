@@ -167,31 +167,32 @@
   <text x="695" y="650" class="flow-label" fill="#7c3aed">cache / state</text>
 
   <!-- GitHub webhook → API -->
-  <path d="M 370 170 C 395 170, 395 265, 428 265" class="arrow" stroke="#dc2626" marker-end="url(#arrR)"/>
-  <text x="388" y="196" class="flow-label" fill="#dc2626">signed webhook</text>
+  <path d="M 370 160 C 400 160, 400 260, 428 260" class="arrow" stroke="#dc2626" marker-end="url(#arrR)"/>
+  <text x="405" y="152" text-anchor="middle" font-size="9" fill="#dc2626" font-family="'SF Pro Text','Segoe UI',-apple-system,sans-serif">signed webhook</text>
 
   <!-- API → GitHub REST -->
-  <path d="M 770 295 C 800 295, 800 170, 828 170" class="arrow" stroke="#166534" marker-end="url(#arrG)"/>
-  <text x="790" y="230" class="flow-label" fill="#166534">diff fetch / publish</text>
+  <path d="M 770 265 C 800 265, 800 160, 828 160" class="arrow" stroke="#166534" marker-end="url(#arrG)"/>
+  <text x="800" y="205" text-anchor="middle" font-size="9" fill="#166534" font-family="'SF Pro Text','Segoe UI',-apple-system,sans-serif">diff fetch / publish</text>
 
   <!-- Worker → AI Provider -->
-  <path d="M 770 540 C 800 540, 800 290, 828 290" class="arrow" stroke="#166534" marker-end="url(#arrG)"/>
-  <text x="810" y="430" class="flow-label" fill="#166534">structured call</text>
+  <path d="M 770 525 C 800 525, 800 262, 828 262" class="arrow" stroke="#166534" marker-end="url(#arrG)"/>
+  <text x="800" y="400" text-anchor="middle" font-size="9" fill="#166534" font-family="'SF Pro Text','Segoe UI',-apple-system,sans-serif">structured call</text>
 
   <!-- Worker → Static Analysis -->
-  <path d="M 770 570 C 800 570, 800 395, 828 395" class="arrow" stroke="#166534" marker-end="url(#arrG)"/>
-  <text x="810" y="505" class="flow-label" fill="#166534">deterministic findings</text>
+  <path d="M 770 560 C 800 560, 800 378, 828 378" class="arrow" stroke="#166534" marker-end="url(#arrG)"/>
+  <text x="800" y="468" text-anchor="middle" font-size="9" fill="#166534" font-family="'SF Pro Text','Segoe UI',-apple-system,sans-serif">deterministic findings</text>
 
-  <!-- Worker → Observability -->
-  <path d="M 770 600 C 800 600, 800 505, 828 505" class="arrow" stroke="#0d9488" marker-end="url(#arrT)"/>
+  <!-- Observability → Worker -->
+  <path d="M 830 485 C 800 485, 800 545, 772 545" class="arrow" stroke="#0d9488" marker-end="url(#arrT)"/>
+  <text x="800" y="530" text-anchor="middle" font-size="9" fill="#0d9488" font-family="'SF Pro Text','Segoe UI',-apple-system,sans-serif">correlation ids</text>
 
   <!-- Billing webhook → API -->
-  <path d="M 370 480 C 400 480, 400 340, 428 340" class="arrow" stroke="#dc2626" marker-end="url(#arrR)"/>
-  <text x="388" y="460" class="flow-label" fill="#dc2626">billing webhook</text>
+  <path d="M 370 480 C 400 480, 400 330, 428 330" class="arrow" stroke="#dc2626" marker-end="url(#arrR)"/>
+  <text x="405" y="455" text-anchor="middle" font-size="9" fill="#dc2626" font-family="'SF Pro Text','Segoe UI',-apple-system,sans-serif">billing webhook</text>
 
-  <!-- API → KMS -->
-  <path d="M 770 330 C 810 330, 810 595, 828 595" class="arrow" stroke="#0d9488" marker-end="url(#arrT)"/>
-  <text x="818" y="580" class="flow-label" fill="#0d9488">decrypt BYOK</text>
+  <!-- KMS → API -->
+  <path d="M 830 590 C 800 590, 800 320, 772 320" class="arrow" stroke="#0d9488" marker-end="url(#arrT)"/>
+  <text x="800" y="565" text-anchor="middle" font-size="9" fill="#0d9488" font-family="'SF Pro Text','Segoe UI',-apple-system,sans-serif">decrypt BYOK</text>
 
   <!-- Legend -->
   <rect x="20" y="798" width="1160" height="20" fill="transparent"/>
