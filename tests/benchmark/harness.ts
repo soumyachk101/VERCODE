@@ -320,13 +320,11 @@ export async function runCase(
   const staticFindings: StaticFinding[] = staticResult.findings;
 
   // A the mock provider (a the deterministic "good" output — a the
-  // MockAdapter's `completeStructured` returns a findings array). A the
-  // "risk-triage" task expects a the `TriageOutputSchema` shape; a the
-  // MockAdapter's "good" mode returns a findings array, which fails that
-  // schema → a the triage's catch → a the heuristic fallback (a the
-  // `aiStageFailed` flag, a the pipeline is "partial" — a the same
-  // behavior a the `IT-pipeline-full` test asserts, REVIEW_ENGINE_SPEC §7).
-  const provider: AIProvider = new MockAdapter(aiScenario);
+  // `CaseAwareMockAdapter`'s "good" mode, a the finding anchored to a
+  // the case's diff, a not a the `MockAdapter`'s fixed `src/example.ts:42`
+  // (a the benchmark's signal is a the pipeline's, a not a the mock's
+  // generic FP, a the `CaseAwareMockAdapter`'s doc comment).
+  const provider: AIProvider = new CaseAwareMockAdapter(changeSet.files, aiScenario);
   const policy: ReviewPolicy = {
     confidenceFloor,
     suppressCategories: [],

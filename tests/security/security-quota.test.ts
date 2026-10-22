@@ -212,21 +212,38 @@ function makeMockDb(config: Partial<MockDbConfig> = {}) {
 // have produced findings if it ran. A the mock provider (from the worker's
 // local adapter) is a good stand-in; we wrap a counter around it so the test
 // can assert `providerCalls === 0` on the skip path.
-import { mockAiProviderFactory } from "../../apps/worker/src/adapters/local.js";
+import { makeMockAiProviders } from "../../apps/worker/src/adapters/local.js";
+import type { AIProvider, ReviewTask } from "@vercode/ai-providers";
+
+// A counting provider wrapper (a the zero-calls assertion reads the counter).
+function countingProvider(inner: AIProvider, calls: { n: number }): AIProvider {
+  return {
+    id: inner.id,
+    completeStructured: async (req) => {
+      calls.n += 1;
+      return inner.completeStructured(req);
+    },
+  };
+}
 
 function makeDeps(db: DbClient, providerCalls: { n: number }): WorkerDeps {
-  const factory = (changeSet: import("@vercode/diff-engine").ChangeSet) => {
-    providerCalls.n += 1;
-    return mockAiProviderFactory(changeSet);
-  };
+  const providers = makeMockAiProviders();
+  const wrapped: Partial<Record<ReviewTask, AIProvider>> = {};
+  for (const [task, p] of Object.entries(providers) as Array<[ReviewTask, AIProvider]>) {
+    wrapped[task] = countingProvider(p, providerCalls);
+  }
   return {
     db,
     redis: {} as never, // A the handler doesn't touch redis (a the lock is in queues.ts).
     github: { fetchPRDiff: async () => PR_DIFF },
-    aiProviderFactories: [factory, factory],
+    aiProviders: wrapped,
     publisher: new MockGithubPublisher(),
-    providerPreference: "mock",
-  } as unknown as WorkerDeps;
+    confidenceFloor: 0.6,
+    maxFiles: 60,
+    maxLines: 3000,
+    promptVersion: "test-v1",
+    testSleep: async () => {},
+  };
 }
 
 const PAYLOAD: ReviewJobPayload = {
