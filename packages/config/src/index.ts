@@ -103,11 +103,63 @@ export type AppConfig = z.infer<typeof AppConfigSchema>;
  * fails fast, with the var named, not a mid-run crash").
  */
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
-  const picked = pick(env, [
-    ...Object.keys({}) , // placeholder, see pick() below
-  ]);
-  // The core + github are required in every deploy; the rest have defaults.
-  const parsed = AppConfigSchema.safeParse(picked);
+  // Read only the documented vars (the "a variable not in the doc doesn't
+  // exist" gate), then shape them into the nested config + validate.
+  const flat = pick(env);
+  const nested = {
+    core: {
+      NODE_ENV: flat.NODE_ENV,
+      DATABASE_URL: flat.DATABASE_URL,
+      REDIS_URL: flat.REDIS_URL,
+      SESSION_SIGNING_KEY: flat.SESSION_SIGNING_KEY,
+      API_BASE_URL: flat.API_BASE_URL,
+      WEB_BASE_URL: flat.WEB_BASE_URL,
+    },
+    github: {
+      GITHUB_APP_ID: flat.GITHUB_APP_ID,
+      GITHUB_APP_PRIVATE_KEY: flat.GITHUB_APP_PRIVATE_KEY,
+      GITHUB_WEBHOOK_SECRET: flat.GITHUB_WEBHOOK_SECRET,
+      GITHUB_API_BASE: flat.GITHUB_API_BASE,
+    },
+    ai: {
+      AI_DEFAULT_PROVIDER: flat.AI_DEFAULT_PROVIDER,
+      OPENAI_API_KEY: flat.OPENAI_API_KEY,
+      ANTHROPIC_API_KEY: flat.ANTHROPIC_API_KEY,
+      OLLAMA_BASE_URL: flat.OLLAMA_BASE_URL,
+      AI_FALLBACK_PROVIDER: flat.AI_FALLBACK_PROVIDER,
+    },
+    billing: {
+      BILLING_PROVIDER: flat.BILLING_PROVIDER,
+      STRIPE_SECRET_KEY: flat.STRIPE_SECRET_KEY,
+      STRIPE_WEBHOOK_SECRET: flat.STRIPE_WEBHOOK_SECRET,
+      RAZORPAY_KEY_ID: flat.RAZORPAY_KEY_ID,
+      RAZORPAY_KEY_SECRET: flat.RAZORPAY_KEY_SECRET,
+      BILLING_CURRENCY: flat.BILLING_CURRENCY,
+    },
+    observability: {
+      SENTRY_DSN_API: flat.SENTRY_DSN_API,
+      SENTRY_DSN_WORKER: flat.SENTRY_DSN_WORKER,
+      SENTRY_DSN_WEB: flat.SENTRY_DSN_WEB,
+      OTEL_EXPORTER_OTLP_ENDPOINT: flat.OTEL_EXPORTER_OTLP_ENDPOINT,
+      OTEL_SERVICE_NAME: flat.OTEL_SERVICE_NAME,
+      LOG_LEVEL: flat.LOG_LEVEL,
+    },
+    limits: {
+      PLATFORM_TOKEN_SPEND_CAP_USD: flat.PLATFORM_TOKEN_SPEND_CAP_USD,
+      DEFAULT_CONFIDENCE_FLOOR: flat.DEFAULT_CONFIDENCE_FLOOR,
+      REVIEW_WALL_CLOCK_BUDGET_MS: flat.REVIEW_WALL_CLOCK_BUDGET_MS,
+      REVIEW_MAX_FILES: flat.REVIEW_MAX_FILES,
+      REVIEW_MAX_LINES: flat.REVIEW_MAX_LINES,
+      WORKER_CONCURRENCY: flat.WORKER_CONCURRENCY,
+      QUEUE_MAX_ATTEMPTS: flat.QUEUE_MAX_ATTEMPTS,
+    },
+    devMock: {
+      USE_MOCK_GITHUB: flat.USE_MOCK_GITHUB,
+      USE_MOCK_AI: flat.USE_MOCK_AI,
+      USE_MOCK_BILLING: flat.USE_MOCK_BILLING,
+    },
+  };
+  const parsed = AppConfigSchema.safeParse(nested);
   if (!parsed.success) {
     const issues = parsed.error.issues
       .map((i) => `  - ${i.path.join(".") || "(root)"}: ${i.message}`)
