@@ -267,27 +267,23 @@ export function classifyFile(path: string, content?: string): Classification {
     return { riskTier: "dependency-manifest", inAiScope: true };
   }
   if (GENERATED_PATTERNS.some((re) => re.test(path) || re.test(base))) {
-    // Content signal: a file that claims to be generated.
-    if (content !== undefined && /^#!?\s*(generated|auto-?generated)/i.test(content)) {
-      return { riskTier: "generated", inAiScope: false };
-    }
     return { riskTier: "generated", inAiScope: false };
   }
   const isTestPath = TEST_PATTERNS.some((re) => re.test(path) || re.test(base));
   if (isTestPath) {
     return { riskTier: "test", inAiScope: true };
   }
+  if (
+    content !== undefined &&
+    /^\s*\/\*\s*(auto-?)?generated\b/i.test(content.slice(0, 400))
+  ) {
+    return { riskTier: "generated", inAiScope: false };
+  }
   if (SECURITY_PATTERNS.some((re) => re.test(path) || re.test(base))) {
     return { riskTier: "security-sensitive", inAiScope: true };
   }
   if (DB_PATTERNS.some((re) => re.test(path) || re.test(base))) {
     return { riskTier: "db-touching", inAiScope: true };
-  }
-  if (
-    content !== undefined &&
-    /\/\*\s*(auto-?)?generated\b/i.test(content.slice(0, 400))
-  ) {
-    return { riskTier: "generated", inAiScope: false };
   }
   return { riskTier: "other", inAiScope: true };
 }
