@@ -127,8 +127,11 @@ const { buildTenantPlugin } = await import("../../apps/api/src/plugins/tenant.js
 // reads — `req.routeOptions.config?.capability`).
 // ---------------------------------------------------------------------------
 
-async function buildTenantApp(seed: TenantSeed, capability: "read" | "org.manage" = "read") {
+type Capability = "read" | "org.manage";
+
+async function buildTenantApp(seed: TenantSeed, capability: Capability = "read") {
   const state = setState(seed);
+  const cfg: { capability?: Capability } = { capability };
 
   const app: FastifyInstance = Fastify({ logger: false });
   app.register(buildTenantPlugin());
@@ -149,7 +152,7 @@ async function buildTenantApp(seed: TenantSeed, capability: "read" | "org.manage
     "/orgs/:orgId/reviews",
     {
       schema: { config: { capability } },
-      config: { capability } as never,
+      config: cfg as never,
     },
     async (req, reply) => {
       reply.send({ reached: true, orgId: req.params, tenant: (req as { tenant?: unknown }).tenant ?? null });

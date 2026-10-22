@@ -7,7 +7,7 @@
 // for a deterministic runs").
 //
 // This file provides a the factory that returns a task → provider map for a
-// the worker's pipeline. A the provider is the @vercode/ai-providers'
+// the worker's pipeline. A the provider is a the @vercode/ai-providers'
 // `AIProvider` interface (a the `completeStructured` contract).
 //
 // When a live provider config is present (the USE_MOCK_AI=false + a the real
@@ -22,14 +22,15 @@ import {
   type AIProvider,
   type ReviewTask,
 } from "@vercode/ai-providers";
+import type { ChangeSet } from "@vercode/diff-engine";
 
 /**
- * Build the mock task → provider map (a the dev default, TRD.md §18).
+ * Build a the mock task → provider map (a the dev default, TRD.md §18).
  *
  * Every task gets a the same MockAdapter with a the "good" scenario — a
  * deterministic, a zero real-token-cost result. A the call count is
  * exposed on a the adapter so a test can assert "a zero provider calls"
- * (the quota-skip test).
+ * (a the quota-skip test, AC-402).
  */
 export function makeMockAiProviders(): Partial<Record<ReviewTask, AIProvider>> {
   const deep = new MockAdapter("good");
@@ -43,7 +44,7 @@ export function makeMockAiProviders(): Partial<Record<ReviewTask, AIProvider>> {
 /**
  * Build a the failing provider map (a the provider-down test — a the
  * partial path, ERROR_HANDLING §5: a the deterministic findings still
- * publish, the job is `partial`).
+ * publish, a the job is `partial`).
  */
 export function makeFailingAiProviders(): Partial<Record<ReviewTask, AIProvider>> {
   const deep = new MockAdapter("down");
@@ -86,4 +87,33 @@ export function makeRealAiProvidersFromConfig(config: {
   const mock = new MockAdapter("good");
   if (!providers["summary"]) providers["summary"] = mock;
   return providers;
+}
+
+// ---------------------------------------------------------------------------
+// A the legacy factory surface (a the M5 worker's original local.ts seam).
+//
+// `@vercode/ai-providers` now owns the provider contract — these are
+// thin wrappers so existing imports (a the security tests, a the local
+// dev-stack) keep working without rewriting them.
+// ---------------------------------------------------------------------------
+
+/**
+ * A mock provider factory (a the `AiProviderFactory` shape). Returns a
+ * deterministic MockAdapter that anchors its findings to a the diff's
+ * added lines. A zero real-token cost.
+ */
+export function mockAiProviderFactory(
+  _changeSet: ChangeSet
+): AIProvider & { callCount: number } {
+  return new MockAdapter("good");
+}
+
+/**
+ * A failing provider factory (a the provider-down test). The returned
+ * provider's `completeStructured` throws a ProviderError.
+ */
+export function failingAiProviderFactory(
+  _changeSet: ChangeSet
+): AIProvider {
+  return new MockAdapter("down");
 }
