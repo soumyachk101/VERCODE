@@ -52,7 +52,7 @@ const PEM_RE =
 // The generic env-var-shaped secret (a the `OPENAI_API_KEY=…` /
 // `DATABASE_URL=…` / `service_token=…` — a the name is kept, a the value
 // is masked to `***`).
-const ENVVAR_RE = /([A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*_(?:KEY|SECRET|TOKEN|PASSWORD|PASSWD|DSN|URL|WEBHOOK_SECRET|CREDENTIAL|CREDENTIALS))\s*=\s*(\S+)/g;
+const ENVVAR_RE = /([A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*_(?:KEY|SECRET|TOKEN|PASSWORD|PASSWD|DSN|URL|WEBHOOK_SECRET|CREDENTIAL|CREDENTIALS))\s*=\s*(\S+)/gi;
 
 // The Stripe webhook signing secret (a the `whsec_` + 8+ char base64url).
 const WHSEC_RE = /\bwhsec_[A-Za-z0-9_-]{8,}\b/g;
