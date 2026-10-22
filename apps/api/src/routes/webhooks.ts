@@ -380,6 +380,18 @@ async function handlePullRequest(
 
   const commitSha = evt.pull_request.head.sha;
 
+  // A the receipt (a the `webhook_deliveries` row, a the replay-dedup
+  // key, a NFR-06). A written BEFORE the enqueue (a the "a verify + a
+  // receipt + a enqueue" order; a the receipt is the durable proof of
+  // the delivery, a a real install + a org id, a not a placeholder).
+  await writeReceipt(db, {
+    installId: install.id,
+    deliveryId: ctx.deliveryId,
+    event: "pull_request",
+    orgId: org.id,
+    accepted: true,
+  });
+
   // THE commit-SHA idempotency (ADR-007, the `review_jobs`
   // `(orgId, repoId, prNumber, commitSha)` unique key; IT-idempotency-01
   // "a same-SHA no-op, a new SHA a new job"). A SUCCEEDED job for the key →

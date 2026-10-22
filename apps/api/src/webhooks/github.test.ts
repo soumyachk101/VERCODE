@@ -40,9 +40,17 @@ const config: AppConfig = {
     GITHUB_API_BASE: "https://api.github.com",
   },
   ai: { AI_DEFAULT_PROVIDER: "mock" },
-  billing: { BILLING_PROVIDER: "stripe" },
-  observability: {},
-  limits: {},
+  billing: { BILLING_PROVIDER: "stripe", BILLING_CURRENCY: "USD" },
+  observability: { LOG_LEVEL: "info" },
+  limits: {
+    PLATFORM_TOKEN_SPEND_CAP_USD: 100000,
+    DEFAULT_CONFIDENCE_FLOOR: 0.6,
+    REVIEW_WALL_CLOCK_BUDGET_MS: 240000,
+    REVIEW_MAX_FILES: 60,
+    REVIEW_MAX_LINES: 3000,
+    WORKER_CONCURRENCY: 4,
+    QUEUE_MAX_ATTEMPTS: 3,
+  },
   devMock: { USE_MOCK_GITHUB: "true", USE_MOCK_AI: "true", USE_MOCK_BILLING: "true" },
 };
 

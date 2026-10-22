@@ -227,7 +227,7 @@ export async function runReviewJob(
   // persist-then-publish invariant, ERROR_HANDLING.md §6).
   const jobStatus: JobStatus = ai.ok ? "SUCCEEDED" : "PARTIAL";
   await txFactory(async (tx) => {
-    const t = tx as DbClient;
+    const t = tx as unknown as DbClient;
     const job = await upsertJob(t, payload, jobStatus, {
       usage: {
         inputTokens: ai.usage.inputTokens,

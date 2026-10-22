@@ -174,17 +174,18 @@ function makeMockDb(config: Partial<MockDbConfig> = {}) {
     },
     reviewFinding: {
       create: async (args: { data: Record<string, unknown> }) => {
+        const d = args.data;
         state.findings.push({
-          source: args.data.source,
-          file: args.data.file,
-          line: args.data.line,
-          severity: args.data.severity,
-          category: args.data.category,
-          title: args.data.title,
-          confidence: Number(args.data.confidence),
-          anchorStatus: args.data.anchorStatus,
+          source: d.source as string,
+          file: d.file as string,
+          line: d.line as number,
+          severity: d.severity as string,
+          category: d.category as string,
+          title: d.title as string,
+          confidence: Number(d.confidence),
+          anchorStatus: d.anchorStatus as string,
         });
-        return args.data;
+        return d;
       },
     },
     usageEvent: {
@@ -200,16 +201,17 @@ function makeMockDb(config: Partial<MockDbConfig> = {}) {
         return { _sum: { reviewCount: sum.reviewCount, estUsdCost: String(sum.estUsdCost) } };
       },
       create: async (args: { data: Record<string, unknown> }) => {
+        const d = args.data;
         state.usageEvents.push({
-          orgId: args.data.orgId,
-          jobId: args.data.jobId,
-          inputTokens: args.data.inputTokens,
-          outputTokens: args.data.outputTokens,
-          estUsdCost: String(args.data.estUsdCost),
-          model: args.data.model,
-          reviewCount: args.data.reviewCount,
+          orgId: d.orgId as string,
+          jobId: d.jobId as string | undefined,
+          inputTokens: d.inputTokens as number | undefined,
+          outputTokens: d.outputTokens as number | undefined,
+          estUsdCost: String(d.estUsdCost),
+          model: d.model as string | undefined,
+          reviewCount: d.reviewCount as number | undefined,
         });
-        return args.data;
+        return d;
       },
     },
     githubRepo: {
