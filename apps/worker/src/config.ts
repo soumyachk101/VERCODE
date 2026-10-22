@@ -142,6 +142,12 @@ export interface WorkerDeps {
   maxLines: number;
   /** A prompt-version label recorded on findings + the usage event. */
   promptVersion: string;
+  /**
+   * A test-injectable sleep (a the provider's bounded retry uses a real
+   * backoff; a test with a "down" provider would otherwise wait
+   * 500 + 2000 ms — the injectable seam keeps the test fast).
+   */
+  testSleep?: (ms: number) => Promise<void>;
 }
 
 export interface WorkerOptions {

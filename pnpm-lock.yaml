@@ -53,6 +53,9 @@ importers:
       '@vercode/github':
         specifier: workspace:*
         version: link:../../packages/github
+      '@vercode/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       argon2:
         specifier: ^0.41.1
         version: 0.41.1
