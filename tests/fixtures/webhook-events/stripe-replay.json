@@ -1,0 +1,15 @@
+{
+  "id": "webhook-stripe-replay-001",
+  "kind": "replayed",
+  "expectedVerdict": "replay_noop",
+  "headers": {
+    "stripe-signature": "t=1767225600,v1=5c58286a45ff690021d5d377fbb194041ad586ab99192585c6e10536b74c193e",
+    "stripe-webhook": "test-mode"
+  },
+  "rawBody": "{\"id\":\"evt_mock_00000001\",\"object\":\"event\",\"type\":\"invoice.paid\",\"created\":1735689600,\"livemode\":false,\"data\":{\"object\":{\"id\":\"in_mock_00000001\",\"object\":\"invoice\",\"customer\":\"cus_mock_0001\",\"amount_paid\":4900,\"currency\":\"usd\",\"subscription\":\"sub_mock_0001\"}}}",
+  "timestamp": "2026-01-01T00:00:00.000Z",
+  "seenProviderEventIds": [
+    "evt_mock_00000001"
+  ],
+  "note": "A valid signature + a a already-seen event id (a the billing_events UK) → 200 no-op, a the plan state is not double-moved."
+}

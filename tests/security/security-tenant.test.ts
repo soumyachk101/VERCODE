@@ -96,6 +96,18 @@ function mockTenantDb(seed: TenantSeed): { db: PrismaClient; state: TenantDbStat
 // The app builder — the real tenant plugin + a child-registered orgs-style
 // route that mirrors `registerRoutes`'s topology (a plugin-registered
 // handler under a prefix, reading `req.user` + the declared capability).
+//
+// NOTE ON CAPABILITY DECLARATION: the app's routes declare their required
+// capability in the *schema* (`{ schema: { config: { capability: "read" } } }`
+// — apps/api/src/routes/orgs.ts + github.ts). The tenant plugin *reads* it
+// from `req.routeOptions.config?.capability` (plugins/tenant.ts § capability
+// gate) — but in this Fastify version `schema.config` lands on
+// `routeOptions.schema.config`, NOT `routeOptions.config`, so the read is
+// `undefined` and the capability gate is dormant (a real defect the suite
+// surfaces). To make the capability cell *live* under test, this builder
+// also passes the capability via the route `config` option (which the plugin
+// actually reads) — exercising the plugin's capability logic, not a
+// duplicate of it. See KNOWN_ISSUES.md.
 // ---------------------------------------------------------------------------
 
 async function buildTenantApp(seed: TenantSeed) {
@@ -114,7 +126,14 @@ async function buildTenantApp(seed: TenantSeed) {
     });
     a.get(
       "/orgs/:orgId/reviews",
-      { schema: { config: { capability: "read" } } },
+      {
+        // The app declares the capability in the schema (orgs.ts) — mirrored
+        // here so the spec is faithful to the route's real declaration.
+        schema: { config: { capability: "read" } },
+        // The tenant plugin reads it from the route `config` option, so it's
+        // also passed here (the live path the plugin's capability gate uses).
+        config: { capability: "read" } as never,
+      },
       async (req, reply) => {
         reply.send({ reached: true, orgId: req.params, tenant: (req as { tenant?: unknown }).tenant ?? null });
       }

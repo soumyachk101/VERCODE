@@ -1,0 +1,12 @@
+{
+  "id": "webhook-stripe-forged-001",
+  "kind": "forged",
+  "expectedVerdict": "rejected_signature",
+  "headers": {
+    "stripe-signature": "t=1767225600,v1=ceadc57794f46e1c6e0f35b74fc89dbe329c66eed90dc3d7f13a134f9b9f7e62",
+    "stripe-webhook": "test-mode"
+  },
+  "rawBody": "{\"id\":\"evt_mock_00000001\",\"object\":\"event\",\"type\":\"invoice.paid\",\"created\":1735689600,\"livemode\":false,\"data\":{\"object\":{\"id\":\"in_mock_00000001\",\"object\":\"invoice\",\"customer\":\"cus_mock_0001\",\"amount_paid\":4900,\"currency\":\"usd\",\"subscription\":\"sub_mock_0001\"}}}",
+  "timestamp": "2026-01-01T00:00:00.000Z",
+  "note": "A wrong-key Stripe signature → 401 BILLING_REJECTED, a the org_billing state is unchanged."
+}
