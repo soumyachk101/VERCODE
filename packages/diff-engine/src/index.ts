@@ -222,9 +222,11 @@ const SECURITY_PATTERNS: RegExp[] = [
 ];
 
 const DB_PATTERNS: RegExp[] = [
-  rx("(^|/)(db|database|databases|sql|repository|repositories|models?|migrations?|prisma)([/\\-.])?$"),
-  rx("\\.(sql)$"),
-  rx("prisma(/|\\.schema)"),
+  // A directory named db/models/repositories/migrations/prisma anywhere in the path.
+  rx("(^|/)(db|database|databases|models?|repositories?|migrations?|prisma)(/|$)"),
+  // .sql / .prisma file suffixes.
+  rx("\\.(sql|prisma)$"),
+  // "migration" / "migrate" in the basename.
   rx("\\b(migrate|migration)\\b"),
 ];
 
