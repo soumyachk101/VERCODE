@@ -567,6 +567,7 @@ export function normalizeUsage(r: unknown): NormalizedUsage {
 export function normalizeBilling(r: unknown): NormalizedBilling {
   const o = (r ?? {}) as Record<string, unknown>;
   const inv = Array.isArray(o.invoices) ? o.invoices : [];
+  const quotaRaw = (o.quota ?? {}) as Record<string, unknown>;
   return {
     plan: String(o.plan ?? "free"),
     status: String(o.status ?? "active") as NormalizedBilling["status"],
@@ -578,11 +579,11 @@ export function normalizeBilling(r: unknown): NormalizedBilling {
       status: String(x.status ?? "paid"),
     })),
     quota: {
-      used: Number(o.quota?.used ?? 0),
-      limit: Number(o.quota?.limit ?? 0),
-      percentUsed: Number(o.quota?.percentUsed ?? 0),
+      used: Number(quotaRaw.used ?? 0),
+      limit: Number(quotaRaw.limit ?? 0),
+      percentUsed: Number(quotaRaw.percentUsed ?? quotaRaw.percent_used ?? 0),
     },
-  } as NormalizedBilling;
+  };
 }
 
 export function normalizeSettings(r: unknown): NormalizedSettings {
