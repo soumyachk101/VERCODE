@@ -676,6 +676,8 @@ describe("POST /webhooks/github installation events (M3 T3.3)", () => {
     });
     expect(res.statusCode).toBe(202);
     expect(st.repos.some((r) => r.githubRepoId === BigInt(778) && r.connected === true)).toBe(true);
+    // A the receipt row (a the `webhook_deliveries` row, a NFR-06).
+    expect(st.deliveries.some((d) => d.deliveryId === "delivery-install-repos")).toBe(true);
   });
 });
 

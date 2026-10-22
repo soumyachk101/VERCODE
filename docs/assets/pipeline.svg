@@ -1,0 +1,90 @@
+<svg viewBox="0 0 1000 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="VERCODE review pipeline">
+  <defs>
+    <style>
+      .stage-title { font-family: 'SF Pro Display', 'Segoe UI', -apple-system, sans-serif; font-size: 12px; font-weight: 700; fill: #1a2b3c; }
+      .stage-sub   { font-family: 'SF Pro Text', 'Segoe UI', -apple-system, sans-serif; font-size: 9px; fill: #5a6b7c; }
+      .phase       { font-family: 'SF Pro Display', 'Segoe UI', -apple-system, sans-serif; font-size: 11px; font-weight: 600; }
+      .arrow       { stroke-width: 1.8; fill: none; }
+    </style>
+    <marker id="mG" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#3a9d5c"/></marker>
+    <marker id="mB" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#2563eb"/></marker>
+    <marker id="mO" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#ea580c"/></marker>
+    <marker id="mP" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#7c3aed"/></marker>
+    <marker id="mR" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#dc2626"/></marker>
+    <marker id="mT" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#0d9488"/></marker>
+  </defs>
+
+  <rect width="1000" height="380" fill="#f8faff"/>
+  <text x="500" y="34" text-anchor="middle" class="stage-title" fill="#1a2b3c" style="font-size:18px">VERCODE — Review Pipeline (Hot Path)</text>
+  <text x="500" y="52" text-anchor="middle" class="stage-sub">Webhook ingress is constant-latency — no LLM work on this path</text>
+
+  <!-- Phase labels -->
+  <text x="30"  y="82" class="phase" fill="#dc2626">INGRESS</text>
+  <text x="230" y="82" class="phase" fill="#ea580c">QUEUE</text>
+  <text x="420" y="82" class="phase" fill="#2563eb">ANALYZE</text>
+  <text x="700" y="82" class="phase" fill="#0d9488">PUBLISH</text>
+
+  <!-- Stage boxes -->
+  <rect x="30" y="95" width="180" height="72" rx="8" fill="white" stroke="#dc2626" stroke-width="2"/>
+  <text x="120" y="118" text-anchor="middle" class="stage-title">GitHub Webhook</text>
+  <text x="120" y="134" text-anchor="middle" class="stage-sub">POST /webhooks/github (signed)</text>
+  <text x="120" y="148" text-anchor="middle" class="stage-sub">HMAC + 5-min window + 24h dedup</text>
+
+  <line x1="210" y1="131" x2="235" y2="131" class="arrow" stroke="#dc2626" marker-end="url(#mR)"/>
+
+  <rect x="240" y="95" width="160" height="72" rx="8" fill="white" stroke="#ea580c" stroke-width="2"/>
+  <text x="320" y="118" text-anchor="middle" class="stage-title">Enqueue Job</text>
+  <text x="320" y="134" text-anchor="middle" class="stage-sub">review-queue (BullMQ)</text>
+  <text x="320" y="148" text-anchor="middle" class="stage-sub">→ 202 Accepted (&lt; 300 ms)</text>
+
+  <line x1="400" y1="131" x2="425" y2="131" class="arrow" stroke="#ea580c" marker-end="url(#mO)"/>
+
+  <rect x="430" y="95" width="250" height="72" rx="8" fill="white" stroke="#2563eb" stroke-width="2"/>
+  <text x="555" y="118" text-anchor="middle" class="stage-title">Worker Pipeline</text>
+  <text x="555" y="134" text-anchor="middle" class="stage-sub">fetch diff → classify → static (ESLint+Semgrep)</text>
+  <text x="555" y="148" text-anchor="middle" class="stage-sub">→ AI review → validate → dedup → policy → summary</text>
+
+  <line x1="680" y1="131" x2="705" y2="131" class="arrow" stroke="#0d9488" marker-end="url(#mT)"/>
+
+  <rect x="710" y="95" width="250" height="72" rx="8" fill="white" stroke="#0d9488" stroke-width="2"/>
+  <text x="835" y="118" text-anchor="middle" class="stage-title">Publish to GitHub</text>
+  <text x="835" y="134" text-anchor="middle" class="stage-sub">summary comment + validated inline comments</text>
+  <text x="835" y="148" text-anchor="middle" class="stage-sub">fallback to PR comment · mark job succeeded</text>
+
+  <!-- Parallel branches under ANALYZE -->
+  <rect x="430" y="190" width="115" height="80" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="487" y="213" text-anchor="middle" class="stage-title" fill="#ea580c">Static Stage</text>
+  <text x="487" y="230" text-anchor="middle" class="stage-sub">ESLint + Semgrep</text>
+  <text x="487" y="245" text-anchor="middle" class="stage-sub">deterministic findings</text>
+  <text x="487" y="260" text-anchor="middle" class="stage-sub">resource-capped sub-process</text>
+
+  <line x1="545" y1="167" x2="505" y2="188" class="arrow" stroke="#ea580c" marker-end="url(#mO)"/>
+
+  <rect x="565" y="190" width="115" height="80" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="622" y="213" text-anchor="middle" class="stage-title" fill="#2563eb">AI Stage</text>
+  <text x="622" y="230" text-anchor="middle" class="stage-sub">OpenAI (task-routed)</text>
+  <text x="622" y="245" text-anchor="middle" class="stage-sub">Zod-validated output</text>
+  <text x="622" y="260" text-anchor="middle" class="stage-sub">no tool-calling path</text>
+
+  <line x1="565" y1="167" x2="605" y2="188" class="arrow" stroke="#2563eb" marker-end="url(#mB)"/>
+
+  <!-- Merge -->
+  <rect x="505" y="295" width="150" height="48" rx="8" fill="#f0fdf4" stroke="#3a9d5c" stroke-width="1.5"/>
+  <text x="580" y="315" text-anchor="middle" class="stage-title" fill="#3a9d5c">Merge + Validate</text>
+  <text x="580" y="331" text-anchor="middle" class="stage-sub">dedup · confidence floor · summary</text>
+
+  <line x1="487" y1="270" x2="550" y2="293" class="arrow" stroke="#3a9d5c" marker-end="url(#mG)"/>
+  <line x1="622" y1="270" x2="610" y2="293" class="arrow" stroke="#3a9d5c" marker-end="url(#mG)"/>
+
+  <!-- Security note -->
+  <rect x="30" y="190" width="180" height="110" rx="8" fill="#fef2f2" stroke="#fecaca" stroke-width="1" stroke-dasharray="4 3"/>
+  <text x="120" y="213" text-anchor="middle" class="stage-title" fill="#991b1b" style="font-size:11px">Security Invariants</text>
+  <text x="40" y="232" class="stage-sub" fill="#991b1b">• Repo content = input, never authority</text>
+  <text x="40" y="247" class="stage-sub" fill="#991b1b">• No LLM on webhook path (T-10 DoS closed)</text>
+  <text x="40" y="262" class="stage-sub" fill="#991b1b">• No untrusted code execution in MVP (T-08)</text>
+  <text x="40" y="277" class="stage-sub" fill="#991b1b">• Redaction on every log line (T-05/T-12)</text>
+  <text x="40" y="292" class="stage-sub" fill="#991b1b">• Quota check BEFORE AI stage (T-11)</text>
+
+  <!-- Bottom note -->
+  <text x="500" y="368" text-anchor="middle" class="stage-sub" fill="#5a6b7c">The worker autoscales on review-queue lag · each instance enforces its own concurrency limit (default 4)</text>
+</svg>
