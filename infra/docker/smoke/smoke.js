@@ -67,10 +67,10 @@ const MOCK_GITHUB_REPO_ID = 424242; // a the seed's githubRepoId
 const MOCK_PR_NUMBER = 42;
 const MOCK_HEAD_SHA = "f".repeat(40); // a valid 40-hex-char commit SHA
 
-function log(msg: string): void {
+function log(msg: string) {
   process.stdout.write(`\x1b[1;34m[smoke]\x1b[0m ${msg}\n`);
 }
-function fail(msg: string): never {
+function fail(msg: string) {
   process.stdout.write(`\x1b[1;31m[smoke] FAILED: ${msg}\x1b[0m\n`);
   process.exit(1);
 }
@@ -78,7 +78,7 @@ function fail(msg: string): never {
 async function getJson(url: string): Promise<unknown> {
   const res = await fetch(url, { method: "GET" });
   const text = await res.text();
-  let body: unknown = null;
+  let body= null;
   try {
     body = text ? JSON.parse(text) : null;
   } catch {
@@ -90,7 +90,7 @@ async function getJson(url: string): Promise<unknown> {
 
 // A the GitHub webhook HMAC (a X-Hub-Signature-256, WEBHOOK_SPECIFICATION
 // §1.1 layer 1): `sha256=` + the hex digest of HMAC-SHA256(secret, rawBody).
-function githubSignature(rawBody: string, secret: string): string {
+function githubSignature(rawBody: string, secret: string) {
   return "sha256=" + createHmac("sha256", secret).update(rawBody).digest("hex");
 }
 
@@ -99,7 +99,7 @@ async function main(): Promise<void> {
   // 1. the health endpoints.
   // -----------------------------------------------------------------------
   log("step 1: the health endpoints");
-  const healths: Array<[string, string]> = [
+  const healths= [
     ["web", `${WEB_BASE}/`],
     ["api /healthz", `${API_BASE}/healthz`],
     ["mock-github", `${MOCK_GITHUB_BASE}/healthz`],

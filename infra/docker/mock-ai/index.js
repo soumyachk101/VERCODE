@@ -1,7 +1,7 @@
 // The mock-AI service (DEPLOYMENT §2 "a the mock-ai is the mock adapter
 // (deterministic fixture outputs)").
 //
-// It serves the SAME deterministic structured outputs as the
+// It serves the SAME deterministic structured outputs
 // `@vercode/ai-providers` `MockAdapter` — the "good" mode's findings array,
 // the schema-invalid near-miss, the "steered" leak, and the "down" error.
 // The payload lives in `fixtures/*.json` so the fixture is the single source
@@ -44,7 +44,7 @@ const FIXTURES = {
 
 const calls: Array<Record<string, unknown>> = [];
 
-function json(body: unknown, status = 200): Response {
+function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "content-type": "application/json" },
@@ -105,7 +105,7 @@ async function main(): Promise<void> {
         });
         return;
       }
-      const fixture = FIXTURES[scenario as keyof typeof FIXTURES];
+      const fixture = FIXTURES[scenario typeof FIXTURES];
       if (fixture === undefined) {
         send(404, { error: "unknown scenario", scenario });
         return;
