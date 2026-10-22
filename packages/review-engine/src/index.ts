@@ -362,35 +362,39 @@ export async function runReview(
   let highRiskFiles = new Set<string>();
 
   if (triageProvider !== undefined) {
-    try {
-      for (const { file: f } of inAiScope) {
-        const req: CompleteStructuredRequest = {
-          task: "risk-triage",
-          messages: [
-            { role: "system", content: "Return a risk score and whether this file needs a deep review." },
-            { role: "user", content: `<file path="${f.path}">${f.hunks.map((h) => h.text).join("\n")}</file>` },
-          ],
-          schema: TriageOutputSchema,
-          maxTokens: 1024,
-          timeoutMs: 15_000,
-        };
+    const triageResults = new Map<string, boolean>();
+    for (const { file: f } of inAiScope) {
+      const req: CompleteStructuredRequest = {
+        task: "risk-triage",
+        messages: [
+          { role: "system", content: "Return a risk score and whether this file needs a deep review." },
+          { role: "user", content: `<file path="${f.path}">${f.hunks.map((h) => h.text).join("\n")}</file>` },
+        ],
+        schema: TriageOutputSchema,
+        maxTokens: 1024,
+        timeoutMs: 15_000,
+      };
+      try {
         const result: StructuredResult = await runWithRetry(triageProvider, req);
         totalInputTokens += result.inputTokens;
         totalOutputTokens += result.outputTokens;
         lastModel = result.model;
         estUsd += estUsdCost(result.model, result.inputTokens, result.outputTokens);
         const triage = TriageOutputSchema.parse(result.content);
-        if (triage.highRisk) highRiskFiles.add(f.path);
+        triageResults.set(f.path, triage.highRisk);
+      } catch {
+        // A per-file triage failure: the provider is down for this file.
+        // Fall back to the heuristic for this file; the pipeline continues
+        // (a the "provider down → highRiskFiles = risk-tier-based heuristic
+        // set; pipeline continues, partial").
+        meta.aiStageFailed = true;
+        const cls = classifyFile(f.path);
+        triageResults.set(f.path, cls.riskTier === "security-sensitive" || cls.riskTier === "db-touching");
       }
-    } catch (e) {
-      // Provider down → heuristic fallback (risk-tier-based set).
-      meta.aiStageFailed = true;
-      highRiskFiles = new Set(
-        inAiScope
-          .filter(({ cls }) => cls.riskTier === "security-sensitive" || cls.riskTier === "db-touching")
-          .map(({ file: f }) => f.path)
-      );
     }
+    highRiskFiles = new Set(
+      [...triageResults.entries()].filter(([, high]) => high).map(([path]) => path)
+    );
   } else {
     // No triage provider configured → heuristic fallback.
     highRiskFiles = new Set(
