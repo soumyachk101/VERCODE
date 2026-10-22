@@ -53,7 +53,7 @@ describe("redact (SECRETS_MANAGEMENT §3, ST-redaction-patterns)", () => {
     },
     {
       file: "github-pat.txt",
-      contains: "ghp...mnop", // the `ghp` shape marker + the last-4 (a bare ghp_ token has no env-var name, so the high-entropy generic mask kicks in → `...mnop` with the `ghp` prefix)
+      contains: "ghp_...mnop", // the ghp_ shape marker + the last-4
       mustNotContain: "ghp_16CharsOrMore0123456789abcdefghijklmnop",
     },
     {
