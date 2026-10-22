@@ -27,8 +27,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { MockAdapter } from "@vercode/ai-providers";
-import type { StructuredResult } from "@vercode/ai-providers";
+import { MockAdapter, type StructuredResult } from "@vercode/ai-providers";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -36,32 +35,35 @@ const here = dirname(fileURLToPath(import.meta.url));
 // deterministic "good" mode's output, a the `@vercode/ai-providers`
 // `MockAdapter`'s "good" scenario).
 const MOCK_AI_FIXTURE = JSON.parse(
-  readFileSync(join(here, "..", "..", "infra", "docker", "mock-ai", "fixtures", "good.json"), "utf8")
+  readFileSync(
+    join(here, "..", "..", "infra", "docker", "mock-ai", "fixtures", "good.json"),
+    "utf8"
+  )
 );
 
 // A the `@vercode/ai-providers` `MockAdapter`'s "good" output (a the
 // deterministic fixture, a the `MockAdapter`'s "good" scenario).
-const MOCK_ADAPTER_GOOD = (await (async () => {
+async function getMockAdapterGoodOutput(): Promise<unknown> {
   const adapter = new MockAdapter("good");
   const req = {
     task: "deep-review" as const,
     messages: [{ role: "user" as const, content: "mock" }],
-    schema: undefined,
     maxTokens: 4096,
     timeoutMs: 60_000,
   };
+  // The `completeStructured` expects a `CompleteStructuredRequest`
+  // (a the `schema` field is a required, a the `MockAdapter`'s
+  // `good` mode ignores it — a the `any` cast is a the fixture's
+  // shape, a not a the real `CompleteStructuredRequest`'s).
   const result: StructuredResult = await adapter.completeStructured(
     req as unknown as Parameters<typeof adapter.completeStructured>[0]
   );
-  return result;
-})()).content;
+  return result.content;
+}
 
-// A the parity assertion: a the mock-ai service's fixture (a the HTTP
-// stub's output) + a the `MockAdapter`'s output must agree (a the
-// "a the mock providers' state" rule — a the seam's output shape is a
-// the deterministic fixture, a the two must match).
-describe("IT-mock-ai-parity (a the INTEGRATION_TEST_PLAN §1 "a the mock providers' state")", () => {
-  it("a the mock-ai service's fixture + a the MockAdapter's 'good' output agree on the shape", () => {
+describe("IT-mock-ai-parity (a the INTEGRATION_TEST_PLAN §1 'a the mock providers' state')", () => {
+  it("a the mock-ai service's fixture + a the MockAdapter's 'good' output agree on the shape", async () => {
+    const mockAdapterGood = await getMockAdapterGoodOutput();
     // A the mock-ai service's fixture is a the findings object (a the
     // `MockAdapter`'s "good" mode's output, a the same shape).
     expect(MOCK_AI_FIXTURE).toHaveProperty("findings");
@@ -69,9 +71,8 @@ describe("IT-mock-ai-parity (a the INTEGRATION_TEST_PLAN §1 "a the mock provide
 
     // A the MockAdapter's "good" output is a the same shape (a the
     // findings array, a the `AIFindingsOutputSchema`'s shape).
-    expect(MOCK_ADAPTER_GOOD).toHaveProperty("findings");
-    expect(Array.isArray(MOCK_ADAPTER_GOOD)).toBe(true) ||
-      expect((MOCK_ADAPTER_GOOD as { findings?: unknown }).findings).toBeDefined();
+    expect(mockAdapterGood).toHaveProperty("findings");
+    expect(Array.isArray((mockAdapterGood as { findings?: unknown }).findings)).toBe(true);
   });
 
   it("a the findings' fields agree on the deterministic anchor (a the file + a the line + a the category)", () => {

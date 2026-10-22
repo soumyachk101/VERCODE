@@ -72,7 +72,6 @@ import {
 } from "@vercode/review-engine";
 import { MockAdapter, type AIProvider } from "@vercode/ai-providers";
 import { runStaticAnalysis, type StaticFinding } from "@vercode/static-analysis";
-import type { ChangeSetFile } from "@vercode/diff-engine";
 
 // ---------------------------------------------------------------------------
 // A the case-aware mock (a the MockAdapter's "good" output anchored to a

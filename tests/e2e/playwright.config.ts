@@ -52,7 +52,7 @@ export default defineConfig({
       "x-api-base": API_URL,
     },
     // A the traces + a the screenshots on failure.
-    trace: "on-firstFailure",
+    trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
   // A the web stack is up before the spec (a the Compose service's
@@ -68,7 +68,7 @@ export default defineConfig({
     // `make e2e` step (a the `tests/e2e/README.md`).
     command: "echo 'the dev-stack is up (a the make e2e step)' && sleep 0.1",
     url: WEB_URL,
-    reuse: true,
+    reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },
   reporter: [

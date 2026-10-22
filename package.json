@@ -21,6 +21,7 @@
     "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm benchmark"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@types/node": "^22.10.0",
     "eslint": "^9.17.0",
     "typescript": "^5.7.3",
