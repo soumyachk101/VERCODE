@@ -216,6 +216,94 @@ export async function orgRoutes(app: FastifyInstance) {
     }
   );
 
+  // POST /:id/invitations/:token/accept — Accept invite
+  app.post("/:id/invitations/:token/accept", async (req, reply) => {
+    const { id, token } = req.params as { id: string; token: string };
+    const userId = req.user.userId;
+    if (!userId) {
+      reply.code(401).send({ error: { code: "UNAUTHENTICATED", message: "No session." } });
+      return;
+    }
+    const db = app.auth.db;
+    const tokenHash = app.auth.hashToken(token);
+
+    const invite = await db.invitation.findFirst({
+      where: {
+        orgId: id,
+        OR: [{ tokenHash }, { id: token }],
+        status: "PENDING",
+        expiresAt: { gt: new Date() },
+      },
+    });
+
+    if (!invite) {
+      reply.code(404).send({ error: { code: "NOT_FOUND", message: "Invitation not found or expired." } });
+      return;
+    }
+
+    await db.$transaction([
+      db.membership.upsert({
+        where: { orgId_userId: { orgId: id, userId } },
+        create: { orgId: id, userId, role: invite.role },
+        update: { role: invite.role },
+      }),
+      db.invitation.update({
+        where: { id: invite.id },
+        data: { status: "ACCEPTED" },
+      }),
+      db.auditEvent.create({
+        data: {
+          orgId: id,
+          actorId: userId,
+          action: "org.invitation_accepted",
+          targetType: "membership",
+          targetId: userId,
+        },
+      }),
+    ]);
+
+    reply.send({ ok: true, orgId: id, role: invite.role });
+  });
+
+  // DELETE /:id/members/:userId — Remove member from org (admin+)
+  app.delete(
+    "/:id/members/:userId",
+    { schema: { config: { capability: "org.manage" } } },
+    async (req, reply) => {
+      const { id, userId: targetUserId } = req.params as { id: string; userId: string };
+      const db = app.auth.db;
+
+      const target = await db.membership.findFirst({
+        where: { orgId: id, userId: targetUserId },
+      });
+      if (!target) {
+        reply.code(404).send({ error: { code: "NOT_FOUND", message: "Member not found." } });
+        return;
+      }
+
+      if (target.role === Role.OWNER) {
+        reply.code(403).send({ error: { code: "FORBIDDEN", message: "Cannot remove the org owner." } });
+        return;
+      }
+
+      await db.membership.delete({
+        where: { id: target.id },
+      });
+
+      await db.auditEvent.create({
+        data: {
+          orgId: id,
+          actorId: req.user.userId ?? "",
+          action: "org.member_removed",
+          targetType: "membership",
+          targetId: targetUserId,
+        },
+      });
+
+      reply.send({ ok: true });
+    }
+  );
+
   // A DELETE /:id (an owner-only, AC-104 "a org.delete is owner-only, a
   // soft-delete + a grace window, a retention §5").
   app.delete(
@@ -238,3 +326,4 @@ export async function orgRoutes(app: FastifyInstance) {
     }
   );
 }
+
