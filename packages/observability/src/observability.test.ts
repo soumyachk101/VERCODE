@@ -53,12 +53,12 @@ describe("redact (SECRETS_MANAGEMENT §3, ST-redaction-patterns)", () => {
     },
     {
       file: "github-pat.txt",
-      contains: "...mnop",
+      contains: "ghp_...6789", // a the ghp_ shape + a the last-4 of the matched token
       mustNotContain: "ghp_16CharsOrMore0123456789abcdefghijklmnop",
     },
     {
       file: "stripe-live-key.txt",
-      contains: "...OpQr",
+      contains: "pk_live_...OpQr", // a the pk_live_ shape + a last-4
       mustNotContain: "pk_live_51H8xYzAbCdEfGhIjKlMnOpQrSt",
     },
     {

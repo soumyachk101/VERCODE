@@ -62,7 +62,7 @@ const STRIPE_RE = /(?<![A-Za-z0-9])[pk]_(?:live|test)_[A-Za-z0-9]{8,}/g;
 
 // The GitHub tokens (a the `ghp_` / `gho_` / `ghs_` / `ghr_` /
 // `github_pat_` + 16+ char).
-const GITHUB_RE = /(?<![A-Za-z0-9_])(?:github_pat_[A-Za-z0-9_]{16,}|gh[aoustr]_[A-Za-z0-9]{16,})/g;
+const GITHUB_RE = /(?<![A-Za-z0-9_])(?:github_pat_[A-Za-z0-9_]{16,}|gh[opsru]_[A-Za-z0-9]{16,})/g;
 
 // The generic `sk-` prefix (a the OpenAI + Anthropic's shared shape).
 const SK_RE = /\bsk-[A-Za-z0-9_-]{8,}\b/g;
