@@ -283,6 +283,24 @@ export async function runReviewJob(
     ((fn: (tx: unknown) => Promise<unknown>) =>
       db.$transaction((tx) => fn(tx) as Promise<unknown>));
 
+  // [M7 observability] — a the trace (a the id = a the job_id) + a the
+  // structured logger (a the correlation id = a the job_id, OBSERVABILITY
+  // §1–§2 "the review pipeline = one trace with a span per stage"). A the
+  // redaction gate runs on every record (a the SECRETS_MANAGEMENT §3 "the
+  // redactor runs on *every* record before it's written") — a the logger's
+  // transport applies it; a the capture's payload is scrubbed (a the
+  // OBSERVABILITY §4 "a Sentry event that carries a secret is a leak").
+  const { trace, log } = makeReviewJobObservability(payload);
+  const startSpan = (stage: string, attrs?: Record<string, unknown>) => {
+    const h = trace.startSpan(stage, attrs);
+    log.debug(stage, `stage start: ${stage}`);
+    return h;
+  };
+  const endSpan = (h: ReturnType<TraceHandle["startSpan"]>, outcome: string, attrs?: Record<string, unknown>) => {
+    if (attrs) for (const [k, v] of Object.entries(attrs)) h.setAttribute(k, v);
+    h.end(outcome);
+  };
+
   // [load the durable state] — a the payload is a pointer.
   const { org, settings, repoRules } = await loadDurableState(db, payload);
 
