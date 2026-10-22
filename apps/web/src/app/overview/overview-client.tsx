@@ -272,12 +272,22 @@ function UsageMini({ usage }: { usage: ReturnType<typeof useUsage> }) {
           const perPr = u.perReviewUsd ?? (u.totals.reviews > 0 ? u.totals.estUsd / u.totals.reviews : 0);
           return (
             <div className="vc-usage-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
-              <MiniLine data={u.series} dataKey="reviews" height={120} ariaLabel="Reviews per day, last 30 days" />
+              <MiniLine
+                data={u.series}
+                dataKey="reviews"
+                height={120}
+                ariaLabel="Reviews per day, last 30 days"
+              />
               <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
                 <Figure label="Cost per PR (blended)" value={`$${perPr.toFixed(2)}`} unit="/ review" />
                 <p className="meta" style={{ marginTop: 8, marginBottom: 0 }}>
                   {u.totals.reviews} reviews · ${u.totals.estUsd.toFixed(2)} in this range
                 </p>
+                {spike && (
+                  <p className="meta" style={{ marginTop: 4, marginBottom: 0 }}>
+                    Spike: {spike.label} on {String(u.series[spike.index]?.date ?? "")}
+                  </p>
+                )}
               </div>
             </div>
           );
