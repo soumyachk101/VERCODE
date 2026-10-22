@@ -11,7 +11,7 @@ import { githubRoutes } from "./github.js";
 import { healthRoutes } from "./health.js";
 
 import { githubWebhookRoutes } from "./webhooks.js";
-import { billingWebhookRoutes } from "../webhooks/billing.js";
+import { billingWebhookRoutes } from "./billing-webhook.js";
 import { BullQueue, type Enqueueable } from "../queue.js";
 
 export function registerRoutes(app: FastifyInstance, config: AppConfig) {
