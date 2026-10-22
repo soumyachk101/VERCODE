@@ -1,6 +1,7 @@
-import { forwardRef, type ReactNode, type HTMLAttributes } from "react";
+import { type ReactNode, type HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 import type { Severity } from "@/lib/types";
+import { SeverityCounts } from "./SeverityMark";
 
 /**
  * Card / Panel (COMPONENT_CATALOG §1): 1px border, no shadow at rest,
@@ -162,12 +163,8 @@ export function VerdictBlock({
   );
 }
 
-import { SeverityCounts } from "./SeverityMark";
-
 function SeverityCountInline({ counts }: { counts: Partial<Record<Severity, number>> }) {
   return <SeverityCounts counts={counts} />;
 }
 export type { HTMLAttributes };
 export type PanelProps = HTMLAttributes<HTMLDivElement>;
-
-export type { PanelProps } from "./panel-types";
