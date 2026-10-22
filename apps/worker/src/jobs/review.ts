@@ -326,7 +326,7 @@ export async function runReviewJob(
       // code sample the PR added is treated as untrusted data (a the §3
       // "a a secret that reaches a log is a released secret" invariant,
       // extended to a the finding payload).
-      const scrubbed = obs.scrub(JSON.stringify(f));
+      const scrubbed = scrub(JSON.stringify(f));
       const scrubbedFinding = JSON.parse(scrubbed) as typeof f;
       await t.reviewFinding.create({
         data: {
