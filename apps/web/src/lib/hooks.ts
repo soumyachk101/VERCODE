@@ -53,7 +53,7 @@ export function useAuthMe(): UseQueryResult<AuthMe> {
   return useQuery({
     queryKey: ["auth", "me"],
     queryFn: async () => {
-      const r = await api.get<AuthMe>(`/auth/me`);
+      const r = await api.get<Record<string, unknown>>(`/auth/me`);
       return normalizeAuthMe(r);
     },
   });
@@ -63,8 +63,8 @@ export function useAuthMe(): UseQueryResult<AuthMe> {
 export function useOrg(orgId?: string) {
   return useQuery({
     queryKey: ["org", orgId ?? "none"],
-    queryFn: () => api.get<OrgDetail>(`/orgs/${orgId}`),
-    select: normalizeOrg,
+    queryFn: async () =>
+      normalizeOrg(await api.get<Record<string, unknown>>(`/orgs/${orgId}`)),
     enabled: !!orgId,
     placeholderData: keepPreviousData,
   });
@@ -72,24 +72,24 @@ export function useOrg(orgId?: string) {
 export function useMembers(orgId?: string) {
   return useQuery({
     queryKey: ["org", orgId ?? "none", "members"],
-    queryFn: () => api.get<Member[]>(`/orgs/${orgId}/members`),
-    select: normalizeMemberList,
+    queryFn: async () =>
+      normalizeMemberList(await api.get<unknown>(`/orgs/${orgId}/members`)),
     enabled: !!orgId,
   });
 }
 export function useInstall(orgId?: string) {
   return useQuery({
     queryKey: ["org", orgId ?? "none", "github"],
-    queryFn: () => api.get<GitHubInstall>(`/orgs/${orgId}/github`),
-    select: normalizeInstall,
+    queryFn: async () =>
+      normalizeInstall(await api.get<Record<string, unknown>>(`/orgs/${orgId}/github`)),
     enabled: !!orgId,
   });
 }
 export function useRepos(orgId?: string) {
   return useQuery({
     queryKey: ["org", orgId ?? "none", "repos"],
-    queryFn: () => api.get<ReposList>(`/orgs/${orgId}/github/repos`),
-    select: normalizeRepos,
+    queryFn: async () =>
+      normalizeRepos(await api.get<unknown>(`/orgs/${orgId}/github/repos`)),
     enabled: !!orgId,
   });
 }
@@ -99,14 +99,18 @@ export function useReviews(
 ) {
   return useQuery({
     queryKey: ["org", orgId ?? "none", "reviews", params],
-    queryFn: () =>
-      api.get<ListReviewsResponse>(`/orgs/${orgId}/reviews`, {
-        status: params.status,
-        repoId: params.repoId,
-        prNumber: params.prNumber,
-        since: params.since,
-      }),
-    select: normalizeReviews,
+    queryFn: async () =>
+      normalizeReviews(
+        await api.get<Record<string, unknown> | unknown[]>(
+          `/orgs/${orgId}/reviews`,
+          {
+            status: params.status,
+            repoId: params.repoId,
+            prNumber: params.prNumber,
+            since: params.since,
+          },
+        ),
+      ),
     enabled: !!orgId,
     placeholderData: keepPreviousData,
   });
@@ -114,28 +118,29 @@ export function useReviews(
 export function useJob(orgId?: string, jobId?: string) {
   return useQuery({
     queryKey: ["org", orgId ?? "none", "reviews", jobId ?? "none"],
-    queryFn: () => api.get<JobDetail>(`/orgs/${orgId}/reviews/${jobId}`),
-    select: normalizeJob,
+    queryFn: async () => normalizeJob(await api.get<Record<string, unknown>>(`/orgs/${orgId}/reviews/${jobId}`)),
     enabled: !!orgId && !!jobId,
   });
 }
 export function useFindings(orgId?: string, jobId?: string) {
   return useQuery({
     queryKey: ["org", orgId ?? "none", "findings", jobId ?? "none"],
-    queryFn: () =>
-      api.get<{ items: ReviewFinding[] }>(`/orgs/${orgId}/reviews/${jobId}/findings`),
-    select: (r) => normalizeFindings(r?.items ?? []),
+    queryFn: async () => {
+      const r = await api.get<{ items?: Array<Record<string, unknown>> }>(
+        `/orgs/${orgId}/reviews/${jobId}/findings`,
+      );
+      return normalizeFindings(r?.items ?? []);
+    },
     enabled: !!orgId && !!jobId,
   });
 }
 export function useSecurity(orgId?: string, since?: string) {
   return useQuery({
     queryKey: ["org", orgId ?? "none", "security", since],
-    queryFn: () =>
-      api.get<SecurityRollup & { items?: ReviewFinding[] }>(`/orgs/${orgId}/security`, {
-        since,
-      }),
-    select: normalizeSecurity,
+    queryFn: async () =>
+      normalizeSecurity(
+        await api.get<Record<string, unknown>>(`/orgs/${orgId}/security`, { since }),
+      ),
     enabled: !!orgId,
     placeholderData: keepPreviousData,
   });
@@ -143,20 +148,21 @@ export function useSecurity(orgId?: string, since?: string) {
 export function useTrends(orgId: string | undefined, params: { repoId?: string } = {}) {
   return useQuery({
     queryKey: ["org", orgId ?? "none", "trends", params],
-    queryFn: () =>
-      api.get<import("./types").TrendsResponse>(`/orgs/${orgId}/trends`, {
-        repoId: params.repoId,
-        range: "30d",
-      }),
-    select: (r) => r?.series ?? [],
+    queryFn: async () => {
+      const r = await api.get<{ series?: Array<Record<string, unknown>> }>(
+        `/orgs/${orgId}/trends`,
+        { repoId: params.repoId, range: "30d" },
+      );
+      return r?.series ?? [];
+    },
     enabled: !!orgId,
   });
 }
 export function useUsage(orgId: string | undefined, range: "30d" | "90d" | "12mo" = "30d") {
   return useQuery({
     queryKey: ["org", orgId ?? "none", "usage", range],
-    queryFn: () => api.get<UsageResponse>(`/orgs/${orgId}/usage`, { range }),
-    select: normalizeUsage,
+    queryFn: async () =>
+      normalizeUsage(await api.get<Record<string, unknown>>(`/orgs/${orgId}/usage`, { range })),
     enabled: !!orgId,
     placeholderData: keepPreviousData,
   });
@@ -164,40 +170,49 @@ export function useUsage(orgId: string | undefined, range: "30d" | "90d" | "12mo
 export function useBilling(orgId?: string) {
   return useQuery({
     queryKey: ["org", orgId ?? "none", "billing"],
-    queryFn: () => api.get<BillingResponse>(`/orgs/${orgId}/billing`),
-    select: normalizeBilling,
+    queryFn: async () =>
+      normalizeBilling(await api.get<Record<string, unknown>>(`/orgs/${orgId}/billing`)),
     enabled: !!orgId,
   });
 }
 export function useSettings(orgId?: string) {
   return useQuery({
     queryKey: ["org", orgId ?? "none", "settings"],
-    queryFn: () => api.get<OrgSettings>(`/orgs/${orgId}/settings`),
-    select: normalizeSettings,
+    queryFn: async () =>
+      normalizeSettings(await api.get<Record<string, unknown>>(`/orgs/${orgId}/settings`)),
     enabled: !!orgId,
   });
 }
 export function useRules(orgId?: string) {
   return useQuery({
     queryKey: ["org", orgId ?? "none", "rules"],
-    queryFn: () => api.get<RulesResponse>(`/orgs/${orgId}/rules`),
-    select: (r) => r?.rules ?? [],
+    queryFn: async () => {
+      const r = await api.get<Record<string, unknown>>(`/orgs/${orgId}/rules`);
+      const rules = Array.isArray(r?.rules) ? (r?.rules as Array<Record<string, unknown>>) : [];
+      return rules.map((x) => ({
+        id: x.id != null ? String(x.id) : undefined,
+        repoId: String(x.repoId ?? x.repo_id ?? ""),
+        repoName: x.repoName != null ? String(x.repoName) : undefined,
+        overrides: Array.isArray(x.overrides) ? (x.overrides as string[]) : [],
+        version: typeof x.version === "number" ? x.version : undefined,
+      }));
+    },
     enabled: !!orgId,
   });
 }
 export function useProviders(orgId?: string) {
   return useQuery({
     queryKey: ["org", orgId ?? "none", "providers"],
-    queryFn: () => api.get<ProvidersResponse>(`/orgs/${orgId}/providers`),
-    select: normalizeProviders,
+    queryFn: async () =>
+      normalizeProviders(await api.get<Record<string, unknown>>(`/orgs/${orgId}/providers`)),
     enabled: !!orgId,
   });
 }
 export function useAudit(orgId?: string) {
   return useQuery({
     queryKey: ["org", orgId ?? "none", "audit"],
-    queryFn: () => api.get<AuditResponse>(`/orgs/${orgId}/audit`),
-    select: normalizeAudit,
+    queryFn: async () =>
+      normalizeAudit(await api.get<Record<string, unknown>>(`/orgs/${orgId}/audit`)),
     enabled: !!orgId,
   });
 }
