@@ -4,7 +4,7 @@
 // (repo + #number + a short title); the verdict is the *word* (never a
 // coloured banner); the status pill names its word of the trade + the
 // reason (a skip is never silent — NFR-18).
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { OrgPage } from "@/components/page";
 import { useOrgShell } from "@/components/OrgShell";
 import { useReviews, useRepos } from "@/lib/hooks";
@@ -13,7 +13,6 @@ import { DataBlock, EmptyBlock } from "@/components/DataBlock";
 import { Panel, PanelTitle } from "@/components/cards";
 import { Table, TRow, TCell } from "@/components/Table";
 import { Pill } from "@/components/Pill";
-import { SeverityCounts } from "@/components/SeverityMark";
 import { VcToggle } from "@/components/controls";
 import { statusTone } from "@/components/CommitHistory";
 import { money, relativeTime, verdictWord } from "@/lib/format";

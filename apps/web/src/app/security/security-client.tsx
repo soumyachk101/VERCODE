@@ -183,6 +183,7 @@ function SecurityBody() {
                   hc: p.high + p.critical,
                 }));
                 const maxIdx = data.reduce((acc, p, i) => (p.hc > (data[acc]?.hc ?? 0) ? i : acc), 0);
+                const spike = data[maxIdx]?.hc ?? 0;
                 return (
                   <MiniLine
                     data={data}
@@ -191,6 +192,7 @@ function SecurityBody() {
                     ariaLabel="High and critical findings per day, 30 days"
                   />
                 );
+                void spike;
               }}
             </DataBlock>
           </Panel>

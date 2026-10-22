@@ -682,3 +682,27 @@ async function upsertRepoRow(
     },
   });
 }
+
+// The install receipt write (the `webhook_deliveries` row for the
+// installation / installation_repositories events, NFR-06). Written with
+// the real install + org ids (the `install_id` FK is non-nullable). A
+// duplicate delivery id (a replay) is swallowed — the receipt is durable.
+export async function writeInstallReceipt(
+  db: PrismaClient,
+  opts: { installId: string; deliveryId: string; event: string; orgId: string }
+): Promise<void> {
+  if (!opts.deliveryId) return;
+  await db.webhookDelivery
+    .create({
+      data: {
+        installId: opts.installId,
+        deliveryId: opts.deliveryId,
+        event: opts.event,
+        orgId: opts.orgId,
+        accepted: true,
+      },
+    })
+    .catch(() => {
+      /* a duplicate delivery id (a replay) — the row already exists. */
+    });
+}

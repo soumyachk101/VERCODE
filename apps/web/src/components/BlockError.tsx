@@ -124,13 +124,7 @@ export function ConfirmDialog({
             variant="destructive"
             disabled={confirming}
             onClick={closeAndConfirm}
-            ref={(el) => {
-              // wire the Radix Action role onto the confirm button
-              // (a real role="alertdialog" with a labelled action)
-              if (el && !el.hasAttribute("data-radix-action")) {
-                el.setAttribute("data-radix-action", "true");
-              }
-            }}
+            data-radix-action="true"
           >
             {confirming ? "Working…" : confirmLabel}
           </Button>
