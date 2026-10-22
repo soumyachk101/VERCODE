@@ -18,6 +18,12 @@
 
 **A SaaS system that reads a pull request the way a careful senior engineer would, and posts an evidence-backed review — inline findings, a summary verdict, and actionable fixes — into the PR, backed by a first-class dashboard.**
 
+**Dashboard previews** (see `docs/DESIGN/PAGE_SPECIFICATIONS.md` for full page specs; screenshots land here as they're captured at 1440 / 768 / 390):
+
+| Overview | PR Review Detail | Security Rollup | Usage + Quota |
+| --- | --- | --- | --- |
+| <!-- placeholder: docs/assets/screenshots/overview-1440.png --> | <!-- placeholder: docs/assets/screenshots/review-detail-1440.png --> | <!-- placeholder: docs/assets/screenshots/security-rollup-1440.png --> | <!-- placeholder: docs/assets/screenshots/usage-1440.png --> |
+
 </div>
 
 ---
