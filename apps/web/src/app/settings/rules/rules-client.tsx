@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react";
 import { OrgPage } from "@/components/page";
 import { useOrgShell } from "@/components/OrgShell";
-import { useSettings, useRules, useSettingsUpdate, useFindings } from "@/lib/hooks";
+import { useSettings, useRules, useSettingsUpdate, useSecurity } from "@/lib/hooks";
 import { SettingsSection, PageHead } from "@/components/Settings";
 import { DataBlock, EmptyBlock } from "@/components/DataBlock";
 import { VcSlider, VcSwitch } from "@/components/controls";
@@ -31,16 +31,18 @@ function RulesBody() {
   const q = useSettings(orgId || undefined);
   const rulesQ = useRules(orgId || undefined);
   const mutate = useSettingsUpdate(orgId);
-  const findingsQ = useFindings(orgId || undefined, ""); // the last 20 reviews' findings
 
   const [floor, setFloor] = useState<number | undefined>(q.data?.confidenceFloor);
   const [suppressed, setSuppressed] = useState<string[]>(q.data?.suppressedCategories ?? []);
   const [savedStamp, setSavedStamp] = useState<string | null>(null);
 
-  // a live-preview count: "3 findings in your last 20 reviews fall below
-  // this floor" (PAGE §6.1.1 — show what the setting produces)
+  // a live-preview count: "N findings in your last 20 reviews fall below
+  // this floor" (PAGE §6.1.1 — show what the setting produces). The count
+  // is computed from the org's open security rollup (the real findings),
+  // not a fabricated fixture
+  const secQ = useSecurity(orgId || undefined);
   const belowFloor =
-    findingsQ.data?.items.filter((f) => f.confidence != null && f.confidence < (floor ?? 0.6)).length ?? 0;
+    secQ.data?.items.filter((f) => f.confidence != null && f.confidence < (floor ?? 0.6)).length ?? 0;
 
   useEffect(() => {
     if (mutate.isSuccess) {
