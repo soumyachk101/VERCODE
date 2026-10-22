@@ -302,7 +302,10 @@ export async function runReviewJob(
   };
 
   // [load the durable state] — a the payload is a pointer.
+  const stateSpan = startSpan("state.load");
   const { org, settings, repoRules } = await loadDurableState(db, payload);
+  endSpan(stateSpan, "succeeded");
+  log.info("state.load", "Loaded the durable state", { plan: org.plan });
 
   // The platform-default budget + floor (config.limits, ENVIRONMENT_VARIABLES
   // §6). The org-level overrides come from the durable rows (org_settings +
@@ -482,7 +485,7 @@ export async function checkQuotaPlan(
   plan: Plan,
   month: string
 ): Promise<QuotaState> {
-  const quota = planQuota(plan);
+  const quota = planQuota(String(plan).toLowerCase() as Plan);
   const totals = await db.usageEvent.aggregate({
     where: { orgId, month },
     _sum: { reviewCount: true, estUsdCost: true },
