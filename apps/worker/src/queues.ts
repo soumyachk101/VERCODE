@@ -160,15 +160,19 @@ export function startWorker(deps: WorkerDeps, opts: WorkerOptions): StartedWorke
     }
   };
 
-  const worker = new Worker<Record<string, unknown>, unknown>(QUEUES.review, handle, {
-    connection: redis,
-    concurrency: opts.concurrency, // NFR-17
-    // A the in-flight re-queue on SIGTERM (ERROR_HANDLING.md §8 "a job that
-    // can't finish is re-queued atomically"): a an unfinished job is moved
-    // back to waiting (not lost). A the max retained jobs cap memory.
-    removeOnComplete: { count: 1_000 },
-    removeOnFail: { count: 1_000 },
-  });
+  const worker = new Worker<Record<string, unknown>, unknown>(
+    QUEUES.review,
+    ((job: Job<Record<string, unknown>>) => handle(job as unknown as Job<ReviewJobPayload>)) as never,
+    {
+      connection: redis,
+      concurrency: opts.concurrency, // NFR-17
+      // A the in-flight re-queue on SIGTERM (ERROR_HANDLING.md §8 "a job that
+      // can't finish is re-queued atomically"): a an unfinished job is moved
+      // back to waiting (not lost). A the max retained jobs cap memory.
+      removeOnComplete: { count: 1_000 },
+      removeOnFail: { count: 1_000 },
+    }
+  );
 
   // A the terminal-failure → DLQ hop (NFR-13/14 "terminal failures go to the
   // DLQ with the reason"). A *transient* failure (attempts remaining) is
@@ -194,8 +198,8 @@ export function startWorker(deps: WorkerDeps, opts: WorkerOptions): StartedWorke
     const start = Date.now();
     while (Date.now() - start < budget) {
       // A wait for in-flight jobs to finish (a the drain, NFR-15).
-      const counts = await worker.getJobCounts("active");
-      if (counts.active === 0) break;
+      const counts = await reviewQueue.getJobCounts("active");
+      if ((counts.active ?? 0) === 0) break;
       await new Promise((r) => setTimeout(r, 250));
     }
     await worker.close();
