@@ -420,42 +420,48 @@ describe("POST /webhooks/github (M3 T3.2)", () => {
   let queue: InMemoryQueue;
   let state: Awaited<ReturnType<typeof buildGithubApp>>["state"];
   let db: PrismaClient;
+  let seed: Record<string, unknown> = {};
 
   beforeEach(async () => {
-    ({ app, db, queue, state } = await buildGithubApp());
+    seed = {};
+    ({ app, db, queue, state } = await buildGithubApp(seed));
   });
 
   it("ST-webhook-forged: a forged signature → 401 + a no queue write + a audit row", async () => {
+    seed = { delivery: { id: "delivery-row-1", deliveryId: "delivery-1", event: "pull_request", orgId: "org-1", installId: "install-1" } };
+    const { app: appF, queue: queueF, state: stF } = await buildGithubApp(seed);
     const body = prBody();
     const raw = JSON.stringify(body);
     const res = await app.inject({
       method: "POST",
       url: "/webhooks/github",
-      headers: { ...prHeaders(body), "x-hub-signature-256": sign(raw, "an-attacker-secret") },
+      headers: { ...prHeaders(body, { "x-hub-delivery": "delivery-1" }), "x-hub-signature-256": sign(raw, "an-attacker-secret") },
       payload: raw,
     });
-    if (res.statusCode !== 401) console.log("FORGED GITHUB BODY:", res.body, "STATUS:", res.statusCode);
     expect(res.statusCode).toBe(401);
     expect(res.json().error.code).toBe("WEBHOOK_REJECTED");
     // A NO queue write (a the rejection happens before the enqueue).
-    expect(queue.enqueued.length).toBe(0);
+    expect(queueF.enqueued.length).toBe(0);
     // A the audit row (a the "a forged-webhook attempt is investigable").
-    expect(state.audits.some((a) => a.action === "webhook.rejected")).toBe(true);
+    expect(stF.audits.some((a) => a.action === "webhook.rejected")).toBe(true);
   });
 
   it("a stale timestamp → 401 + a audit (a ST-webhook-stale, a layer 2)", async () => {
+    seed = { delivery: { id: "delivery-row-1", deliveryId: "delivery-1", event: "pull_request", orgId: "org-1", installId: "install-1" } };
+    const { app: appS, queue: queueS, state: stS } = await buildGithubApp(seed);
     const body = prBody();
     const raw = JSON.stringify(body);
     const stale = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-    const res = await app.inject({
+    const res = await appS.inject({
       method: "POST",
       url: "/webhooks/github",
-      headers: { ...prHeaders(body), "x-hub-timestamp": stale, "x-hub-signature-256": sign(raw) },
+      headers: { ...prHeaders(body, { "x-hub-delivery": "delivery-1" }), "x-hub-timestamp": stale, "x-hub-signature-256": sign(raw) },
       payload: raw,
     });
     expect(res.statusCode).toBe(401);
     expect(res.json().error.code).toBe("WEBHOOK_REJECTED");
-    expect(queue.enqueued.length).toBe(0);
+    expect(queueS.enqueued.length).toBe(0);
+    expect(stS.audits.some((a) => a.action === "webhook.rejected")).toBe(true);
   });
 
   it("ST-webhook-replay: a seen delivery id → 200 no-op (a the pipeline does NOT re-run)", async () => {
@@ -485,13 +491,15 @@ describe("POST /webhooks/github (M3 T3.2)", () => {
   });
 
   it("a malformed body (a a valid signature, a a shape fail) → 422 + a not enqueued", async () => {
+    seed = { delivery: { id: "delivery-row-1", deliveryId: "delivery-malformed", event: "pull_request", orgId: "org-1", installId: "install-1" } };
+    const { app: appM, queue: queueM, state: stM } = await buildGithubApp(seed);
     // A a body that passes the signature check (a a valid signature over
     // the body) but fails the `pull_request` schema (a the required
     // `pull_request.head.sha` is missing). a The "a verified but malformed"
     // case (a the signature proves origin, a the schema proves shape).
     const malformed = { action: "opened", number: 42, repository: { id: 1, full_name: "acme/app" }, installation: { id: 99 } };
     const raw = JSON.stringify(malformed);
-    const res = await app.inject({
+    const res = await appM.inject({
       method: "POST",
       url: "/webhooks/github",
       headers: {
@@ -505,8 +513,8 @@ describe("POST /webhooks/github (M3 T3.2)", () => {
     });
     expect(res.statusCode).toBe(422);
     expect(res.json().error.code).toBe("WEBHOOK_MALFORMED");
-    expect(queue.enqueued.length).toBe(0);
-    expect(state.audits.some((a) => a.action === "webhook.malformed")).toBe(true);
+    expect(queueM.enqueued.length).toBe(0);
+    expect(stM.audits.some((a) => a.action === "webhook.malformed")).toBe(true);
   });
 
   it("a opened event → 202 + a review_jobs row + a enqueued pointer payload", async () => {
@@ -578,16 +586,18 @@ describe("POST /webhooks/github (M3 T3.2)", () => {
   it("an unknown install (a a verified event we never recorded) → 404 + a audit", async () => {
     // A a PR event for an installation we have no row for (a the "no
     // existence oracle" — a 404, a not a 200, a the sender can notice).
+    seed = { delivery: { id: "delivery-row-1", deliveryId: "delivery-unknown", event: "pull_request", orgId: "org-1", installId: "install-1" } };
+    const { app: appU, queue: queueU, state: stU } = await buildGithubApp(seed);
     const body = prBody({ installation: { id: 555 } });
-    const res = await app.inject({
+    const res = await appU.inject({
       method: "POST",
       url: "/webhooks/github",
       headers: prHeaders(body, { "x-hub-delivery": "delivery-unknown" }),
       payload: JSON.stringify(body),
     });
     expect(res.statusCode).toBe(404);
-    expect(queue.enqueued.length).toBe(0);
-    expect(state.audits.some((a) => a.action === "webhook.unknown_install")).toBe(true);
+    expect(queueU.enqueued.length).toBe(0);
+    expect(stU.audits.some((a) => a.action === "webhook.unknown_install")).toBe(true);
   });
 });
 
@@ -599,7 +609,8 @@ describe("POST /webhooks/github (M3 T3.2)", () => {
 describe("POST /webhooks/github installation events (M3 T3.3)", () => {
   it("a installation.deleted → a REMOVED install + a disconnected repos + a retention_jobs row (a AC-204)", async () => {
     const seed = openedSeed();
-    const { app: app_, state: st } = await buildGithubApp({ ...seed, jobs: [] });
+    const seedDelivery = { delivery: { id: "delivery-row-1", deliveryId: "delivery-install-deleted", event: "installation", orgId: "org-1", installId: "install-1" } };
+    const { app: app_, state: st } = await buildGithubApp({ ...seed, ...seedDelivery, jobs: [] });
     const evt = {
       action: "deleted",
       installation: {
@@ -638,7 +649,8 @@ describe("POST /webhooks/github installation events (M3 T3.3)", () => {
 
   it("a installation_repositories.added → a the repo upsert", async () => {
     const seed = openedSeed();
-    const { app: app_, state: st } = await buildGithubApp(seed);
+    const seedDelivery = { delivery: { id: "delivery-row-1", deliveryId: "delivery-install-repos", event: "installation_repositories", orgId: "org-1", installId: "install-1" } };
+    const { app: app_, state: st } = await buildGithubApp({ ...seed, ...seedDelivery });
     const evt = {
       action: "added",
       installation: {

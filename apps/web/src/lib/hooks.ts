@@ -274,7 +274,7 @@ export function useByokRevoke(orgId: string) {
 export function useSubscribe(orgId: string) {
   return useMutation({
     mutationFn: (body: { plan: string; atPeriodEnd?: boolean }) =>
-      api.post(`/orgs/${orgId}/billing/subscribe`, body),
+      api.post<{ plan: string; status?: string }>(`/orgs/${orgId}/billing/subscribe`, body),
   });
 }
 export function useCancelSubscription(orgId: string) {
@@ -311,7 +311,6 @@ export function useSignOutAll() {
 
 import type {
   AuthMe,
-  FindingSeverityCount,
   NormalizedBilling,
   NormalizedFindings,
   NormalizedJob,
@@ -326,6 +325,7 @@ import type {
   NormalizedInstall,
   NormalizedOrg,
 } from "./normalized";
+import type { Severity } from "./types";
 
 export function normalizeAuthMe(r: unknown): AuthMe {
   const o = (r ?? {}) as Record<string, unknown>;
