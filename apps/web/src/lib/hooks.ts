@@ -421,7 +421,6 @@ export function normalizeReviews(r: unknown): NormalizedReviews {
 
 export function normalizeJob(x: Record<string, unknown>): NormalizedJob {
   const summary = (x.summary ?? {}) as Record<string, unknown>;
-  const sevCount = summary.highSeverityCount;
   return {
     id: String(x.id ?? ""),
     repoId: x.repoId != null ? String(x.repoId) : undefined,
