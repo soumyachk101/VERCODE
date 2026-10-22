@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="1000" height="560" role="img" aria-label="VERCODE monorepo structure" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="tarrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+  <rect width="1000" height="560" fill="#0f172a"/>
+  <text x="40" y="40" fill="#f1f5f9" font-size="16" font-weight="700">VERCODE — Monorepo Structure (pnpm workspaces)</text>
+  <text x="40" y="56" fill="#64748b" font-size="11">TypeScript · Node 22 · shared contracts package as single source of truth</text>
+
+  <!-- root -->
+  <rect x="380" y="80" width="240" height="60" rx="10" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="500" y="106" text-anchor="middle" fill="#fbbf24" font-size="13" font-weight="700">vercode (pnpm workspace root)</text>
+  <text x="500" y="124" text-anchor="middle" fill="#cbd5e1" font-size="11">pnpm-workspace.yaml · ESLint · Vitest 3</text>
+
+  <!-- apps -->
+  <rect x="60" y="200" width="300" height="260" rx="12" fill="#0b1120" stroke="#38bdf8" stroke-width="1"/>
+  <text x="210" y="226" text-anchor="middle" fill="#7dd3fc" font-size="13" font-weight="700">apps/</text>
+  <rect x="80" y="244" width="260" height="46" rx="8" fill="#1e293b"/>
+  <text x="95" y="264" fill="#e2e8f0" font-size="11" font-weight="600">web</text>
+  <text x="95" y="280" fill="#64748b" font-size="10">Next.js 15 · React 19 · dashboard UI</text>
+  <rect x="80" y="300" width="260" height="46" rx="8" fill="#1e293b"/>
+  <text x="95" y="320" fill="#e2e8f0" font-size="11" font-weight="600">api</text>
+  <text x="95" y="336" fill="#64748b" font-size="10">Fastify · webhooks · REST · Prisma</text>
+  <rect x="80" y="356" width="260" height="46" rx="8" fill="#1e293b"/>
+  <text x="95" y="376" fill="#e2e8f0" font-size="11" font-weight="600">worker</text>
+  <text x="95" y="392" fill="#64748b" font-size="10">BullMQ consumer · review pipeline</text>
+
+  <!-- packages -->
+  <rect x="400" y="200" width="540" height="260" rx="12" fill="#0b1120" stroke="#a78bfa" stroke-width="1"/>
+  <text x="670" y="226" text-anchor="middle" fill="#c4b5fd" font-size="13" font-weight="700">packages/</text>
+  <g font-size="11" fill="#cbd5e1">
+    <rect x="420" y="244" width="150" height="40" rx="6" fill="#1e293b"/>
+    <text x="432" y="260" font-weight="600" fill="#e2e8f0">contracts</text>
+    <text x="432" y="276" font-size="10" fill="#64748b">Zod schemas (core)</text>
+    <rect x="580" y="244" width="150" height="40" rx="6" fill="#1e293b"/>
+    <text x="592" y="260" font-weight="600" fill="#e2e8f0">github</text>
+    <text x="592" y="276" font-size="10" fill="#64748b">App auth · diff · publish</text>
+    <rect x="740" y="244" width="150" height="40" rx="6" fill="#1e293b"/>
+    <text x="752" y="260" font-weight="600" fill="#e2e8f0">database</text>
+    <text x="752" y="276" font-size="10" fill="#64748b">Prisma · tenant repos</text>
+
+    <rect x="420" y="294" width="150" height="40" rx="6" fill="#1e293b"/>
+    <text x="432" y="310" font-weight="600" fill="#e2e8f0">diff-engine</text>
+    <text x="432" y="326" font-size="10" fill="#64748b">pure diff parser</text>
+    <rect x="580" y="294" width="150" height="40" rx="6" fill="#1e293b"/>
+    <text x="592" y="310" font-weight="600" fill="#e2e8f0">static-analysis</text>
+    <text x="592" y="326" font-size="10" fill="#64748b">deterministic rules</text>
+    <rect x="740" y="294" width="150" height="40" rx="6" fill="#1e293b"/>
+    <text x="752" y="310" font-weight="600" fill="#e2e8f0">ai-providers</text>
+    <text x="752" y="326" font-size="10" fill="#64748b">LLM adapters + routing</text>
+
+    <rect x="420" y="344" width="150" height="40" rx="6" fill="#1e293b"/>
+    <text x="432" y="360" font-weight="600" fill="#e2e8f0">review-engine</text>
+    <text x="432" y="376" font-size="10" fill="#64748b">pipeline orchestration</text>
+    <rect x="580" y="344" width="150" height="40" rx="6" fill="#1e293b"/>
+    <text x="592" y="360" font-weight="600" fill="#e2e8f0">policy-engine</text>
+    <text x="592" y="376" font-size="10" fill="#64748b">floors · quotas · skip</text>
+    <rect x="740" y="344" width="150" height="40" rx="6" fill="#1e293b"/>
+    <text x="752" y="360" font-weight="600" fill="#e2e8f0">billing</text>
+    <text x="752" y="376" font-size="10" fill="#64748b">plans · webhooks</text>
+
+    <rect x="420" y="394" width="150" height="40" rx="6" fill="#1e293b"/>
+    <text x="432" y="410" font-weight="600" fill="#e2e8f0">observability</text>
+    <text x="432" y="426" font-size="10" fill="#64748b">logs · traces · redact</text>
+    <rect x="580" y="394" width="150" height="40" rx="6" fill="#1e293b"/>
+    <text x="592" y="410" font-weight="600" fill="#e2e8f0">config</text>
+    <text x="592" y="426" font-size="10" fill="#64748b">typed env · model routing</text>
+  </g>
+
+  <!-- infra + docs -->
+  <rect x="60" y="480" width="200" height="50" rx="10" fill="#1e293b"/>
+  <text x="160" y="500" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">infra/ (Docker · K8s)</text>
+  <text x="160" y="516" text-anchor="middle" fill="#64748b" font-size="10">build + deploy</text>
+
+  <rect x="290" y="480" width="200" height="50" rx="10" fill="#1e293b"/>
+  <text x="390" y="500" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">tests/</text>
+  <text x="390" y="516" text-anchor="middle" fill="#64748b" font-size="10">unit · integration · e2e · security</text>
+
+  <rect x="520" y="480" width="200" height="50" rx="10" fill="#1e293b"/>
+  <text x="620" y="500" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">docs/</text>
+  <text x="620" y="516" text-anchor="middle" fill="#64748b" font-size="10">product · technical · security · operations</text>
+
+  <!-- edges -->
+  <line x1="450" y1="140" x2="210" y2="196" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#tarrow)"/>
+  <line x1="550" y1="140" x2="670" y2="196" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#tarrow)"/>
+  <text x="290" y="170" fill="#64748b" font-size="10">deployables</text>
+  <text x="640" y="170" fill="#64748b" font-size="10">libraries</text>
+
+  <text x="740" y="500" fill="#64748b" font-size="10">all packages import from</text>
+  <text x="740" y="516" fill="#c4b5fd" font-size="10" font-weight="600">contracts</text>
+  <line x1="726" y1="505" x2="495" y2="415" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#tarrow)"/>
+</svg>
