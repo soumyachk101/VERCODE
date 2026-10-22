@@ -545,13 +545,27 @@ export function dedupFindings(findings: CanonicalFinding[]): CanonicalFinding[] 
 export function applyPolicy(
   findings: CanonicalFinding[],
   floor: number,
-  repoRules: Array<{ suppressCategories: unknown; confidenceFloorOverride?: number | null }>
+  repoRules: Array<{
+    suppressCategories: unknown;
+    confidenceFloorOverride?: unknown;
+  }>
 ): { published: CanonicalFinding[]; suppressedBelowFloor: number; suppressedByRule: number } {
   let effectiveFloor = floor;
   const suppressCategories: string[] = [];
   for (const rule of repoRules) {
-    if (typeof rule.confidenceFloorOverride === "number") {
-      effectiveFloor = Math.max(effectiveFloor, rule.confidenceFloorOverride);
+    // The confidenceFloorOverride is a Prisma Decimal (string-backed) or a
+    // plain number — coerce to a number, never assume.
+    const raw = rule.confidenceFloorOverride;
+    const override: number | null =
+      raw == null
+        ? null
+        : typeof raw === "number"
+          ? raw
+          : typeof raw === "string"
+            ? Number(raw)
+            : Number((raw as { toString(): string }).toString());
+    if (override != null && !Number.isNaN(override)) {
+      effectiveFloor = Math.max(effectiveFloor, override);
     }
     const cats = Array.isArray(rule.suppressCategories)
       ? (rule.suppressCategories as string[])

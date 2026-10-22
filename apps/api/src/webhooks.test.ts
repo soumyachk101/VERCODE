@@ -324,7 +324,9 @@ async function buildGithubApp(seed: Seed = {}) {
     argon2: typeof import("argon2");
     newSessionToken: () => string;
   });
-  githubWebhookRoutes(app, config, { db, queue });
+  app.register(async (a: FastifyInstance) => {
+    githubWebhookRoutes(a, config, { db, queue });
+  }, { prefix: "/webhooks" });
   await app.ready();
   return { app, db, queue, state, config };
 }
@@ -340,7 +342,9 @@ async function buildBillingApp(seed: Seed = {}) {
     argon2: typeof import("argon2");
     newSessionToken: () => string;
   });
-  await billingWebhookRoutes(app, config);
+  app.register(async (a: FastifyInstance) => {
+    await billingWebhookRoutes(a, config);
+  }, { prefix: "/webhooks" });
   await app.ready();
   return { app, db, state, config };
 }
