@@ -156,11 +156,6 @@ export function startWorker(deps: WorkerDeps, opts: WorkerOptions): StartedWorke
     } catch (err) {
       // A transient failure: release the lock (the retry acquires a fresh one).
       await releaseInFlightLock(redis, lockKey, token);
-      // NFR-15 "a job that can't finish is re-queued atomically": a re-add the
-      // job to the waiting set so it's not lost if the process dies mid-flight.
-      if (job.attemptsMade < opts.maxAttempts) {
-        await requeueIncomplete(reviewQueue, payload, job.attemptsMade + 1);
-      }
       throw err; // A BullMQ retries per the backoff; the last attempt → DLQ.
     }
   };
