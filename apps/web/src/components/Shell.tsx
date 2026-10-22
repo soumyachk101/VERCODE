@@ -201,11 +201,17 @@ function SidebarHeader({
   orgName,
   orgPlan,
   onSwitchOrg,
+  orgOptions,
+  activeOrgId,
 }: {
   orgName: string;
   orgPlan?: string;
   onSwitchOrg?: (orgId: string) => void;
+  orgOptions?: OrgOption[];
+  activeOrgId?: string;
 }) {
+  const [open, setOpen] = useState(false);
+  const others = (orgOptions ?? []).filter((o) => o.id !== activeOrgId);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div
@@ -236,43 +242,111 @@ function SidebarHeader({
         </span>
         <span>VERCODE</span>
       </div>
-      <button
-        type="button"
-        onClick={() => onSwitchOrg?.("")}
-        className="pressable"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "6px 8px",
-          borderRadius: 8,
-          border: "1px solid var(--border)",
-          background: "var(--surface)",
-          color: "var(--text)",
-          fontSize: 13,
-          textAlign: "left",
-        }}
-      >
-        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {orgName}
-        </span>
-        {orgPlan && (
-          <span
+      {/* the org switcher: shows the org name + the plan badge ("Team");
+          a "switch to another org" only when the user has >1 (IA §2).
+          Switching re-scopes every screen. */}
+      <div style={{ position: "relative" }}>
+        <button
+          type="button"
+          aria-haspopup={others.length > 0 ? "menu" : undefined}
+          aria-expanded={others.length > 0 ? open : undefined}
+          disabled={others.length === 0}
+          onClick={() => setOpen((v) => !v)}
+          className="pressable"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "6px 8px",
+            borderRadius: 8,
+            border: "1px solid var(--border)",
+            background: "var(--surface)",
+            color: "var(--text)",
+            fontSize: 13,
+            textAlign: "left",
+            width: "100%",
+            cursor: others.length > 0 ? "pointer" : "default",
+          }}
+        >
+          <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {orgName}
+          </span>
+          {orgPlan && (
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 500,
+                color: "var(--muted)",
+                background: "var(--raised)",
+                border: "1px solid var(--rule)",
+                borderRadius: "var(--radius-chip)",
+                padding: "1px 6px",
+                textTransform: "capitalize",
+              }}
+            >
+              {orgPlan}
+            </span>
+          )}
+        </button>
+        {open && others.length > 0 && (
+          <div
+            role="menu"
+            aria-label="Switch organization"
+            className="popover-enter"
             style={{
-              fontSize: 11,
-              fontWeight: 500,
-              color: "var(--muted)",
-              background: "var(--raised)",
-              border: "1px solid var(--rule)",
-              borderRadius: "var(--radius-chip)",
-              padding: "1px 6px",
-              textTransform: "capitalize",
+              position: "absolute",
+              top: "calc(100% + 4px)",
+              left: 0,
+              right: 0,
+              zIndex: 30,
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius-card)",
+              boxShadow: "0 8px 24px rgba(0,0,0,.12)",
+              padding: 6,
             }}
           >
-            {orgPlan}
-          </span>
+            {others.map((o) => (
+              <button
+                key={o.id}
+                role="menuitem"
+                type="button"
+                className="pressable"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  width: "100%",
+                  padding: "6px 8px",
+                  fontSize: 13,
+                  color: "var(--text)",
+                  textAlign: "left",
+                  borderRadius: "var(--radius-chip)",
+                }}
+                onClick={() => {
+                  setOpen(false);
+                  onSwitchOrg?.(o.id);
+                }}
+              >
+                <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {o.name}
+                </span>
+                {o.plan && (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      color: "var(--muted)",
+                      textTransform: "capitalize",
+                    }}
+                  >
+                    {o.plan}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
         )}
-      </button>
+      </div>
     </div>
   );
 }
