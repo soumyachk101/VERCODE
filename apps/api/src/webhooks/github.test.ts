@@ -242,7 +242,6 @@ import type { FastifyInstance } from "fastify";
 async function buildApp(seed: DbSeed, queue: InMemoryQueue) {
   const { db } = makeDb(seed);
   const app = Fastify({ logger: false });
-  app.decorate("auth", { db });
   await githubWebhookRoutes(app, config, { db, queue });
   return app;
 }
@@ -279,8 +278,7 @@ describe("ST-webhook-forged (a a forged signature → 401 + a no queue write + a
     };
     const { db, auditRows } = makeDb(seed);
     const app = Fastify({ logger: false });
-    app.decorate("auth", { db });
-    await githubWebhookRoutes(app, config, { db, queue });
+      await githubWebhookRoutes(app, config, { db, queue });
 
     const body = prEventBody();
     const res = await postWebhook(app, {

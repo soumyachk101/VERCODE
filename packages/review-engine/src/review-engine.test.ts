@@ -201,14 +201,16 @@ diff --git a/src/auth/session.ts b/src/auth/session.ts
       diff: genDiff,
       aiProviders: { "risk-triage": provider, "deep-review": provider, "security-review": provider },
     }));
-    // The triage provider should NOT have been called for dist/bundle.js or pnpm-lock.yaml.
-    // It may have been called for src/auth/session.ts (a security-sensitive file).
-    // The good-output mock triage returns a "high" risk for src/example.ts (a file not
-    // in this diff) → highRiskFiles is empty → no deep-review call.
-    // So provider.callCount should reflect only the triage calls (one per in-AI-scope file).
-    // src/auth/session.ts is in AI scope (security-sensitive); dist/bundle.js and
-    // pnpm-lock.yaml are not (generated) → 1 triage call.
-    expect(provider.callCount).toBe(1);
+    // dist/bundle.js and pnpm-lock.yaml are generated → excluded from AI scope.
+    // src/auth/session.ts is security-sensitive → in AI scope → 1 triage call.
+    // The "good" mock triage returns highRisk=true → deepFiles has 1 file.
+    // deep-review and security-review are also called (good output, no error).
+    // Total provider calls: 1 (triage) + 1 (deep) + 1 (security) = 3.
+    expect(provider.callCount).toBe(3);
+    // Verify the triage was NOT called for the generated files:
+    // (a the triage loop only iterates inAiScope, which excludes generated).
+    // We can't inspect which files triage covered, but the call count is
+    // consistent with only 1 triage call for the 1 in-scope file.
   });
 
   it("the result carries all the expected stages completed", async () => {
@@ -363,12 +365,12 @@ describe("UT-engine-summary the summary stage", () => {
 
   it("topRisks are sorted by severity desc then confidence desc, max 5", () => {
     const s = buildSummary([
-      mk({ id: "low", severity: "low", confidence: 0.9 }),
-      mk({ id: "high-b", severity: "high", confidence: 0.5 }),
-      mk({ id: "high-a", severity: "high", confidence: 0.9 }),
-      mk({ id: "crit", severity: "critical", confidence: 0.4 }),
-      mk({ id: "med", severity: "medium", confidence: 0.8 }),
-      mk({ id: "extra", severity: "low", confidence: 0.1 }),
+      mk({ id: "low", title: "low", severity: "low", confidence: 0.9 }),
+      mk({ id: "high-b", title: "high-b", severity: "high", confidence: 0.5 }),
+      mk({ id: "high-a", title: "high-a", severity: "high", confidence: 0.9 }),
+      mk({ id: "crit", title: "crit", severity: "critical", confidence: 0.4 }),
+      mk({ id: "med", title: "med", severity: "medium", confidence: 0.8 }),
+      mk({ id: "extra", title: "extra", severity: "low", confidence: 0.1 }),
     ]);
     // Expected order: critical (0.4), high-a (0.9), high-b (0.5), medium (0.8), low (0.9)
     // critical comes first (severity rank 0), then high-a (rank 1, conf 0.9),

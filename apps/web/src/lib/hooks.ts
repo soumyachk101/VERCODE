@@ -45,6 +45,9 @@ export function createQueryClient(): QueryClient {
 // ---------------------------------------------------------------- the hooks
 // Each returns a result the page renders: data | loading skeleton | the
 // in-block error state ("Couldn't load X. Last updated …" + Retry).
+// Every org-scoped hook takes `orgId?: string` + is `enabled: !!orgId`
+// so a shell that hasn't resolved /org/me yet renders an empty block,
+// not a 404 stack.
 
 export function useAuthMe(): UseQueryResult<AuthMe> {
   return useQuery({
@@ -57,41 +60,45 @@ export function useAuthMe(): UseQueryResult<AuthMe> {
 }
 
 // ---------------------------------------------------------------- org data
-export function useOrg(orgId: string) {
+export function useOrg(orgId?: string) {
   return useQuery({
-    queryKey: ["org", orgId],
+    queryKey: ["org", orgId ?? "none"],
     queryFn: () => api.get<OrgDetail>(`/orgs/${orgId}`),
     select: normalizeOrg,
+    enabled: !!orgId,
     placeholderData: keepPreviousData,
   });
 }
-export function useMembers(orgId: string) {
+export function useMembers(orgId?: string) {
   return useQuery({
-    queryKey: ["org", orgId, "members"],
+    queryKey: ["org", orgId ?? "none", "members"],
     queryFn: () => api.get<Member[]>(`/orgs/${orgId}/members`),
     select: normalizeMemberList,
+    enabled: !!orgId,
   });
 }
-export function useInstall(orgId: string) {
+export function useInstall(orgId?: string) {
   return useQuery({
-    queryKey: ["org", orgId, "github"],
+    queryKey: ["org", orgId ?? "none", "github"],
     queryFn: () => api.get<GitHubInstall>(`/orgs/${orgId}/github`),
     select: normalizeInstall,
+    enabled: !!orgId,
   });
 }
-export function useRepos(orgId: string) {
+export function useRepos(orgId?: string) {
   return useQuery({
-    queryKey: ["org", orgId, "repos"],
+    queryKey: ["org", orgId ?? "none", "repos"],
     queryFn: () => api.get<ReposList>(`/orgs/${orgId}/github/repos`),
     select: normalizeRepos,
+    enabled: !!orgId,
   });
 }
 export function useReviews(
-  orgId: string,
+  orgId: string | undefined,
   params: { status?: string; repoId?: string; prNumber?: number; since?: string } = {},
 ) {
   return useQuery({
-    queryKey: ["org", orgId, "reviews", params],
+    queryKey: ["org", orgId ?? "none", "reviews", params],
     queryFn: () =>
       api.get<ListReviewsResponse>(`/orgs/${orgId}/reviews`, {
         status: params.status,
@@ -100,24 +107,25 @@ export function useReviews(
         since: params.since,
       }),
     select: normalizeReviews,
+    enabled: !!orgId,
     placeholderData: keepPreviousData,
   });
 }
-export function useJob(orgId: string, jobId: string) {
+export function useJob(orgId?: string, jobId?: string) {
   return useQuery({
-    queryKey: ["org", orgId, "reviews", jobId],
+    queryKey: ["org", orgId ?? "none", "reviews", jobId ?? "none"],
     queryFn: () => api.get<JobDetail>(`/orgs/${orgId}/reviews/${jobId}`),
     select: normalizeJob,
-    enabled: !!jobId,
+    enabled: !!orgId && !!jobId,
   });
 }
-export function useFindings(orgId: string, jobId: string) {
+export function useFindings(orgId?: string, jobId?: string) {
   return useQuery({
-    queryKey: ["org", orgId, "findings", jobId],
+    queryKey: ["org", orgId ?? "none", "findings", jobId ?? "none"],
     queryFn: () =>
       api.get<{ items: ReviewFinding[] }>(`/orgs/${orgId}/reviews/${jobId}/findings`),
     select: (r) => normalizeFindings(r?.items ?? []),
-    enabled: !!jobId,
+    enabled: !!orgId && !!jobId,
   });
 }
 export function useSecurity(orgId?: string, since?: string) {
@@ -153,39 +161,44 @@ export function useUsage(orgId: string | undefined, range: "30d" | "90d" | "12mo
     placeholderData: keepPreviousData,
   });
 }
-export function useBilling(orgId: string) {
+export function useBilling(orgId?: string) {
   return useQuery({
-    queryKey: ["org", orgId, "billing"],
+    queryKey: ["org", orgId ?? "none", "billing"],
     queryFn: () => api.get<BillingResponse>(`/orgs/${orgId}/billing`),
     select: normalizeBilling,
+    enabled: !!orgId,
   });
 }
-export function useSettings(orgId: string) {
+export function useSettings(orgId?: string) {
   return useQuery({
-    queryKey: ["org", orgId, "settings"],
+    queryKey: ["org", orgId ?? "none", "settings"],
     queryFn: () => api.get<OrgSettings>(`/orgs/${orgId}/settings`),
     select: normalizeSettings,
+    enabled: !!orgId,
   });
 }
-export function useRules(orgId: string) {
+export function useRules(orgId?: string) {
   return useQuery({
-    queryKey: ["org", orgId, "rules"],
+    queryKey: ["org", orgId ?? "none", "rules"],
     queryFn: () => api.get<RulesResponse>(`/orgs/${orgId}/rules`),
     select: (r) => r?.rules ?? [],
+    enabled: !!orgId,
   });
 }
-export function useProviders(orgId: string) {
+export function useProviders(orgId?: string) {
   return useQuery({
-    queryKey: ["org", orgId, "providers"],
+    queryKey: ["org", orgId ?? "none", "providers"],
     queryFn: () => api.get<ProvidersResponse>(`/orgs/${orgId}/providers`),
     select: normalizeProviders,
+    enabled: !!orgId,
   });
 }
-export function useAudit(orgId: string) {
+export function useAudit(orgId?: string) {
   return useQuery({
-    queryKey: ["org", orgId, "audit"],
+    queryKey: ["org", orgId ?? "none", "audit"],
     queryFn: () => api.get<AuditResponse>(`/orgs/${orgId}/audit`),
     select: normalizeAudit,
+    enabled: !!orgId,
   });
 }
 export function useProfile() {
