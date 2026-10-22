@@ -14,22 +14,23 @@
 //   POST /review-publish               → records + returns the publish (the
 //                                          worker's mock publisher target —
 //                                          the E2E "a the mock side-effect
-//                                          is recorded" assertion, E2E_TEST_PLAN §3)
-//   GET  /recorded-publishes           → the recorded publish log (a the test
-//                                          reads this to assert the pipeline
-//                                          ran end-to-end)
+//                                          is recorded" assertion,
+//                                          E2E_TEST_PLAN §3)
+//   GET  /recorded-publishes           → the recorded publish log (a the
+//                                          test reads this to assert the
+//                                          pipeline ran end-to-end)
 //   GET  /token                        → { token: "ghs_mock_install_token" }
 //                                          (a the install-token exchange
-//                                          stand-in, INTEGRATION_DESIGN §1.4 —
-//                                          a deterministic token, never a
+//                                          stand-in, INTEGRATION_DESIGN §1.4
+//                                          — a deterministic token, never a
 //                                          credential)
 //   GET  /pr-diff/:prNumber?repo=..    → a canned unified diff (a the
 //                                          worker's GithubDiffClient stand-in)
 //   POST /reset                        → clears the recorded state
 //
-// Node's built-in fetch (Node 22) makes this a zero-dependency stub.
+// Node's built-in fetch + node:http make this a zero-dependency stub.
 
-const PORT = 8091;
+const PORT = Number(process.env.PORT ?? 8091);
 
 // The canned PR diff (a two-file PR: a SQL-concatenation security bug + a
 // clean util file — a pipeline run against it produces a deterministic
@@ -52,10 +53,10 @@ index 9a8b7c6..0f1e2d3 100644
 --- a/src/util/format.ts
 +++ b/src/util/format.ts
 @@ -1,4 +1,7 @@
- export function pad(n: number) {
+ export function pad(n) {
    return String(n).padStart(2, "0");
  }
-+export function truncate(s: string, n: number) {
++export function truncate(s, n) {
 +  return s.length > n ? s.slice(0, n - 1) + "…" : s;
 +}
 `;
@@ -71,46 +72,48 @@ index 9a8b7c6..0f1e2d3 100644
 
 const PUBLISH_LOG = process.env.PUBLISH_LOG ?? "";
 
-const recordedPublishes: Array<Record<string, unknown>> = [];
+const recordedPublishes = [];
 let eventCount = 0;
 
-function readBody(req: Request): Promise<Record<string, unknown>> {
-  return req
-    .text()
-    .then((t) => (t ? (JSON.parse(t)<string, unknown>) : {}));
+function readBody(req) {
+  return req.text().then((t) => (t ? JSON.parse(t) : {}));
 }
 
-function json(body: unknown, status = 200) {
+function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "content-type": "application/json" },
   });
 }
 
-async function main(): Promise<void> {
-  const server = await (await import("node:http")).createServer(async (req, res) => {
-    const url = new URL(req.url ?? "/", `http://localhost:${PORT}`);
-    const path = url.pathname;
+async function main() {
+  const http = await import("node:http");
+  const fs = await import("node:fs");
+  const pathMod = await import("node:path");
 
-    if (req.method === "GET" && path === "/healthz") {
+  const server = http.createServer(async (req, res) => {
+    const url = new URL(req.url ?? "/", `http://localhost:${PORT}`);
+    const p = url.pathname;
+
+    if (req.method === "GET" && p === "/healthz") {
       res.writeHead(200, { "content-type": "application/json" });
       res.end(JSON.stringify({ ok: true, service: "mock-github" }));
       return;
     }
 
-    if (req.method === "GET" && path === "/token") {
+    if (req.method === "GET" && p === "/token") {
       res.writeHead(200, { "content-type": "application/json" });
       res.end(JSON.stringify({ token: "ghs_mock_install_token", installationId: "1" }));
       return;
     }
 
-    if (req.method === "GET" && path === "/recorded-publishes") {
+    if (req.method === "GET" && p === "/recorded-publishes") {
       res.writeHead(200, { "content-type": "application/json" });
       res.end(JSON.stringify({ count: recordedPublishes.length, publishes: recordedPublishes }));
       return;
     }
 
-    if (req.method === "POST" && path === "/reset") {
+    if (req.method === "POST" && p === "/reset") {
       recordedPublishes.length = 0;
       eventCount = 0;
       res.writeHead(200, { "content-type": "application/json" });
@@ -118,7 +121,7 @@ async function main(): Promise<void> {
       return;
     }
 
-    if (req.method === "POST" && path === "/events") {
+    if (req.method === "POST" && p === "/events") {
       eventCount += 1;
       const body = await readBody(req);
       res.writeHead(202, { "content-type": "application/json" });
@@ -130,7 +133,7 @@ async function main(): Promise<void> {
       return;
     }
 
-    if (req.method === "POST" && path === "/review-publish") {
+    if (req.method === "POST" && p === "/review-publish") {
       const body = await readBody(req);
       const record = {
         ...body,
@@ -142,9 +145,8 @@ async function main(): Promise<void> {
       // in-memory log is lost on restart, this one is not).
       if (PUBLISH_LOG) {
         try {
-          const fs = await import("node:fs");
-          const { dirname } = await import("node:path");
-          fs.mkdirSync(dirname(PUBLISH_LOG), { recursive: true });
+          const dir = pathMod.dirname(PUBLISH_LOG);
+          fs.mkdirSync(dir, { recursive: true });
           const prev = fs.existsSync(PUBLISH_LOG)
             ? JSON.parse(fs.readFileSync(PUBLISH_LOG, "utf8"))
             : [];
@@ -159,8 +161,8 @@ async function main(): Promise<void> {
       return;
     }
 
-    if (req.method === "GET" && path.startsWith("/pr-diff/")) {
-      const prNumber = path.split("/")[2] ?? "1";
+    if (req.method === "GET" && p.startsWith("/pr-diff/")) {
+      const prNumber = p.split("/")[2] ?? "1";
       res.writeHead(200, { "content-type": "application/json" });
       res.end(
         JSON.stringify({
@@ -175,8 +177,10 @@ async function main(): Promise<void> {
     }
 
     res.writeHead(404, { "content-type": "application/json" });
-    res.end(JSON.stringify({ error: "not found", path }));
-  }).listen(PORT, () => {
+    res.end(JSON.stringify({ error: "not found", path: p }));
+  });
+
+  server.listen(PORT, () => {
     console.log(`mock-github listening on :${PORT}`);
   });
 }

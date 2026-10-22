@@ -151,6 +151,12 @@ export interface WorkerOptions {
   maxAttempts: number;
   /** NFR-15: the SIGTERM drain budget (60 s). */
   drainBudgetMs: number;
+  /** The default confidence floor (DEFAULT_CONFIDENCE_FLOOR, the platform default). */
+  confidenceFloor: number;
+  /** The per-review file budget (REVIEW_MAX_FILES, NFR-19). */
+  maxFiles: number;
+  /** The per-review changed-line budget (REVIEW_MAX_LINES, NFR-19). */
+  maxLines: number;
 }
 
 /** The in-flight lock key (REVIEW_ENGINE_SPEC §5 "Redis SET NX on lock:{key}"). */
@@ -172,5 +178,9 @@ export function workerOptsFromConfig(config: AppConfig): WorkerOptions {
     maxAttempts: Math.max(1, Math.round(config.limits.QUEUE_MAX_ATTEMPTS)),
     // NFR-15: the 60 s drain budget.
     drainBudgetMs: 60_000,
+    // The platform defaults (ENVIRONMENT_VARIABLES §6 "these are defaults").
+    confidenceFloor: config.limits.DEFAULT_CONFIDENCE_FLOOR,
+    maxFiles: Math.round(config.limits.REVIEW_MAX_FILES),
+    maxLines: Math.round(config.limits.REVIEW_MAX_LINES),
   };
 }

@@ -63,6 +63,99 @@ import {
   type WorkerDeps,
 } from "../config.js";
 import { applyPolicy, dedupFindings, resolveWorkerPolicy, type ReviewPolicy } from "./policy.js";
+import {
+  logger,
+  tracer,
+  capture,
+  type StructuredLogger,
+  type Tracer,
+  type TraceHandle,
+} from "@vercode/observability";
+
+// ---------------------------------------------------------------------------
+// The observability wiring (M7, OBSERVABILITY.md §1–§2 "a one trace per
+// pipeline" + the redaction gate on every record). Each stage boundary logs
+// a structured record (correlation id = the job_id, §1 "the correlation id
+// (= the job_id)") + a span (§2 "the review pipeline = one trace with a span
+// per stage"). The Sentry-style capture (the PII-scrubbed captured-errors
+// array, OBSERVABILITY.md §4) is wired to the job handler — a terminal
+// failure is captured with the correlation id, not returned to the client.
+// The redaction gate runs on every record (SECRETS_MANAGEMENT §3 "the
+// redactor runs on *every* record before it's written") — the logger's
+// transport applies it; the capture's payload is scrubbed before it's
+// stored (OBSERVABILITY.md §4 "a Sentry event that carries a secret is a
+// leak").
+// ---------------------------------------------------------------------------
+
+/**
+ * The worker's global tracer (the "one trace per pipeline" surface,
+ * OBSERVABILITY.md §2). The worker's bootstrap sets a fresh tracer; a the
+ * job handler's `makeReviewJobTrace` continues the trace (the api's
+ * `webhook.ingest` span is the trace's first, a the worker's stages are a
+ * the siblings — §2 "the webhook→worker hand-off is one trace, not two
+ * disconnected ones").
+ */
+let workerTracer: Tracer | null = null;
+export function setWorkerTracer(t: Tracer | null): void {
+  workerTracer = t;
+}
+export function getWorkerTracer(): Tracer {
+  if (!workerTracer) workerTracer = tracer();
+  return workerTracer;
+}
+
+/**
+ * The worker's global capture (the Sentry-style PII-scrubbed
+ * captured-errors array, OBSERVABILITY.md §4). The worker's bootstrap sets
+ * it; the job handler's `captureWorkerError` uses it for a terminal
+ * failure (a the ERROR_HANDLING §2 "a a unhandled worker exception is
+ * captured with a the correlation id, not a returned to the client").
+ */
+let workerCapture: ReturnType<typeof capture> | null = null;
+export function setWorkerCapture(c: ReturnType<typeof capture> | null): void {
+  workerCapture = c;
+}
+export function getWorkerCapture(): ReturnType<typeof capture> {
+  if (!workerCapture) workerCapture = capture();
+  return workerCapture;
+}
+
+/**
+ * The job handler's tracer + a the structured logger + a the capture (a
+ * the M7 observability wiring). The trace id = a the job_id (OBSERVABILITY
+ * §2 "the trace id = the job_id"); the correlation id = a the job_id (a the
+ * §1 "the correlation id (= the job_id)"); the capture is the PII-scrubbed
+ * captured-errors array (a the §4 "a Sentry event that carries a secret is
+ * a leak").
+ */
+export function makeReviewJobObservability(payload: ReviewJobPayload): {
+  trace: TraceHandle;
+  log: StructuredLogger;
+} {
+  const trace = getWorkerTracer().startTrace(payload.jobId, "review.pipeline");
+  const log = logger({
+    correlationId: payload.jobId,
+    orgId: payload.orgId,
+  });
+  return { trace, log };
+}
+
+/**
+ * The Sentry-style capture of a terminal failure (a the OBSERVABILITY §4
+ * "a a unhandled worker exception is captured with a the correlation id,
+ * not a returned to the client"). The PII + a the secret scrub (a the
+ * SECRETS_MANAGEMENT §3 gate) runs on the message + a the stack + a the
+ * breadcrumbs before they're stored.
+ */
+export function captureWorkerError(
+  err: unknown,
+  ctx: { correlationId: string; orgId: string }
+): void {
+  getWorkerCapture().capture(err, {
+    correlationId: ctx.correlationId,
+    orgId: ctx.orgId,
+  });
+}
 
 // ---------------------------------------------------------------------------
 // The canonical finding (post-pipeline, pre-persist). Mirrors the contracts
