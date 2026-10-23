@@ -135,7 +135,7 @@ function ReviewRow({ job }: { job: NormalizedJob }) {
           }}
         >
           <span className="tabular">PR #{job.prNumber}</span>
-          {job.prTitle ? <span style={{ fontWeight: 400, color: "var(--muted)" }}> · {job.prTitle}</span> : null}
+          {job.prTitle ? <span style={{ fontWeight: 400, color: "var(--muted-ink)" }}> · {job.prTitle}</span> : null}
         </a>
       </TCell>
       <TCell>

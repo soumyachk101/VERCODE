@@ -193,7 +193,7 @@ export function VcTabs({
               padding: "8px 2px",
               fontSize: 13,
               fontWeight: 500,
-              color: on ? "var(--text)" : "var(--muted)",
+              color: on ? "var(--text)" : "var(--muted-ink)",
               borderBottom: on ? "2px solid var(--accent)" : "2px solid transparent",
               margin: "0 0 -1px",
             }}
@@ -225,7 +225,7 @@ export function VcToggle({
         borderRadius: "var(--radius-control)",
         border: "1px solid " + (pressed ? "var(--control)" : "transparent"),
         background: pressed ? "var(--active)" : "transparent",
-        color: pressed ? "var(--text)" : "var(--muted)",
+        color: pressed ? "var(--text)" : "var(--muted-ink)",
         fontSize: 13,
         fontWeight: 500,
         display: "inline-flex",

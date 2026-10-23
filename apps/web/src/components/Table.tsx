@@ -39,7 +39,7 @@ export function Table({
               style={{
                 fontSize: 12,
                 fontWeight: 500,
-                color: "var(--muted)",
+                color: "var(--muted-ink)",
                 textAlign: h.align === "right" ? "right" : "left",
                 padding: "8px 10px",
                 width: h.width,

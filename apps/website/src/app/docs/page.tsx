@@ -101,7 +101,7 @@ export default function DocsIndexPage() {
           <h2 className="text-[20px] font-semibold text-[var(--text)]">
             Get your first review in 10 minutes
           </h2>
-          <p className="mt-2 text-[15px] leading-[1.6] text-[var(--muted)]">
+          <p className="mt-2 text-[16px] leading-[1.6] text-[var(--muted)]">
             Install the GitHub App on one repo, open a pull request, and the
             verdict lands as a summary comment plus inline findings. No
             configuration is required between the install and the first
@@ -110,9 +110,9 @@ export default function DocsIndexPage() {
           <p className="mt-3">
             <a
               href="/docs/quickstart/"
-              className="text-[15px] font-medium text-[var(--accent)] underline underline-offset-2"
+              className="text-[16px] font-medium text-[var(--accent)] underline underline-offset-2"
             >
-              Start here →
+              Start here
             </a>
           </p>
         </div>

@@ -35,14 +35,34 @@ function AccountBody() {
   const profile = useProfile();
   const sessions = useSessions();
   const signOutAll = useSignOutAll();
+  const githubStart = useGithubStart();
+  const githubDisconnect = useGithubDisconnect();
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
   const [pwSaved, setPwSaved] = useState(false);
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
   const { theme, setTheme } = useTheme();
 
+  // The GitHub OAuth return trip: the API's callback redirects to
+  // `/settings/account?github=connected` (or `?github=error` on a
+  // failure). A the client strips the param + refetches the profile so
+  // the "Connected as <handle>" row updates (a the token is stored
+  // server-side, a the refetch is the honest read).
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (!searchParams) return;
+    const gh = searchParams.get("github");
+    if (!gh) return;
+    void profile.refetch();
+    const next = new URLSearchParams(searchParams);
+    next.delete("github");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, profile, setSearchParams]);
+
   const p = profile.data;
   const sess = sessions.data ?? [];
+  const githubConnected = p?.githubConnected ?? false;
+  const githubHandle = p?.githubHandle ?? null;
 
   return (
     <div>
@@ -138,6 +158,48 @@ function AccountBody() {
               {signOutAll.isPending ? "Signing out…" : "Sign out everywhere"}
             </Button>
           </div>
+        </SettingsSection>
+
+        <SettingsSection
+          label="GitHub"
+          description="Connect your GitHub account so reviews are posted as you. You can disconnect at any time."
+        >
+          <DataBlock result={profile} block="GitHub connection">
+            {() => (
+              <ProviderConnectionRow
+                label="GitHub"
+                data={{ connected: githubConnected, handle: githubHandle }}
+                connecting={githubStart.isPending}
+                onConnect={() => {
+                  githubStart.mutate(undefined, {
+                    onSuccess: (url) => {
+                      if (url) window.location.href = url;
+                    },
+                  });
+                }}
+                disconnecting={githubDisconnect.isPending}
+                onDisconnect={() => {
+                  githubDisconnect.mutate(undefined, {
+                    onSuccess: () => {
+                      void profile.refetch();
+                    },
+                  });
+                }}
+              />
+            )}
+          </DataBlock>
+          {githubStart.isError && (
+            <span className="meta" style={{ color: "var(--negative)" }} role="alert">
+              {(githubStart.error as { message?: string } | null)?.message ??
+                "Couldn't start the GitHub connection."}
+            </span>
+          )}
+          {githubDisconnect.isError && (
+            <span className="meta" style={{ color: "var(--negative)" }} role="alert">
+              {(githubDisconnect.error as { message?: string } | null)?.message ??
+                "Couldn't disconnect GitHub."}
+            </span>
+          )}
         </SettingsSection>
 
         <SettingsSection

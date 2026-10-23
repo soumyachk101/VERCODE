@@ -82,7 +82,7 @@ function ProvidersBody() {
                         <TCell right>{r.maxTokens != null ? r.maxTokens : "—"}</TCell>
                         <TCell>
                           {gated ? (
-                            <span className="meta" aria-disabled="true" style={{ color: "var(--muted)" }}>
+                            <span className="meta" aria-disabled="true" style={{ color: "var(--muted-ink)" }}>
                               <span style={{ color: "var(--text)" }}>Tier-gated</span> —{" "}
                               <TextButton onClick={() => {}} style={{ fontSize: 12, textDecoration: "underline" }}>
                                 Upgrade to use

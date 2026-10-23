@@ -224,7 +224,7 @@ function SecurityBody() {
                         style={{
                           marginTop: 4,
                           color:
-                            deltaPts != null && deltaPts < 0 ? "var(--negative)" : "var(--muted)",
+                            deltaPts != null && deltaPts < 0 ? "var(--negative)" : "var(--muted-ink)",
                         }}
                       >
                         {deltaWords}

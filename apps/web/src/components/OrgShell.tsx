@@ -211,7 +211,7 @@ function EmptyShellState({
           type="button"
           className="pressable"
           onClick={onSignOut}
-          style={{ alignSelf: "flex-start", background: "none", border: 0, color: "var(--muted)", fontSize: 13, cursor: "pointer" }}
+          style={{ alignSelf: "flex-start", background: "none", border: 0, color: "var(--muted-ink)", fontSize: 13, cursor: "pointer" }}
         >
           Sign out instead
         </button>

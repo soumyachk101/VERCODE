@@ -42,7 +42,7 @@ const FINDING_SAMPLE = `{
 }`;
 
 // The 4 pillars (IA §3.2's anchorable sections; each carries a code/UI
-// fragment of the real surface + a "How it works →" link to the docs).
+// fragment of the real surface + a "How it works" link to the docs).
 const PILLARS = [
   {
     id: "deterministic-precision",
@@ -146,7 +146,7 @@ export default function Features() {
       </div>
 
       {/* The 4 pillars, anchorable sections (IA §3.2: each an id, 2–4
-          sentences, a real code/UI fragment, a "How it works →" docs link). */}
+          sentences, a real code/UI fragment, a "How it works" docs link). */}
       <Reveal>
         <div className="mx-auto max-w-4xl px-5">
           {PILLARS.map((pillar) => (
@@ -172,7 +172,7 @@ export default function Features() {
               </pre>
               <a
                 href={pillar.docs}
-                className="mt-4 inline-block text-[14px] font-medium text-[var(--accent)] underline-offset-4 hover:underline"
+                className="mt-4 inline-block text-[16px] font-medium text-[var(--accent)] underline-offset-4 hover:underline"
               >
                 How it works
               </a>
@@ -208,9 +208,9 @@ export default function Features() {
                 </p>
                 <a
                   href={story.docs}
-                  className="mt-2 inline-block text-[14px] font-medium text-[var(--accent)] underline-offset-4 hover:underline"
+                  className="mt-2 inline-block text-[16px] font-medium text-[var(--accent)] underline-offset-4 hover:underline"
                 >
-                  The docs →
+                  The docs
                 </a>
               </article>
             ))}
