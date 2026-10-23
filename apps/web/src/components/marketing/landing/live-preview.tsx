@@ -11,18 +11,6 @@ import { useAuthMe, useInstall, useRepos, useReviews, useSecurity, useUsage } fr
 import type { NormalizedSecurity, NormalizedUsage, NormalizedReviews, NormalizedRepos, NormalizedInstall } from "@/lib/normalized";
 import { IconArrow, IconShield } from "../icons";
 
-function SkeletonPanel({ label }: { label: string }) {
-  return (
-    <div className="flex flex-col items-start gap-2 rounded-[10px] border border-[hsl(var(--line))] bg-[hsl(var(--panel))] p-6">
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-[hsl(var(--text-3))]">
-        {label}
-      </span>
-      <div className="mt-2 h-3 w-40 animate-pulse rounded bg-[hsl(var(--highlight))]" />
-      <div className="h-3 w-64 animate-pulse rounded bg-[hsl(var(--highlight))]" />
-    </div>
-  );
-}
-
 export function LivePreview() {
   const me = useAuthMe();
   const orgId = me.data?.orgs?.[0]?.id ?? null;
