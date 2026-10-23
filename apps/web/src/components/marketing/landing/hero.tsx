@@ -8,6 +8,7 @@ const TRUST = [
 ];
 
 export function Hero() {
+
   return (
     <section className="relative overflow-hidden border-b border-[hsl(var(--line))]">
       <div
@@ -20,30 +21,20 @@ export function Hero() {
       />
       <div className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-16 sm:px-6 sm:pb-20 sm:pt-24">
         <div className="mx-auto max-w-3xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-[hsl(var(--line))] bg-[hsl(var(--panel))] px-3 py-1 text-[12px] font-medium text-[hsl(var(--text-2))]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-color)]" aria-hidden="true" />
-            Git-native AI code review and enforcement
-          </span>
-          <h1 className="mt-6 text-[38px] font-bold leading-[1.08] tracking-[-0.02em] text-[hsl(var(--text-1))] sm:text-[56px]">
+          <h1 className="text-[38px] font-bold leading-[1.08] tracking-[-0.02em] text-[hsl(var(--text-1))] sm:text-[56px]">
             Code review your team
             <br className="hidden sm:block" /> actually reads.
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-[16px] leading-relaxed text-[hsl(var(--text-2))] sm:text-[18px]">
             Static analysis runs first. Task-routed AI reviews the bounded diff.
-            Your team's rules become a merge gate. VERCODE posts a verdict and
+            Your team&apos;s rules become a merge gate. VERCODE posts a verdict and
             evidence-backed findings back to the pull request in under two minutes.
           </p>
           <div className="mt-9 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
-            <Link
-              href="/signin"
-              className="pressable inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[var(--accent-color)] px-6 text-[15px] font-semibold text-[hsl(var(--accent-foreground))] transition-opacity hover:opacity-90"
-            >
-              Launch VERCODE
-              <IconArrow width={18} height={18} />
-            </Link>
+            {cta}
             <Link
               href="/changelog"
-              className="pressable inline-flex h-11 items-center justify-center gap-2 rounded-[8px] border border-[var(--hard-border)] px-6 text-[15px] font-semibold text-[hsl(var(--text-1))] transition-colors hover:border-[var(--accent-color)] hover:text-[var(--accent-color)]"
+              className="pressable inline-flex h-11 items-center justify-center gap-2 rounded-[8px] border border-[var(--hard-border)] px-6 text-[15px] font-semibold text-[hsl(var(--text-1))] transition-colors hover:border-[var(--accent-color)] hover:text-[var(--accent-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-color)]"
             >
               View changelog
             </Link>
