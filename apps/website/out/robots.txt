@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Sitemap: https://vercode.com/sitemap.xml
+Disallow: /docs/source

@@ -112,7 +112,7 @@ export default function Pricing() {
                       {priceParts(offer).unit}
                     </span>
                   </p>
-                  <p className="mt-3 text-[14px] leading-relaxed text-[hsl(var(--muted))]">
+                  <p className="mt-3 text-[16px] leading-relaxed text-[hsl(var(--muted))]">
                     {offer.positioning}
                   </p>
                   <a

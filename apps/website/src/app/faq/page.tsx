@@ -62,7 +62,7 @@ export default function FaqPage() {
           {/* The 4-group <dl>. Each group is a 13px/600 --faint label
               (sentence case, no uppercase — the DESIGN_SYSTEM §2 ban on
               uppercase labels); each question is a <dt> 16px/600 and
-              each answer a <dd> 15px/1.6 --muted. The answers are the
+              each answer a <dd> 16px/1.6 --muted. The answers are the
               verbatim FAQ_ITEMS strings (the byte-equivalence rule). */}
           <dl>
             {FAQ_GROUPS.map((g) => {
@@ -73,13 +73,13 @@ export default function FaqPage() {
                   <dt className="text-[13px] font-semibold text-[hsl(var(--faint))]">
                     {g.label}
                   </dt>
-                  <div className="mt-3 space-y-5">
+                  <div className="mt-3 space-y-6">
                     {items.map((item) => (
-                      <div key={item.anchor} className="border-t border-[var(--rule)] pt-4">
+                      <div key={item.anchor}>
                         <dt className="text-[16px] font-semibold text-[var(--text)]">
                           {item.q}
                         </dt>
-                        <dd className="mt-1 text-[15px] leading-[1.6] text-[hsl(var(--muted))]">
+                        <dd className="mt-1 text-[16px] leading-[1.6] text-[hsl(var(--muted))]">
                           {item.a}
                         </dd>
                       </div>

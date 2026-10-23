@@ -110,6 +110,7 @@ function setupTestApp() {
     audits: [] as any[],
     rules: [] as any[],
     byokKeys: [] as any[],
+    oauthStates: [] as any[],
     repos: [
       { id: "repo-1", orgId: "org-1", fullName: "acme/repo", defaultBranch: "main", connected: true, githubRepoId: BigInt(123), install: { accountLogin: "acme", status: "ACTIVE" }, _count: { jobs: 1 }, createdAt: new Date() },
     ],
