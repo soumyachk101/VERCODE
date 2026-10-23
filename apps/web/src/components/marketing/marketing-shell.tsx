@@ -54,7 +54,7 @@ export function Header() {
           </Link>
           <Link
             href="/signin"
-            className="rounded-[6px] bg-[var(--accent-color)] px-3.5 py-1.5 text-[13px] font-semibold text-[hsl(var(--accent-foreground))] transition-opacity hover:opacity-90"
+            className="rounded-[6px] bg-[var(--accent-color)] px-3.5 py-1.5 text-[13px] font-semibold text-[hsl(var(--accent-foreground))] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-color)]"
           >
             Get started
           </Link>
