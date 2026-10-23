@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { HEADER_CTA_HREF, NEXT_LINKS } from "./nav-links.js";
 
 // The marketing header (IA §4 + DESIGN_SYSTEM_AND_TYPOGRAPHY.md §3):
@@ -26,17 +26,17 @@ export function SiteHeader() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
 
-  const openSheet = useCallback(() => {
+  const openSheet = () => {
     setSheetOpen(true);
-  }, []);
+  };
 
-  const closeSheet = useCallback(() => {
+  const closeSheet = () => {
     setSheetOpen(false);
     // A focus return to the trigger (the "back to trigger on close"
     // step — the trigger is a real `<button>`, so `focus()` is
     // keyboard-safe).
     triggerRef.current?.focus();
-  }, []);
+  };
 
   // An Escape closes the sheet. The handler is attached to the document
   // while the sheet is open (not just the sheet's own `onKeyDown`): the
@@ -54,7 +54,7 @@ export function SiteHeader() {
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [sheetOpen, closeSheet]);
+  });
 
   // The sheet is mobile-only chrome: if the viewport grows past 768px
   // while it's open (a rotation / a window resize), close it so the
