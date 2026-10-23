@@ -47,7 +47,7 @@ export function LivePreview() {
     reviews7d: rev?.items?.length ?? 0,
     avgReviewTime: usg?.totals.reviews > 0 ? `${usg.totals.reviews} reviews · ${usg.totals.estUsd.toFixed(2)} USD` : "No reviews yet",
     quotaUsed: usg ? Math.round((usg.quota?.percentUsed ?? 0) * 100) : 0,
-    connectedRepos: rep?.items?.length ?? 0,
+    connectedRepos: rep?.repos?.length ?? 0,
     installState: (inst?.connected ? "connected" : "not-connected") as "connected" | "not-connected",
   };
 
