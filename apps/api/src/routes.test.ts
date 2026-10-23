@@ -191,6 +191,7 @@ function setupTestApp() {
     organization: {
       findUnique: async ({ where }: any) => store.orgs.find((o) => o.id === where.id) ?? null,
       findFirst: async ({ where }: any) => store.orgs.find((o) => o.id === where.id) ?? null,
+      findMany: async () => store.orgs,
       update: async ({ where, data }: any) => {
         const org = store.orgs.find((o) => o.id === where.id);
         if (org) Object.assign(org, data);
@@ -653,6 +654,7 @@ describe("Dashboard REST API Complete Route Specification", () => {
         method: "GET",
         url: "/me",
       });
+      if (res.statusCode !== 200) { console.log("ME STATUS", res.statusCode, res.body); }
       expect(res.statusCode).toBe(200);
       const body = JSON.parse(res.body);
       expect(body.user.githubConnected).toBe(true);

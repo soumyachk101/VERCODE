@@ -45,7 +45,7 @@ export default function NotFound() {
           <ul className="space-y-2">
             {TOP_5_LINKS.map((link) => (
               <li key={link.href}>
-                <a href={link.href} className="nav-link text-[15px]">
+                <a href={link.href} className="nav-link text-[16px]">
                   {link.label}
                 </a>
               </li>
