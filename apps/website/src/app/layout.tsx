@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import "@/styles/globals.css";
 import "@/styles/layout.css";
 import "@/styles/prose.css";
+import "@/styles/motion.css";
 import { RevealObserver } from "@/components/RevealObserver.js";
 import { SiteFooter } from "@/components/SiteFooter.js";
 import { SiteHeader } from "@/components/SiteHeader.js";
