@@ -14,21 +14,22 @@ export function Cta() {
             Ship better code. Catch bugs earlier.
           </h2>
           <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-[hsl(var(--text-2))]">
-            Set up VERCODE on a pull request in under two minutes. Start on the
-            free tier with 50 reviews a month, or bring your own model keys for
-            enterprise. Your rules become the gate, and the gate is enforced.
+            Connect your GitHub, install the app, and set your first rule on a
+            pull request in under two minutes. Start on the free tier with 50
+            reviews a month, or bring your own model keys for enterprise. Your
+            rules become the gate — and the gate is enforced.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/signin"
-              className="pressable inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[var(--accent-color)] px-6 text-[15px] font-semibold text-[hsl(var(--accent-foreground))] transition-opacity hover:opacity-90"
+              className="pressable inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[var(--accent-color)] px-6 text-[15px] font-semibold text-[hsl(var(--accent-foreground))] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-color)]"
             >
-              Launch VERCODE
+              Start free — connect GitHub
               <IconArrow width={18} height={18} />
             </Link>
             <Link
               href="/changelog"
-              className="pressable inline-flex h-11 items-center justify-center rounded-[8px] border border-[var(--hard-border)] px-6 text-[15px] font-semibold text-[hsl(var(--text-1))] transition-colors hover:border-[var(--accent-color)]"
+              className="pressable inline-flex h-11 items-center justify-center rounded-[8px] border border-[var(--hard-border)] px-6 text-[15px] font-semibold text-[hsl(var(--text-1))] transition-colors hover:border-[var(--accent-color)] hover:text-[var(--accent-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-color)]"
             >
               See what shipped
             </Link>
