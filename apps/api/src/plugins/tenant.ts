@@ -65,7 +65,12 @@ export function buildTenantPlugin() {
       const orgId = (params.orgId ?? params.id) as string | undefined;
       if (!orgId) return;
 
-      const userId = req.user.userId;
+      // The auth plugin decorates req.user in its own preHandler; if it has
+      // not run yet (the test seam), req.user is undefined. The tenant gate
+      // only fires when the user is known; an unauthenticated request is
+      // handled by the auth plugin (401) and never reaches here.
+      const user = (req as unknown as { user?: { userId?: string | null } }).user;
+      const userId = user?.userId;
       if (!userId) {
         reply.code(404).send({ error: { code: "NOT_FOUND", message: "Org not found." } });
         return;

@@ -18,7 +18,6 @@
 // (a pathological file is bounded, not a crash; UT-static-runner-01/02).
 
 import {
-  ReviewFindingSchema,
   type ReviewFinding,
   type FindingSeverity,
   type FindingCategory,

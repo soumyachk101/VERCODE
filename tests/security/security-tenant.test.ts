@@ -8,6 +8,7 @@
 //
 // Release-gate semantics: a cross-tenant leak is a Critical — an automatic
 // block.
+<<<<<<< Updated upstream
 //
 // ---------------------------------------------------------------------------
 // WHAT THIS SPEC EXERCISES + THE PRODUCT DEFECTS IT SURFACES:
@@ -47,6 +48,58 @@
 import { describe, it, expect } from "vitest";
 import type { Role } from "@prisma/client";
 import type { Capability } from "../../../apps/api/src/plugins/tenant.js";
+=======
+//
+// ---------------------------------------------------------------------------
+// WHAT THIS SPEC EXERCISES + THE PRODUCT DEFECTS IT SURFACES:
+//
+// This spec drives the *real* tenant plugin source
+// (apps/api/src/plugins/tenant.ts `buildTenantPlugin`) against a mocked
+// Prisma surface (`vi.mock("@prisma/client")` → a fake whose methods read a
+// per-test in-memory seed) + the in-memory queue pattern of
+// apps/api/src/webhooks.test.ts. It asserts the 404-vs-403 split:
+//
+//   - a cross-tenant request (org-A user → org-B resource) → 404 + an
+//     `access.denied_cross_tenant` audit row (NOT a 403 — no existence
+//     oracle, AC-902);
+//   - an in-tenant capability denial (a member whose role lacks the
+//     declared capability) → 403 + an `access.denied_capability` audit row
+//     (a capability denial, distinct from a tenancy denial);
+//   - a member with the capability → the gate passes, the handler runs.
+//
+// **Where the gate is driven:** Fastify runs a plugin's hooks only on routes
+// registered in the *same* plugin scope (a sibling-plugin or root-level
+// route does NOT pick up the hook — see P1 below). So this spec registers
+// the tenant plugin + a probe route + a session stand-in in ONE child
+// plugin scope (the same scope the real app's gate needs to be in), and
+// asserts the plugin's decision there. This is the *unit* surface of the
+// gate — the correct behavior, exercisable today.
+//
+// **Two P0 product defects this probe established against the real source**
+// are in KNOWN_ISSUES.md (they are what make the *full app* fail the
+// ST-isolation-oracle gate today; this spec is the gate that catches a
+// regression once the wiring is fixed — not fixed here, the M7/M8-owned
+// security-critical path):
+//
+//   P1 (ENCAPSULATION): the tenant + auth plugins are registered on the
+//      root app (`buildServer`), but the orgs/github routes are registered
+//      inside a *sibling* child plugin (`registerRoutes`). A hook or a
+//      decorate made inside one root-level plugin is NOT visible to routes
+//      in a sibling plugin or on the root — so the tenant gate's preHandler
+//      never applies to a real `/orgs/*` request (probed: GET /orgs/org-b
+//      → 200, `req.tenant` null, no membership/organization query issued).
+//   P2 (BOOT CRASH): `registerRoutes` reads `a.auth.db` in the /webhooks
+//      plugin, but the `auth` decorate is encapsulated to the auth plugin,
+//      so it is `undefined` at the root → `buildServer().ready()` throws
+//      "Cannot read properties of undefined (reading 'db')" before the app
+//      serves any request (probed against the real buildServer).
+// ---------------------------------------------------------------------------
+
+import { describe, it, expect, vi } from "vitest";
+import Fastify from "fastify";
+import type { FastifyInstance } from "fastify";
+import type { PrismaClient, Organization, Membership, AuditEvent, Role } from "@prisma/client";
+>>>>>>> Stashed changes
 
 // ---------------------------------------------------------------------------
 // The capability matrix (AUTHORIZATION.md §1) — the same shape the
@@ -105,7 +158,85 @@ function gateDecision(
   if (requiredCap && !CAPS[role].has(requiredCap)) {
     return { status: 403, code: "FORBIDDEN" };
   }
+<<<<<<< Updated upstream
   return { status: 200, code: "OK" };
+=======
+  return { ...actual, PrismaClient: FakePrismaClient };
+});
+
+// A the plugin is imported AFTER the mock is registered so its
+// `new PrismaClient()` resolves to the fake.
+const { buildTenantPlugin } = await import("../../apps/api/src/plugins/tenant.js");
+
+// ---------------------------------------------------------------------------
+// The app builder — the real tenant plugin + a probe route + a session
+// stand-in, all in ONE child-plugin scope (the scope where Fastify actually
+// runs the plugin's preHandler). The capability is declared via the route
+// `config` option (the path the plugin reads — `req.routeOptions.config?.
+// capability`; see P1 in KNOWN_ISSUES.md for why the app's `schema.config`
+// declaration is dormant).
+// ---------------------------------------------------------------------------
+
+type Capability = "read" | "org.manage";
+
+async function buildTenantApp(seed: TenantSeed, capability: Capability = "read") {
+  const state = setState(seed);
+  const cfg: { capability?: Capability } = { capability };
+
+  const app: FastifyInstance = Fastify({ logger: false });
+  app.register(async (a: FastifyInstance) => {
+    // The real tenant plugin (the gate under test).
+    a.register(buildTenantPlugin());
+    // A minimal session stand-in: the tenant plugin reads `req.user.userId`
+    // (the auth plugin would resolve it from the cookie; here the test seeds
+    // it directly so the tenancy gate is the unit under test). The hook is
+    // in the same scope so it runs before the plugin's gate.
+    a.addHook("preHandler", async (req) => {
+      (req as { user?: { userId: string | null } }).user = { userId: seed.actingUserId };
+    });
+    // A the probe route, registered in the same scope so the plugin's
+    // preHandler gate applies. The capability is declared on the route
+    // `config` option (the path the plugin reads) + mirrored in the schema
+    // (the app's real declaration shape).
+    a.get(
+      "/orgs/:orgId/reviews",
+      {
+        schema: { config: { capability } },
+        config: cfg as never,
+      },
+      async (req, reply) => {
+        reply.send({ reached: true, orgId: req.params, tenant: (req as { tenant?: unknown }).tenant ?? null });
+      }
+    );
+  });
+
+  await app.ready();
+  return { app, state };
+}
+
+// ---------------------------------------------------------------------------
+// The org-A / org-B fixture
+// ---------------------------------------------------------------------------
+
+const ORG_A = "org-a";
+const ORG_B = "org-b";
+const USER_IN_A = "user-in-a";
+const USER_IN_NEITHER = "user-in-neither";
+
+function baseSeed(over: Partial<TenantSeed> = {}): TenantSeed {
+  return {
+    orgs: [
+      { id: ORG_A, slug: "acme", status: "ACTIVE" },
+      { id: ORG_B, slug: "globex", status: "ACTIVE" },
+    ],
+    memberships: [
+      { id: "m-1", orgId: ORG_A, userId: USER_IN_A, role: "ADMIN" },
+      { id: "m-2", orgId: ORG_B, userId: "user-in-b", role: "OWNER" },
+    ],
+    actingUserId: USER_IN_A,
+    ...over,
+  };
+>>>>>>> Stashed changes
 }
 
 // ---------------------------------------------------------------------------

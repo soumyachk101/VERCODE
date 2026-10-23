@@ -275,7 +275,7 @@ function createFetchAdapter(
 export function createOpenAIAdapter(apiKey: string, baseUrl = "https://api.openai.com"): AIProvider {
   return createFetchAdapter(
     "openai",
-    (model, req) => `${baseUrl}/v1/chat/completions`,
+    (_model, _req) => `${baseUrl}/v1/chat/completions`,
     (model, req) => ({
       model,
       messages: req.messages.map((m) => ({ role: m.role, content: m.content })),
@@ -311,7 +311,7 @@ export function createOpenAIAdapter(apiKey: string, baseUrl = "https://api.opena
 export function createAnthropicAdapter(apiKey: string, baseUrl = "https://api.anthropic.com"): AIProvider {
   return createFetchAdapter(
     "anthropic",
-    (_model, req) => `${baseUrl}/v1/messages`,
+    (_model, _req) => `${baseUrl}/v1/messages`,
     (model, req) => ({
       model,
       max_tokens: req.maxTokens,
