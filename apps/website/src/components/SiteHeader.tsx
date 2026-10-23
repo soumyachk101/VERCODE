@@ -136,7 +136,15 @@ export function SiteHeader() {
         </button>
       </div>
 
-      {/* The mobile sheet (a `position: fixed inset-0` + a scrim). */}
+      {/* The mobile sheet (a `position: fixed inset-0` + a scrim).
+          An enter-only `@starting-style` animation lives in
+          `globals.css` (a `#site-header-sheet` + a
+          `.site-header-sheet-panel` + a `.site-header-sheet-scrim`
+          150ms opacity+translateY travel, skipped under
+          `prefers-reduced-motion`). The sheet unmounts on close, so
+          an exit animation is not needed (a `DESIGN_SYSTEM_AND_TYP-
+          OGRAPHY.md` §5's "no exit" note: the sheet is a few links
+          away from the next page). */}
       {sheetOpen && (
         <div
           ref={sheetRef}
@@ -153,13 +161,19 @@ export function SiteHeader() {
         >
           {/* The scrim: a click on it closes the sheet (the "a
               scrim click + an Escape" close affordance — no
-              explicit close button). */}
+              explicit close button). The `.site-header-sheet-scrim`
+              class is the `@starting-style` hook in `globals.css`. */}
           <span
             aria-hidden="true"
-            className="absolute inset-0 block cursor-default bg-[rgba(28,25,23,0.45)]"
+            className="site-header-sheet-scrim absolute inset-0 block cursor-default bg-[rgba(28,25,23,0.45)]"
             onClick={closeSheet}
           />
-          <div className="absolute inset-x-0 top-0 border-b border-[var(--border)] bg-[var(--surface)]">
+          {/* The top panel: the nav + the CTA. A
+              `.site-header-sheet-panel` `@starting-style` 150ms
+              opacity+translateY(8px) travel — the one "mount"
+              moment in the site's motion set (§5's `emil-design-
+              eng` rule). */}
+          <div className="site-header-sheet-panel absolute inset-x-0 top-0 border-b border-[var(--border)] bg-[var(--surface)]">
             <nav aria-label="Primary (mobile)" className="container flex flex-col py-4">
               <ul className="flex flex-col">
                 {NEXT_LINKS.map((link) => (
