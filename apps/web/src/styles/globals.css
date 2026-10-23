@@ -4,17 +4,22 @@
  *
  * TWO NAMESPACES, ONE PALETTE:
  *
- * 1. The palette itself (the exact user values, HSL triples). The marketing
- *    surface consumes them as hsl(var(--token)); the dashboard's colour
- *    tokens below are defined FROM them, so both surfaces are literally the
- *    same palette. Names here are fixed:
+ * 1. The palette itself (the exact user values, HSL triples) — consumed by
+ *    the marketing surface as hsl(var(--token)). These names are fixed and
+ *    must stay raw triples:
  *      --background --foreground --muted --muted-foreground --accent
  *      --accent-foreground --border --panel --line --highlight --success
  *      --text-1 --text-2 --text-3
  *
  * 2. The dashboard's semantic colour tokens (--ground, --surface, --text,
- *    --muted-ink ...) — legacy names the components already use, each
- *    defined from the palette above.
+ *    --muted-ink, ...) — the legacy names the components already use, each
+ *    defined FROM the palette above. Where a semantic token would collide
+ *    with a palette name (--border, --accent, --muted, --faint), the
+ *    semantic side takes a distinct name:
+ *      --hard-border   (the border colour = hsl(var(--border)))
+ *      --accent-color  (the accent colour = hsl(var(--accent)))
+ *      --muted-ink     (the secondary ink  = hsl(var(--muted-foreground)))
+ *      --faint         (decorative ink     = hsl(var(--text-3)))
  *
  * No light theme, no gradients, no tinted tiles, 1px borders only, flat
  * surfaces. */
@@ -36,23 +41,24 @@
   --text-2: 240 10% 80%;
   --text-3: 240 8% 58%;
 
-  /* ---- 2. the dashboard's semantic tokens, from the palette --------- */
-  /* surfaces */
+  /* ---- 2. the dashboard's semantic tokens, from the palette -------- */
+  /* surfaces — the indigo scale */
   --ground: hsl(var(--background));
   --surface: hsl(var(--panel));
   --raised: hsl(var(--muted));
   --active: hsl(var(--highlight));
+  --hard-border: hsl(var(--border));
   --rule: hsl(var(--line));
   --control: hsl(var(--border));
   --grid: hsl(var(--line));
   /* ink */
   --text: hsl(var(--foreground));
-  /* the muted body/meta ink (--muted-foreground): text-3 (58%) is too low
-     contrast for copy, so it stays for decorative labels only. */
   --muted-ink: hsl(var(--muted-foreground));
   --faint: hsl(var(--text-3));
   --primary: hsl(var(--text-1));
   --primary-ink: hsl(var(--background));
+  /* the single data hue — the accent colour */
+  --accent-color: hsl(var(--accent));
   /* severity ramp (critical→low): the accent, stepped, then the ink ramp */
   --sev-critical: hsl(var(--accent));
   --sev-high: hsl(var(--accent) / 0.7);

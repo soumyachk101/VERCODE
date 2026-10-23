@@ -21,7 +21,7 @@ export function Hero() {
       <div className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-16 sm:px-6 sm:pb-20 sm:pt-24">
         <div className="mx-auto max-w-3xl text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-[hsl(var(--line))] bg-[hsl(var(--panel))] px-3 py-1 text-[12px] font-medium text-[hsl(var(--text-2))]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[hsl(hsl(var(--accent)))]" aria-hidden="true" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--accent))]" aria-hidden="true" />
             Git-native AI code review and enforcement
           </span>
           <h1 className="mt-6 text-[38px] font-bold leading-[1.08] tracking-[-0.02em] text-[hsl(var(--text-1))] sm:text-[56px]">
@@ -36,14 +36,14 @@ export function Hero() {
           <div className="mt-9 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
             <Link
               href="/signin"
-              className="pressable inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[hsl(hsl(var(--accent)))] px-6 text-[15px] font-semibold text-[hsl(var(--accent-foreground))] transition-opacity hover:opacity-90"
+              className="pressable inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[hsl(var(--accent))] px-6 text-[15px] font-semibold text-[hsl(var(--accent-foreground))] transition-opacity hover:opacity-90"
             >
               Launch VERCODE
               <IconArrow width={18} height={18} />
             </Link>
             <Link
               href="/changelog"
-              className="pressable inline-flex h-11 items-center justify-center gap-2 rounded-[8px] border border-[hsl(hsl(var(--border)))] px-6 text-[15px] font-semibold text-[hsl(var(--text-1))] transition-colors hover:border-[hsl(hsl(var(--accent)))] hover:text-[hsl(hsl(var(--accent)))]"
+              className="pressable inline-flex h-11 items-center justify-center gap-2 rounded-[8px] border border-[hsl(var(--border))] px-6 text-[15px] font-semibold text-[hsl(var(--text-1))] transition-colors hover:border-[hsl(var(--accent))] hover:text-[hsl(var(--accent))]"
             >
               View changelog
             </Link>
@@ -54,7 +54,7 @@ export function Hero() {
         </div>
 
         {/* the verdict device — the one large thing, a code-like card */}
-        <div className="mx-auto mt-14 max-w-3xl overflow-hidden rounded-[10px] border border-[hsl(hsl(var(--border)))] bg-[hsl(var(--panel))]">
+        <div className="mx-auto mt-14 max-w-3xl overflow-hidden rounded-[10px] border border-[hsl(var(--border))] bg-[hsl(var(--panel))]">
           <div className="flex items-center justify-between border-b border-[hsl(var(--line))] px-4 py-3">
             <div className="flex items-center gap-2">
               <IconShield width={16} height={16} className="text-[hsl(var(--success))]" />
@@ -95,7 +95,7 @@ export function Hero() {
         <ul className="mx-auto mt-14 grid max-w-4xl grid-cols-1 gap-px overflow-hidden rounded-[10px] border border-[hsl(var(--line))] bg-[hsl(var(--line))] sm:grid-cols-3">
           {TRUST.map((item) => (
             <li key={item.label} className="flex items-start gap-3 bg-[hsl(var(--background))] px-5 py-5">
-              <item.icon width={20} height={20} className="mt-0.5 shrink-0 text-[hsl(hsl(var(--accent)))]" />
+              <item.icon width={20} height={20} className="mt-0.5 shrink-0 text-[hsl(var(--accent))]" />
               <div>
                 <div className="text-[14px] font-semibold text-[hsl(var(--text-1))]">{item.label}</div>
                 <div className="mt-1 text-[13px] text-[hsl(var(--text-3))]">{item.detail}</div>

@@ -223,11 +223,11 @@ export default function Pricing() {
         </section>
       </Reveal>
 
-      {/* The closing CTA (IA §3.3 block 5). */}
+      {/* The closing CTA (IA §3.3 block 5) — a raised band, no rules. */}
       <Reveal>
         <section
           aria-labelledby="pricing-cta-heading"
-          className="border-y border-[hsl(var(--border))] bg-[var(--surface)] py-16"
+          className="mt-8 bg-[var(--raised)] py-16"
         >
           <div className="mx-auto flex max-w-2xl flex-col items-center px-5 text-center">
             <h2
