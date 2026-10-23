@@ -61,26 +61,26 @@ export default function LegalTermsPage() {
 
       <div className="mx-auto flex max-w-4xl gap-10 px-5 pt-14">
         <Prose toc={toc}>
-          {/* The breadcrumb — a visible 13px hsl(var(--faint)) "Vercode / Legal /
+          {/* The breadcrumb — a visible 13px var(--faint) "Vercode / Legal /
               Terms of service" line (IA §3.9's visible breadcrumb; the
               JSON-LD BreadcrumbList is in the <script> above). */}
           <nav aria-label="Breadcrumb" className="mb-6">
-            <p className="text-[13px] text-[hsl(var(--faint))]">
+            <p className="text-[13px] text-[var(--faint)]">
               <a
                 href="/"
-                className="text-[hsl(var(--faint))] underline underline-offset-2 hover:text-[var(--text)]"
+                className="text-[var(--faint)] underline underline-offset-2 hover:text-[var(--text)]"
               >
                 Vercode
               </a>{" "}
               /{" "}
               <a
                 href="/legal/"
-                className="text-[hsl(var(--faint))] underline underline-offset-2 hover:text-[var(--text)]"
+                className="text-[var(--faint)] underline underline-offset-2 hover:text-[var(--text)]"
               >
                 Legal
               </a>{" "}
               /{" "}
-              <span className="text-[hsl(var(--muted))]">Terms of service</span>
+              <span className="text-[var(--muted)]">Terms of service</span>
             </p>
           </nav>
 
@@ -92,12 +92,12 @@ export default function LegalTermsPage() {
               contact email is a placeholder the infra team owns at launch
               (the U-item in UNRESOLVED_DECISIONS.md); it is a placeholder
               by comment, not a promise. */}
-          <p className="mt-3 text-[13px] text-[hsl(var(--faint))]">
+          <p className="mt-3 text-[13px] text-[var(--faint)]">
             Last updated <time dateTime="2026-10-23">2026-10-23</time> ·
             Contact{" "}
             <a
               href="mailto:legal@vercode.com"
-              className="text-[hsl(var(--faint))] underline underline-offset-2"
+              className="text-[var(--faint)] underline underline-offset-2"
             >
               legal@vercode.com
             </a>{" "}

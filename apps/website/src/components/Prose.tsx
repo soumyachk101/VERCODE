@@ -48,7 +48,7 @@ export function Prose({ children, toc }: ProseProps) {
           aria-label="On this page"
           className="sticky top-24 hidden w-44 shrink-0 self-start lg:block"
         >
-          <p className="text-[13px] font-medium text-[hsl(var(--faint))]">
+          <p className="text-[13px] font-medium text-[var(--faint)]">
             On this page
           </p>
           <ul className="mt-3 space-y-2 border-l border-[var(--rule)]">
@@ -56,7 +56,7 @@ export function Prose({ children, toc }: ProseProps) {
               <li key={e.id}>
                 <a
                   href={`#${e.id}`}
-                  className="block border-l border-transparent pl-3 text-[13px] text-[hsl(var(--muted))] transition-colors hover:border-[var(--accent-color)] hover:text-[var(--text)]"
+                  className="block border-l border-transparent pl-3 text-[13px] text-[var(--muted)] transition-colors hover:border-[var(--accent-color)] hover:text-[var(--text)]"
                 >
                   {e.label}
                 </a>

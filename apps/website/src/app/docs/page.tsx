@@ -85,7 +85,7 @@ export default function DocsIndexPage() {
         <h1 className="text-[40px] font-bold tracking-tight text-[var(--text)]">
           Documentation
         </h1>
-        <p className="mt-4 text-[16px] leading-[1.6] text-[hsl(var(--muted))]">
+        <p className="mt-4 text-[16px] leading-[1.6] text-[var(--muted)]">
           Each topic answers one question: how to install, how to configure,
           what each number means. The numbers are the literal ones from the
           source docs; every topic links to the two or three most-adjacent
@@ -101,7 +101,7 @@ export default function DocsIndexPage() {
           <h2 className="text-[20px] font-semibold text-[var(--text)]">
             Get your first review in 10 minutes
           </h2>
-          <p className="mt-2 text-[16px] leading-[1.6] text-[hsl(var(--muted))]">
+          <p className="mt-2 text-[16px] leading-[1.6] text-[var(--muted)]">
             Install the GitHub App on one repo, open a pull request, and the
             verdict lands as a summary comment plus inline findings. No
             configuration is required between the install and the first
@@ -129,7 +129,7 @@ export default function DocsIndexPage() {
             .filter((g) => g.docs.length > 0)
             .map((g) => (
               <div key={g.id} className="mb-8">
-                <dt className="text-[13px] font-semibold text-[hsl(var(--faint))]">
+                <dt className="text-[13px] font-semibold text-[var(--faint)]">
                   {g.label}
                 </dt>
                 <div className="mt-3 space-y-5">
@@ -141,7 +141,7 @@ export default function DocsIndexPage() {
                       >
                         {d.front.title}
                       </a>
-                      <p className="mt-1 text-[16px] leading-[1.5] text-[hsl(var(--muted))]">
+                      <p className="mt-1 text-[16px] leading-[1.5] text-[var(--muted)]">
                         {d.front.description}
                       </p>
                     </dd>

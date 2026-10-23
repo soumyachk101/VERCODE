@@ -57,7 +57,7 @@ main {
    hover (a 100ms transition, the site's only motion). */
 .nav-link {
   font-size: 14px;
-  color: hsl(var(--muted));
+  color: var(--muted);
   transition: color 100ms ease-out;
 }
 
@@ -70,13 +70,13 @@ main {
 .footer-col-title {
   font-size: 13px;
   font-weight: 600;
-  color: hsl(var(--faint));
+  color: var(--faint);
 }
 
 /* A footer link. */
 .footer-link {
   font-size: 14px;
-  color: hsl(var(--muted));
+  color: var(--muted);
   transition: color 100ms ease-out;
 }
 
