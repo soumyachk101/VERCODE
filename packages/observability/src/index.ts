@@ -112,7 +112,6 @@ export function logger(opts: LoggerOptions = {}): StructuredLogger {
     // A the default sink (a the console, a the structured JSON). A the
     // record is a the JSON (a a the pino-style "a structured field" — a a
     // single-line JSON, a the queryable surface).
-    // eslint-disable-next-line no-console
     console.error(JSON.stringify(r));
   });
 
@@ -255,7 +254,7 @@ export function tracer(otelEndpoint?: string): Tracer {
   // The exporter (a the no-op if no OTLP endpoint — a the in-memory spans
   // array is the queryable surface; a the OTLP send is a later seam, a the
   // "a no OTLP endpoint → no-op exporter" rule, OBSERVABILITY.md §2).
-  const exportSpan = (span: Span): void => {
+  const exportSpan = (_span: Span): void => {
     if (otelEndpoint) void otelEndpoint; // a the real OTLP send is a later seam
   };
 

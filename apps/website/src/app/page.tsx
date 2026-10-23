@@ -45,12 +45,10 @@ const schemaBlocks = generateSchemaFor({ route: "/", isRoot: true });
 // mirrors this — a visible text == schema text, the SEO_AEO_GEO.md §3 rule).
 const STEPS = [
   {
-    num: "01",
     title: "Install the GitHub App",
     body: "The install URL is pre-scoped to the least-privilege list: contents:read, pull_requests:write, checks:write, metadata:read, issues:read. No admin:org, no secrets scope.",
   },
   {
-    num: "02",
     title: "Open a pull request",
     body: "GitHub dispatches the webhook; VERCODE verifies the signature and enqueues the review job in under 300 ms (NFR-04 — no LLM on the webhook path). The queue, not the request, does the work.",
   },
