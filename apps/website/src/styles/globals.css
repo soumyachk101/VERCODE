@@ -1,55 +1,75 @@
 @import "tailwindcss";
 
 /*
- * VERCODE website — the design tokens (DESIGN_SYSTEM_AND_TYPOGRAPHY.md §4.2's
- * light palette, extended with the warm ivory / graphite / emerald brief).
+ * VERCODE website — the design tokens. ONE dark palette, shared with the
+ * dashboard (apps/web): deep indigo neutrals, a single red accent, a
+ * positive green. No light theme, no warm-ivory brief, no gradient chrome
+ * (DESIGN_SYSTEM §7: one typeface, one accent, no rainbow).
  *
- * The dashboard (apps/web) keeps its near-achromatic cool palette; the
- * marketing surface is allowed its own warmth + a single restrained accent
- * (DESIGN_SYSTEM.md §7: "a product site that shows its app" — one typeface,
- * one accent, no rainbow, no gradient chrome).
+ * The palette itself is defined as HSL triples (--background,
+ * --foreground, --muted, --muted-foreground, --accent,
+ * --accent-foreground, --panel, --line, --highlight, --success,
+ * --text-1, --text-2, --text-3). The marketing surface consumes those
+ * names as hsl(var(--token)) (Tailwind arbitrary values + inline <style>
+ * blocks), so those names stay raw triples. The site's legacy semantic
+ * tokens (--ground, --text, ...) are defined FROM the triples and used in
+ * CSS rules as colors.
+ *
+ * Where a semantic token would collide with a triple name (the border
+ * colour, the accent colour), the semantic side takes a distinct name:
+ * --hard-border and --accent-color. The ink ramp uses --faint
+ * (decorative, low-contrast) and --muted-ink (body copy).
  */
 
 :root {
-  /* Surfaces — warm ivory + white, never cream/terracotta-heavy. */
-  --ground: #faf8f5;
-  --surface: #ffffff;
-  --raised: #f5f2ee;
-  --active: #efe9e1;
-  --border: #e6e0d8;
-  --rule: #efe9e2;
+  /* ---- 1. the palette (exact values, HSL triples) ------------------ */
+  --background: 240 60% 4%;
+  --foreground: 0 0% 98%;
+  --muted: 240 30% 12%;
+  --muted-foreground: 240 10% 66%;
+  --accent: 0 90% 55%;
+  --accent-foreground: 0 0% 100%;
+  --panel: 240 40% 9%;
+  --line: 240 25% 16%;
+  --highlight: 240 35% 14%;
+  --success: 150 60% 45%;
+  --text-1: 0 0% 100%;
+  --text-2: 240 10% 80%;
+  --text-3: 240 8% 58%;
 
-  /* Ink — graphite family, 4.5:1+ on ground. */
-  --text: #1c1917;
-  --muted: #57534e;
-  --faint: #78716c;
+  /* ---- 2. the site's semantic tokens, from the palette ------------- */
+  /* Surfaces — the indigo scale. */
+  --ground: hsl(var(--background));
+  --surface: hsl(var(--panel));
+  --raised: hsl(var(--muted));
+  --active: hsl(var(--highlight));
+  --hard-border: hsl(240 25% 18%);
+  --rule: hsl(var(--line));
 
-  /* The one data hue (restrained emerald) — CTA + the recommended-plan
-     border + the one filled button. Everything else is graphite. The
-     accent is the *fill* of the one primary action (an emerald button
-     with white text: ~5.5:1 contrast, the WNFR-07 4.5:1 floor held on
-     both themes). A light emerald-on-dark or a near-black primary
-     would be the app's rule; the marketing CTA is the one coloured
-     element on the page (DESIGN_SYSTEM_AND_TYPOGRAPHY.md §4). */
-  --accent: #0f766e;
-  --accent-ink: #0b5a54;
-  --accent-soft: #e6f2f0;
-  /* The CTA button's fill: a dark emerald on light (white text, 5.5:1),
-     a lighter emerald on dark (white text, 3.5:1 for large 15px/500
-     button text, the WCAG large-text floor). */
-  --accent-cta: #0d5f58;
+  /* Ink — 3-step ramp. Body/muted copy is --muted-ink; --faint stays
+     reserved for decorative labels (low contrast on the dark ground). */
+  --text: hsl(var(--foreground));
+  --faint: hsl(var(--text-3));
+  --muted-ink: hsl(var(--muted-foreground));
 
-  /* The product's signature severity marks (DESIGN_SYSTEM.md §4.1) — used
+  /* The one data hue — the red accent. The accent is the fill of the one
+     primary action (white text, the 4.5:1 floor held). */
+  --accent-color: hsl(0 90% 55%);
+  --accent-ink: hsl(var(--accent));
+  --accent-soft: hsl(var(--highlight));
+  --accent-cta: var(--accent-color);
+
+  /* The product's signature severity marks (DESIGN_SYSTEM §4.1) — used
      ONLY inside the verdict-device card + screenshots, never on chrome. */
-  --sev-critical: #c4242a;
-  --sev-high: #d97706;
-  --sev-medium: #2563eb;
-  --sev-low: #6b7280;
-  --sev-positive: #247b50;
+  --sev-critical: hsl(var(--accent));
+  --sev-high: hsl(var(--accent) / 0.7);
+  --sev-medium: hsl(var(--text-2));
+  --sev-low: hsl(var(--text-3));
+  --sev-positive: hsl(var(--success));
 
   /* The control + primary. */
-  --primary: #1c1917;
-  --control: #d6cfc5;
+  --primary: hsl(var(--text-1));
+  --control: var(--hard-border);
 
   /* Radii (tight family, 4–8px). */
   --radius-card: 8px;
@@ -63,31 +83,10 @@
     Menlo, monospace;
 }
 
-/* True-neutral dark theme, follows prefers-color-scheme (IA §6: no manual
-   toggle in P2 — the palette ships both themes). */
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    --ground: #0c0c0c;
-    --surface: #161616;
-    --raised: #1d1d1d;
-    --active: #262626;
-    --border: #2a2a2a;
-    --rule: #212121;
-    --text: #f4f2ef;
-    --muted: #a8a29a;
-    --faint: #8a847c;
-    --accent: #2dd4bf;
-    --accent-ink: #5eead4;
-    --accent-soft: #12312e;
-    --accent-cta: #0f766e;
-    --primary: #f4f2ef;
-    --control: #3a3a3a;
-    --sev-high: #f59e0b;
-    --sev-medium: #3b82f6;
-    --sev-low: #9ca3af;
-    --sev-positive: #3fc07a;
-  }
+/* The site is dark-only (the shared palette). The old light
+   prefers-color-scheme override is gone. */
+:root {
+  color-scheme: dark;
 }
 
 html {
@@ -98,59 +97,4 @@ html {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-}
-
-body {
-  margin: 0;
-  background: var(--ground);
-}
-
-code,
-pre,
-.mono {
-  font-family: var(--font-mono);
-}
-
-.tnum {
-  font-variant-numeric: tabular-nums;
-}
-
-::selection {
-  background: var(--accent-soft);
-  color: var(--text);
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-a:focus-visible,
-button:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: var(--radius-chip);
-}
-
-/* The reading column (docs / blog / changelog / legal): 720px, 1.6 line
-   height, one left edge (DESIGN_SYSTEM_AND_TYPOGRAPHY.md §3). */
-.reading-col {
-  max-width: 45rem;
-}
-
-/* The one-time scroll reveal (DESIGN_SYSTEM_AND_TYPOGRAPHY.md §5) —
-   disabled under prefers-reduced-motion (PERFORMANCE_AND_ACCESSIBILITY.md
-   WNFR-08).
-
-   The `.js` gate: an inline script in `src/app/layout.tsx` adds a `.js`
-   class to `<html>` before first paint. The reveal is hidden ONLY
-   when that class is present, so a no-JS crawler (or a JS failure)
-   always sees every element (the "content is visible by default"
-   rule, a `PERFORMANCE_AND_ACCESSIBILITY.md`'s a11y fallback). */
-.js .reveal {
-  opacity: 0;
-  transform: translateY(8px);
-  transition:
-    opacity 120ms ease-out,
-    transform 120ms ease-out;
 }
