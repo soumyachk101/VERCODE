@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
+import { Button } from "./Button";
+import { Pill } from "./Pill";
 
 /**
  * Loading: the final layout with each value a flat grey bar at its real size
