@@ -408,7 +408,7 @@ function Avatar({ name }: { name: string }) {
         width: 32,
         height: 32,
         borderRadius: 8,
-        background: `hsl(${hue} 40% 92%)`,
+        background: `hsl(${hue} 30% 18%)`,
         color: "var(--text)",
         display: "inline-flex",
         alignItems: "center",

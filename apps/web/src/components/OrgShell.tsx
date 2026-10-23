@@ -1,10 +1,11 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useAuthMe, useReviews, useSecurity } from "@/lib/hooks";
+import { useAuthMe, useReviews, useSecurity, useSignOutAll } from "@/lib/hooks";
 import { Shell, type NavItem } from "@/components/Shell";
 import { LiveRegion } from "@/components/announcer";
 import { useState, useEffect, type ReactNode } from "react";
+import { api } from "@/lib/api";
 
 /**
  * The org shell (INFORMATION_ARCHITECTURE §2): the seven destinations in
@@ -41,6 +42,17 @@ export function useOrgShell() {
   const pathname = usePathname();
   const activeKey = matchActive(pathname);
   const router = useRouter();
+
+  // Sign out: revoke the session server-side, then back to the sign-in
+  // surface (a hard replace — the shell must not stay mounted).
+  const signOut = async () => {
+    try {
+      await api.post("/auth/signout");
+    } catch {
+      // an unreachable API still clears the client-side state below
+    }
+    router.replace("/signin");
+  };
 
   const items: NavItem[] = [
     { key: "overview", href: "/overview", label: "Overview" },
