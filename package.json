@@ -10,7 +10,11 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "pnpm -r --filter \".\"... dev",
+    "dev": "pnpm -r --parallel --filter \"./apps/*\" --filter \"./website\" dev",
+    "dev:web": "pnpm --filter @vercode/web dev",
+    "dev:api": "pnpm --filter @vercode/api dev",
+    "dev:worker": "pnpm --filter @vercode/worker dev",
+    "dev:site": "pnpm --filter @vercode/website dev",
     "build": "pnpm -r build",
     "test": "vitest run",
     "test:watch": "vitest",

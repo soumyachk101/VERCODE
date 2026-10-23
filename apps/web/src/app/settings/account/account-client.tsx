@@ -21,6 +21,7 @@ import { ConfirmDialog } from "@/components/BlockError";
 import { Input, Label } from "@/components/controls";
 import { useTheme } from "@/components/theme";
 import { relativeTime } from "@/lib/format";
+import type { Session } from "@/lib/types";
 
 export function AccountClient() {
   return (
@@ -59,7 +60,12 @@ function AccountBody() {
   }, [isGitHubReturn, profile]);
 
   const p = profile.data;
-  const sess = sessions.data ?? [];
+  const rawSessions = sessions.data;
+  const sess: Session[] = Array.isArray(rawSessions)
+    ? rawSessions
+    : Array.isArray((rawSessions as any)?.sessions)
+    ? (rawSessions as any).sessions
+    : [];
   const githubConnected = p?.githubConnected ?? false;
   const githubHandle = p?.githubHandle ?? null;
 

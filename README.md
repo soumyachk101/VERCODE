@@ -63,7 +63,14 @@ VERCODE is an open-source AI code-review SaaS monorepo. It reads a GitHub pull r
 
 ### Architecture
 
-![System architecture](docs/assets/architecture.svg)
+![System architecture](docs/assets/architecture.png)
+
+The production deployment runs on AWS ECS Fargate inside a two-tier VPC. The
+public tier (NLB + 4 API tasks) verifies webhooks and enqueues jobs — it holds
+no model credentials. The private tier (worker tasks + RDS Postgres +
+ElastiCache Redis) runs the full review pipeline and is the only tier that can
+reach the LLM provider gateways. The Next.js dashboard is a static export on
+S3 fronted by CloudFront with WAF.
 
 Three stateless, independently deployable units sit in front of managed Postgres and Redis:
 
@@ -75,7 +82,7 @@ Three stateless, independently deployable units sit in front of managed Postgres
 
 ### Review pipeline
 
-![Review pipeline](docs/assets/pipeline.svg)
+![Review pipeline](docs/assets/pipeline.png)
 
 **How it works, step by step:**
 
@@ -88,9 +95,18 @@ Three stateless, independently deployable units sit in front of managed Postgres
 7. **Publish** — a summary verdict + validated inline comments are posted to the PR (falling back to a PR-body comment when an anchor can't be verified); usage, cost, and prompt version are attributed to the org.
 8. **Resilience** — rate-limit responses (403/429) back off through a retry queue; a hard crash just re-delivers the durable job. A wall-clock budget (default 240 s) yields *partial* results rather than a hang.
 
+<details>
+<summary><b>Full 8-stage data flow &amp; lifecycle</b> (expandable)</summary>
+
+<br />
+
+![Review Data Flow & Lifecycle](docs/diagrams/data-flow.png)
+
+</details>
+
 ### Monorepo layout
 
-![Monorepo structure](docs/diagrams/repository.svg)
+![Monorepo structure](docs/diagrams/repository.png)
 
 ```
 VERCODE/
@@ -197,7 +213,7 @@ Per-org overrides (confidence floor, file budgets, suppressions) are **config ro
 
 ## Security
 
-![VERCODE Trust Model and Security Boundaries](docs/assets/trust-model.svg)
+![VERCODE Trust Model and Security Boundaries](docs/assets/trust-model.png)
 
 VERCODE's core invariant: **repository content is *input*, never *authority*.** The design docs in `docs/SECURITY/` define a 16-threat STRIDE register (T-01…T-16), each mapped to a control layer and a named verification test.
 

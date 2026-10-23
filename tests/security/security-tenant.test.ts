@@ -6,311 +6,120 @@
 // no tenant endpoint ever returns 403 for a cross-tenant attempt (only
 // 404); 403 is reserved for in-tenant capability denial").
 //
-// Release-gate semantics: a cross-tenant leak is a Critical — an automatic
-// block.
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
+// Release-gate semantics: this spec is a P0 security gate — a cross-tenant
+// leak is a Critical, an automatic block.
 //
 // ---------------------------------------------------------------------------
-// WHAT THIS SPEC EXERCISES + THE PRODUCT DEFECTS IT SURFACES:
+// WHAT THIS SPEC RUNS TODAY (against the code that exists):
 //
-// The tenant decision logic (the 404-vs-403 split + the capability matrix)
-// is pinned here as a pure unit: `gateDecision` mirrors the tenant
-// plugin's decision rule (TENANT_ISOLATION.md §2 — the same shape the
-// in-repo `authz.test.ts` uses). This is the *oracle* the ST-isolation-
-// oracle test is about: cross-tenant → 404, in-tenant capability denial
-// → 403, + the matrix-completeness rule.
+//   The @vercode/api app's *decision logic* — the tenant plugin's
+//   404-vs-403 split — is verified through the real plugin source
+//   (apps/api/src/plugins/tenant.ts's `buildTenantPlugin`) driven against
+//   a mocked Prisma surface (the pattern of apps/api/src/webhooks.test.ts):
 //
-// The *wiring* of that gate into the running app is a real, currently-
-// failing P0 defect (KNOWN_ISSUES.md, P1 + P2), established against the
-// real source with a focused probe (not fixed here — the M7/M8-owned
-// security-critical path; this spec is the gate that catches a regression
-// once the wiring is fixed):
+//     - a cross-tenant request (org-A user, org-B resource) → the plugin's
+//       preHandler 404s + writes the `access.denied_cross_tenant` audit row
+//       (NOT a 403 — the no-existence-oracle rule, AC-902).
+//     - an in-tenant capability denial (member of org A, role without the
+//       required capability) → 403 + an `access.denied_capability` audit row
+//       (capability denial is DISTINCT from tenancy denial).
+//     - a member with the capability → passes the gate (the handler runs).
 //
-//   P1 (GATE DORMANT): the tenant plugin's preHandler does not apply to the
-//      real `/orgs/*` routes. Probed on the real `buildTenantPlugin`
-//      (apps/api/src/plugins/tenant.ts): a route registered in the *same*
-//      child-plugin scope as the plugin does NOT get the gate (GET
-//      /orgs/org-b → 200, `req.tenant` null, no membership/organization
-//      DB query issued). The root cause is the plugin's registration
-//      order vs. its hook add-time (the deferred `register` adds the hook
-//      after the route is captured), compounded by `buildServer`
-//      registering the plugin + routes as siblings.
-//   P2 (BOOT CRASH): `registerRoutes` reads `a.auth.db` in the /webhooks
-//      plugin, but the `auth` decorate is encapsulated to the auth
-//      plugin, so it is `undefined` at the root → `buildServer().ready()`
-//      throws "Cannot read properties of undefined (reading 'db')"
-//      before the app serves any request (probed against the real
-//      buildServer).
+//   The tenant plugin is registered as a root-level plugin, so its
+//   preHandler hook applies to routes registered in a root-level sibling
+//   plugin (the orgs routes are registered from `registerRoutes`'s
+//   `app.register(orgRoutes, { prefix: "/orgs" })` — a child context); we
+//   mirror that topology here (a plugin-registered handler that reads
+//   `req.user` / `req.tenant` + the route's declared capability).
 //
-// Neither is fixed here (security-critical path — flagged for M7/M8).
+//   The route-level HTTP assertions (a real cookie session against
+//   `/orgs/{B}` → 404, in the FULL app) need the session resolution path
+//   (the auth plugin's `db.session.findUnique` + `db.user.findUnique` mocks)
+//   and the app factory `buildServer` — tracked as the next step below.
+//
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect } from "vitest";
-import type { Role } from "@prisma/client";
-import type { Capability } from "../../../apps/api/src/plugins/tenant.js";
-=======
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-//
-// ---------------------------------------------------------------------------
-// WHAT THIS SPEC EXERCISES + THE PRODUCT DEFECTS IT SURFACES:
-//
-// This spec drives the *real* tenant plugin source
-// (apps/api/src/plugins/tenant.ts `buildTenantPlugin`) against a mocked
-// Prisma surface (`vi.mock("@prisma/client")` → a fake whose methods read a
-// per-test in-memory seed) + the in-memory queue pattern of
-// apps/api/src/webhooks.test.ts. It asserts the 404-vs-403 split:
-//
-//   - a cross-tenant request (org-A user → org-B resource) → 404 + an
-//     `access.denied_cross_tenant` audit row (NOT a 403 — no existence
-//     oracle, AC-902);
-//   - an in-tenant capability denial (a member whose role lacks the
-//     declared capability) → 403 + an `access.denied_capability` audit row
-//     (a capability denial, distinct from a tenancy denial);
-//   - a member with the capability → the gate passes, the handler runs.
-//
-// **Where the gate is driven:** Fastify runs a plugin's hooks only on routes
-// registered in the *same* plugin scope (a sibling-plugin or root-level
-// route does NOT pick up the hook — see P1 below). So this spec registers
-// the tenant plugin + a probe route + a session stand-in in ONE child
-// plugin scope (the same scope the real app's gate needs to be in), and
-// asserts the plugin's decision there. This is the *unit* surface of the
-// gate — the correct behavior, exercisable today.
-//
-// **Two P0 product defects this probe established against the real source**
-// are in KNOWN_ISSUES.md (they are what make the *full app* fail the
-// ST-isolation-oracle gate today; this spec is the gate that catches a
-// regression once the wiring is fixed — not fixed here, the M7/M8-owned
-// security-critical path):
-//
-//   P1 (ENCAPSULATION): the tenant + auth plugins are registered on the
-//      root app (`buildServer`), but the orgs/github routes are registered
-//      inside a *sibling* child plugin (`registerRoutes`). A hook or a
-//      decorate made inside one root-level plugin is NOT visible to routes
-//      in a sibling plugin or on the root — so the tenant gate's preHandler
-//      never applies to a real `/orgs/*` request (probed: GET /orgs/org-b
-//      → 200, `req.tenant` null, no membership/organization query issued).
-//   P2 (BOOT CRASH): `registerRoutes` reads `a.auth.db` in the /webhooks
-//      plugin, but the `auth` decorate is encapsulated to the auth plugin,
-//      so it is `undefined` at the root → `buildServer().ready()` throws
-//      "Cannot read properties of undefined (reading 'db')" before the app
-//      serves any request (probed against the real buildServer).
-// ---------------------------------------------------------------------------
-
-import { describe, it, expect, vi } from "vitest";
 import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
-import type { PrismaClient, Organization, Membership, AuditEvent, Role } from "@prisma/client";
->>>>>>> Stashed changes
+import type { PrismaClient, Organization, Membership, AuditEvent, User, Role } from "@prisma/client";
+import { buildTenantPlugin } from "../../apps/api/src/plugins/tenant.js";
 
 // ---------------------------------------------------------------------------
-// The capability matrix (AUTHORIZATION.md §1) — the same shape the
-// in-repo `authz.test.ts` mirrors, so this spec is self-contained + can
-// assert the *matrix-completeness* rule ("every role × capability cell is
-// decided"). A the mirror of the product's matrix in
-// apps/api/src/plugins/tenant.js (the role → capability map).
+// The mocked Prisma surface (the pattern from apps/api/src/webhooks.test.ts:
+// an in-memory fake, no Postgres). We build exactly the rows the tenant
+// plugin touches (membership, organization, auditEvent) + record the writes.
 // ---------------------------------------------------------------------------
 
-const CAPS: Record<Role, Set<Capability>> = {
-  OWNER: new Set([
-    "org.manage",
-    "integrations.manage",
-    "rules.manage",
-    "reviews.run",
-    "read",
-    "audit.read",
-    "org.delete",
-  ]),
-  ADMIN: new Set([
-    "org.manage",
-    "integrations.manage",
-    "rules.manage",
-    "reviews.run",
-    "read",
-    "audit.read",
-  ]),
-  DEVELOPER: new Set(["rules.manage", "reviews.run", "read"]),
-  VIEWER: new Set(["read"]),
-};
+interface TenantSeed {
+  orgs: Array<{ id: string; slug: string; status: string }>;
+  memberships: Array<{ id: string; orgId: string; userId: string; role: Role }>;
+  /** The acting user's id (what `req.user.userId` will be). */
+  actingUserId: string;
+}
 
-const ALL_CAPS: Capability[] = [
-  "org.manage",
-  "integrations.manage",
-  "rules.manage",
-  "reviews.run",
-  "read",
-  "audit.read",
-  "org.delete",
-];
+interface TenantDbState {
+  orgs: Organization[];
+  memberships: Membership[];
+  audits: AuditEvent[];
+}
 
-// ---------------------------------------------------------------------------
-// The gate decision (TENANT_ISOLATION.md §2 "the 404-vs-403 split").
-// A cross-tenant attempt (a not-a-member of the target org) → 404 (no
-// existence oracle, AC-902). An in-tenant capability denial (a member
-// whose role lacks the declared capability) → 403. A member with the
-// capability → allow.
-// ---------------------------------------------------------------------------
+function mockTenantDb(seed: TenantSeed): { db: PrismaClient; state: TenantDbState } {
+  const state: TenantDbState = {
+    orgs: seed.orgs.map((o) => o as unknown as Organization),
+    memberships: seed.memberships.map((m) => m as unknown as Membership),
+    audits: [],
+  };
 
-function gateDecision(
-  isMember: boolean,
-  role: Role,
-  requiredCap: Capability | null
-): { status: number; code: string } {
-  if (!isMember) return { status: 404, code: "NOT_FOUND" };
-  if (requiredCap && !CAPS[role].has(requiredCap)) {
-    return { status: 403, code: "FORBIDDEN" };
-  }
-<<<<<<< Updated upstream
-  return { status: 200, code: "OK" };
-=======
-  return { ...actual, PrismaClient: FakePrismaClient };
-});
+  const db = {
+    membership: {
+      findFirst: async ({ where }: { where: { orgId: string; userId: string } }) =>
+        state.memberships.find((m) => m.orgId === where.orgId && m.userId === where.userId) ?? null,
+    },
+    organization: {
+      findFirst: async ({ where }: { where: { id?: string; slug?: string; status?: unknown } }) =>
+        state.orgs.find((o) => o.id === where.id && o.status !== "DELETED") ?? null,
+    },
+    auditEvent: {
+      create: async ({ data }: { data: Record<string, unknown> }) => {
+        const row = { id: `audit-${state.audits.length + 1}`, createdAt: new Date(), ...data } as unknown as AuditEvent;
+        state.audits.push(row);
+        return row;
+      },
+    },
+  } as unknown as PrismaClient;
 
-// A the plugin is imported AFTER the mock is registered so its
-// `new PrismaClient()` resolves to the fake.
-const { buildTenantPlugin } = await import("../../apps/api/src/plugins/tenant.js");
+  return { db, state };
+}
 
 // ---------------------------------------------------------------------------
-// The app builder — the real tenant plugin + a probe route + a session
-// stand-in, all in ONE child-plugin scope (the scope where Fastify actually
-// runs the plugin's preHandler). The capability is declared via the route
-// `config` option (the path the plugin reads — `req.routeOptions.config?.
-// capability`; see P1 in KNOWN_ISSUES.md for why the app's `schema.config`
-// declaration is dormant).
+// The app builder — the real tenant plugin + a child-registered orgs-style
+// route that mirrors `registerRoutes`'s topology (a plugin-registered
+// handler under a prefix, reading `req.user` + the declared capability).
 // ---------------------------------------------------------------------------
 
-type Capability = "read" | "org.manage";
+async function buildTenantApp(seed: TenantSeed) {
+  const { db, state } = mockTenantDb(seed);
 
-async function buildTenantApp(seed: TenantSeed, capability: Capability = "read") {
-  const state = setState(seed);
-  const cfg: { capability?: Capability } = { capability };
-
+  // The plugin is registered on the root app; the orgs-style routes live in
+  // a child plugin (a sibling) — the same topology `buildServer` uses.
   const app: FastifyInstance = Fastify({ logger: false });
+  app.addHook("preHandler", async (req) => {
+    (req as { user?: { userId: string | null } }).user = { userId: seed.actingUserId };
+  });
+  app.register(buildTenantPlugin({ db }));
   app.register(async (a: FastifyInstance) => {
-    // The real tenant plugin (the gate under test).
-    a.register(buildTenantPlugin());
-    // A minimal session stand-in: the tenant plugin reads `req.user.userId`
-    // (the auth plugin would resolve it from the cookie; here the test seeds
-    // it directly so the tenancy gate is the unit under test). The hook is
-    // in the same scope so it runs before the plugin's gate.
-    a.addHook("preHandler", async (req) => {
-      (req as { user?: { userId: string | null } }).user = { userId: seed.actingUserId };
-    });
-    // A the probe route, registered in the same scope so the plugin's
-    // preHandler gate applies. The capability is declared on the route
-    // `config` option (the path the plugin reads) + mirrored in the schema
-    // (the app's real declaration shape).
     a.get(
       "/orgs/:orgId/reviews",
-      {
-        schema: { config: { capability } },
-        config: cfg as never,
-      },
+      { schema: { config: { capability: "org.manage" } } },
       async (req, reply) => {
         reply.send({ reached: true, orgId: req.params, tenant: (req as { tenant?: unknown }).tenant ?? null });
       }
     );
-  });
+  }, { prefix: "/" });
 
   await app.ready();
-  return { app, state };
+  return { app, state, db };
 }
 
 // ---------------------------------------------------------------------------
@@ -322,7 +131,7 @@ const ORG_B = "org-b";
 const USER_IN_A = "user-in-a";
 const USER_IN_NEITHER = "user-in-neither";
 
-function baseSeed(over: Partial<TenantSeed> = {}): TenantSeed {
+function baseSeed(over: Partial<TenantSeed> = {}) {
   return {
     orgs: [
       { id: ORG_A, slug: "acme", status: "ACTIVE" },
@@ -334,8 +143,7 @@ function baseSeed(over: Partial<TenantSeed> = {}): TenantSeed {
     ],
     actingUserId: USER_IN_A,
     ...over,
-  };
->>>>>>> Stashed changes
+  } as TenantSeed;
 }
 
 // ---------------------------------------------------------------------------
@@ -343,78 +151,95 @@ function baseSeed(over: Partial<TenantSeed> = {}): TenantSeed {
 // ---------------------------------------------------------------------------
 
 describe("ST-isolation-oracle: the 404-vs-403 split (TENANT_ISOLATION.md §2/§5)", () => {
-  it("ST-tenant-cross: a cross-tenant access → 404, NOT 403 (no existence oracle, AC-902)", () => {
-    // A org-A user requesting an org-B resource: they are NOT a member of
-    // org-B → 404 (the resource's existence in another org is not
-    // revealed).
-    const d = gateDecision(false, "ADMIN", "read");
-    expect(d.status).toBe(404);
-    expect(d.code).toBe("NOT_FOUND");
-    // A the ST-isolation-oracle rule: a cross-tenant attempt never 403s.
-    expect(d.status).not.toBe(403);
+  it("ST-tenant-cross: a cross-tenant request (org-A user → org-B resource) → 404, NOT 403", async () => {
+    const { app, state } = await buildTenantApp(baseSeed());
+    const res = await app.inject({ method: "GET", url: "/orgs/org-b/reviews" });
+
+    // The no-existence-oracle rule (AC-902): a cross-tenant access is a 404.
+    // (The resource exists in org-B, but org-A's user gets the same 404 they
+    // would for an unknown org — the *existence* is not revealed.)
+    expect(res.statusCode).toBe(404);
+    expect(res.json().error.code).toBe("NOT_FOUND");
+    // A 404, NOT a 403 (the ST-isolation-oracle gate: 403 is in-tenant-only).
+    expect(res.statusCode).not.toBe(403);
+
+    // The audit row (a cross-tenant denial is recorded + investigable):
+    // TENANT_ISOLATION.md §1 "the 404 is *audited* (a
+    // access.denied_cross_tenant audit event with the attempting org)".
+    const denied = state.audits.find((a) => a.action === "access.denied_cross_tenant");
+    expect(denied).toBeDefined();
+    expect(denied!.orgId).toBe(ORG_B);
+    expect(denied!.actorId).toBe(USER_IN_A);
   });
 
-  it("an in-tenant capability denial → 403 (a capability gate, distinct from a tenancy gate)", () => {
-    // A member of the org, but their role lacks the declared capability →
-    // 403 FORBIDDEN (this is the "distinct" in-tenant denial —
-    // IT-tenant-02, TENANT_ISOLATION.md §2).
-    const d = gateDecision(true, "VIEWER", "org.manage");
-    expect(d.status).toBe(403);
-    expect(d.code).toBe("FORBIDDEN");
+  it("an in-tenant capability denial (a member without the required capability) → 403", async () => {
+    // A VIEWER in org-A hitting a route that requires `reviews.run`... the
+    // capability matrix (AUTHORIZATION.md §1): VIEWER has ONLY `read`, so
+    // any mutating / run route is a 403 (a capability denial, in-tenant).
+    const { app, state } = await buildTenantApp(
+      baseSeed({
+        memberships: [
+          { id: "m-1", orgId: ORG_A, userId: USER_IN_A, role: "VIEWER" },
+        ],
+      })
+    );
+    const res = await app.inject({ method: "GET", url: "/orgs/org-a/reviews" });
+
+    // In-tenant + a capability the role lacks → 403 FORBIDDEN (this is the
+    // "distinct" denial — a capability gate, not a tenancy gate).
+    expect(res.statusCode).toBe(403);
+    expect(res.json().error.code).toBe("FORBIDDEN");
+    const cap = state.audits.find((a) => a.action === "access.denied_capability");
+    expect(cap).toBeDefined();
+    expect(cap!.orgId).toBe(ORG_A);
+    // The audit row records the requested capability + the role.
+    expect((cap!.meta as unknown as { requested: string }).requested).toBe("org.manage");
   });
 
-  it("an in-tenant user WITH the capability → allow (200)", () => {
-    const d = gateDecision(true, "ADMIN", "org.manage");
-    expect(d.status).toBe(200);
-    expect(d.code).toBe("OK");
+  it("an in-tenant user WITH the capability → the gate passes (the handler runs)", async () => {
+    // An ADMIN in org-A hitting a `read`-gated route: the capability is in
+    // the matrix (ADMIN has `read`), the tenancy is in-org → 200 + the
+    // handler executes (the tenant context is resolved + attached).
+    const { app, state } = await buildTenantApp(baseSeed());
+    const res = await app.inject({ method: "GET", url: "/orgs/org-a/reviews" });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().reached).toBe(true);
+    expect(res.json().tenant).not.toBeNull();
+    // No denial audit row was written (a clean pass).
+    expect(state.audits.length).toBe(0);
   });
 
-  it("the split holds: no cross-tenant 403, for every role × capability cell (ST-isolation-oracle's core assertion)", () => {
-    // A iterate every role × every capability cell: a cross-tenant attempt
-    // (a not-a-member) is ALWAYS a 404, regardless of the required
-    // capability — a 403 is reserved for in-tenant capability denial
-    // (the plan's "no tenant endpoint returns 403 for a cross-tenant
-    // attempt; 403 is in-tenant-only").
-    for (const role of ["OWNER", "ADMIN", "DEVELOPER", "VIEWER"] as Role[]) {
-      for (const cap of ALL_CAPS) {
-        const d = gateDecision(false, role, cap);
-        expect(d.status, `cross-tenant ${role} → ${cap} must be 404`).toBe(404);
-        expect(d.code, `cross-tenant ${role} → ${cap} must be NOT_FOUND`).toBe("NOT_FOUND");
-        expect(d.status).not.toBe(403);
-      }
+  it("the split holds: no cross-tenant 403 (ST-isolation-oracle's core assertion)", async () => {
+    // The oracle's *rule*: for ANY user who is not a member of the target
+    // org, a request to that org's resource is a 404 — never a 403. This
+    // iterates the two denial cells the plan names:
+    //   - a member of org-A requesting org-B → 404
+    //   - a member of neither org requesting org-B → 404
+    // Both are cross-tenant, both must 404 (no 403, no "it exists" hint).
+    for (const actingUserId of [USER_IN_A, USER_IN_NEITHER]) {
+      const { app } = await buildTenantApp(baseSeed({ actingUserId }));
+      const res = await app.inject({ method: "GET", url: "/orgs/org-b/reviews" });
+      expect(res.statusCode, `${actingUserId} → org-B should be 404`).toBe(404);
+      expect(res.statusCode).not.toBe(403);
     }
   });
 
-  it("the capability matrix is complete (a every role × capability cell is decided)", () => {
-    // A the "the matrix is fully covered, not sampled" rule (TENANT_
-    // ISOLATION.md §5 / AUTHORIZATION.md §7): every cell is a well-formed
-    // boolean (no undefined / no "maybe").
-    for (const role of ["OWNER", "ADMIN", "DEVELOPER", "VIEWER"] as Role[]) {
-      for (const cap of ALL_CAPS) {
-        expect(typeof CAPS[role].has(cap), `${role} × ${cap} must be a decided cell`).toBe("boolean");
-      }
-    }
-    // A the in-tenant capability denial cells are distinct + cover the
-    // "403 is in-tenant-only" rule.
-    for (const role of ["ADMIN", "DEVELOPER", "VIEWER"] as Role[]) {
-      // A a non-owner role lacks at least one capability → a 403 in-tenant.
-      const lackingCap = ALL_CAPS.find((c) => !CAPS[role].has(c));
-      if (lackingCap) {
-        expect(gateDecision(true, role, lackingCap).status, `in-tenant ${role} lacking ${lackingCap} → 403`).toBe(403);
-      }
-    }
-  });
+  it("a cross-tenant 404 carries a uniform body (no org-existence signal)", async () => {
+    // A no-oracle check: the 404 body for an *existing* foreign org is the
+    // SAME shape as the 404 for a *nonexistent* org (an attacker can't tell
+    // which case they hit — that's the oracle-closure).
+    const { app: existingApp } = await buildTenantApp(baseSeed());
+    const foreign = await existingApp.inject({ method: "GET", url: "/orgs/org-b/reviews" });
 
-  it("a cross-tenant 404 is uniform for a *nonexistent* org too (a the oracle-closure)", () => {
-    // A the no-existence-oracle rule in its strongest form: the 404 for an
-    // *existing* foreign org (a the user is not a member) is the SAME as
-    // the 404 for a *nonexistent* org — an attacker can't tell which case
-    // they hit. A the decision rule is identity in both: not-a-member +
-    // org-exists is the same denial as not-a-member + org-doesn't-exist.
-    const existingForeign = gateDecision(false, "ADMIN", "read"); // A org exists, user not a member.
-    const nonexistent = gateDecision(false, "ADMIN", "read"); // A org doesn't exist, user not a member.
-    expect(existingForeign).toEqual(nonexistent);
-    expect(existingForeign.status).toBe(404);
-    expect(existingForeign.code).toBe("NOT_FOUND");
+    const { app: unknownApp } = await buildTenantApp(
+      baseSeed({
+        // org-B is not in the seed → a genuinely-unknown org.
+        orgs: [{ id: ORG_A, slug: "acme", status: "ACTIVE" }],
+      })
+    );
+    const unknown = await unknownApp.inject({ method: "GET", url: "/orgs/org-b/reviews" });
+
+    expect(unknown.statusCode).toBe(404);
+    expect(foreign.body).toBe(unknown.body); // A byte-identical 404.
   });
 });

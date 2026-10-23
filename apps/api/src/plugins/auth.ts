@@ -55,6 +55,7 @@ export function buildAuthPlugin(config: AppConfig) {
         req.url.includes("/auth/signin") ||
         req.url.includes("/auth/signup") ||
         req.url.includes("/auth/verify-email") ||
+        req.url.includes("/health") ||
         req.url.includes("/webhooks");
       if (isPublic) {
         // Even public routes resolve the session (a "me" on a public page).

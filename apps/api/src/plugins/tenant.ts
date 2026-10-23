@@ -52,9 +52,9 @@ const CAPS: Record<Role, Set<Capability>> = {
   VIEWER: new Set(["read"]),
 };
 
-export function buildTenantPlugin() {
+export function buildTenantPlugin(opts: { db?: PrismaClient } = {}) {
   const plugin = async (app: FastifyInstance) => {
-    const db = new PrismaClient();
+    const db = opts.db ?? new PrismaClient();
 
     // A preHandler that resolves the tenant for a `/orgs/:id/*` request.
     // The org id comes from the `:id` path param. A non-member → 404.
