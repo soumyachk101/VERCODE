@@ -70,7 +70,7 @@ function RulesBody() {
         finding="How the review is tuned for this org — the confidence floor, suppressed categories, and per-repo overrides"
         right={savedStamp ? <Pill tone="positive">Saved {savedStamp}</Pill> : null}
       />
-      <div style={{ background: "var(--surface)", border: "1px solid hsl(var(--border))", borderRadius: 8, padding: "0 20px" }}>
+      <div style={{ background: "var(--surface)", border: "1px solid var(--hard-border)", borderRadius: 8, padding: "0 20px" }}>
         <SettingsSection
           label="Confidence floor"
           description="Findings below this confidence are hidden from the review detail. A lower floor surfaces more of the AI's speculative findings; a higher floor trims the noise."
@@ -146,7 +146,7 @@ function RulesBody() {
                         <span className="meta tabular">{r.version ?? 1}</span>
                       </TCell>
                       <TCell right>
-                        <a href="/settings/rules" className="pressable" style={{ color: "hsl(var(--accent))", fontSize: 13 }}>
+                        <a href="/settings/rules" className="pressable" style={{ color: "var(--accent-color)", fontSize: 13 }}>
                           Manage
                         </a>
                       </TCell>

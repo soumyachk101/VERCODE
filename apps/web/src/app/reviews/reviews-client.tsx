@@ -142,7 +142,7 @@ function ReviewRow({ job }: { job: NormalizedJob }) {
         <span className="meta">{job.repoName ?? "—"}</span>
       </TCell>
       <TCell>
-        <span style={{ fontSize: 14, color: "hsl(var(--accent))", fontWeight: 500 }}>
+        <span style={{ fontSize: 14, color: "var(--accent-color)", fontWeight: 500 }}>
           {verdictWord(job)}
         </span>
       </TCell>

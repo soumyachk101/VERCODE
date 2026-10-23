@@ -38,7 +38,7 @@ export function BlockError({
           type="button"
           onClick={onRetry}
           disabled={retrying}
-          className="pressable text-sm font-medium text-[hsl(var(--accent))] disabled:opacity-60"
+          className="pressable text-sm font-medium text-[var(--accent-color)] disabled:opacity-60"
         >
           Retry
         </button>
@@ -85,7 +85,7 @@ export function ConfirmDialog({
         className="popover-enter"
         style={{
           background: "var(--surface)",
-          border: "1px solid hsl(var(--border))",
+          border: "1px solid var(--hard-border)",
           borderRadius: "var(--radius-card)",
           boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
           padding: 20,
@@ -149,7 +149,7 @@ export function Notice({
   const [open, setOpen] = useState(true);
   if (!open) return null;
   const border =
-    tone === "warning" ? "var(--notice-border)" : "hsl(var(--border))";
+    tone === "warning" ? "var(--notice-border)" : "var(--hard-border)";
   return (
     <div
       className={cn(className)}

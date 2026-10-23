@@ -60,7 +60,7 @@ export default function BlogIndexPage() {
         .bl-title { font-size: 17px; font-weight: 600; margin: 0 0 0.375rem; }
         .bl-title a { color: var(--text); text-decoration: none; }
         .bl-title a:hover { color: var(--accent-ink); }
-        .bl-dek { font-size: 15px; color: hsl(var(--muted)); margin: 0 0 0.5rem; line-height: 1.5; }
+        .bl-dek { font-size: 16px; color: hsl(var(--muted)); margin: 0 0 0.5rem; line-height: 1.5; }
         .bl-tags { font-size: 13px; color: hsl(var(--faint)); margin: 0; }
         .bl-tags span + span::before { content: " · "; }
       `}</style>

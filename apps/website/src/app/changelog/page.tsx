@@ -128,7 +128,7 @@ export default function ChangelogIndexPage() {
         .cl-title { font-size: 17px; font-weight: 600; margin: 0 0 0.375rem; }
         .cl-title a { color: var(--text); text-decoration: none; }
         .cl-title a:hover { color: var(--accent-ink); }
-        .cl-summary { font-size: 15px; color: hsl(var(--muted)); margin: 0 0 1rem; line-height: 1.5; }
+        .cl-summary { font-size: 16px; color: hsl(var(--muted)); margin: 0 0 1rem; line-height: 1.5; }
         .cl-sec { font-size: 13px; font-weight: 600; letter-spacing: 0.05em; color: hsl(var(--faint)); margin: 0 0 0.375rem; }
         .cl ul { margin: 0; padding-left: 1.25rem; font-size: 16px; color: var(--text); line-height: 1.5; }
         .cl li { margin-bottom: 0.375rem; }

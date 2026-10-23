@@ -21,7 +21,7 @@ const TAG_LABEL: Record<ChangelogTag, string> = {
 const TAG_CLASS: Record<ChangelogTag, string> = {
   added: "bg-[hsl(var(--success))] text-[hsl(var(--accent-foreground))]",
   improved: "bg-[hsl(var(--text-3))] text-[hsl(var(--accent-foreground))]",
-  fixed: "bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]",
+  fixed: "bg-[var(--accent-color)] text-[hsl(var(--accent-foreground))]",
   security: "bg-[hsl(var(--panel))] text-[hsl(var(--text-2))]",
 };
 
@@ -40,7 +40,7 @@ export default function ChangelogPage() {
   return (
     <MarketingShell>
       <section className="mx-auto w-full max-w-3xl px-4 py-16 sm:px-6 sm:py-20">
-        <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[hsl(var(--accent))]">
+        <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-color)]">
           Changelog
         </span>
         <h1 className="mt-3 text-[32px] font-bold leading-[1.1] tracking-[-0.02em] text-[hsl(var(--text-1))] sm:text-[44px]">
@@ -59,7 +59,7 @@ export default function ChangelogPage() {
               {/* the timeline node */}
               <span
                 aria-hidden="true"
-                className="absolute -left-[calc(1.5rem+5px)] top-1 h-3 w-3 rounded-full border-2 border-[hsl(var(--background))] bg-[hsl(var(--accent))] sm:-left-[calc(2rem+5px)]"
+                className="absolute -left-[calc(1.5rem+5px)] top-1 h-3 w-3 rounded-full border-2 border-[hsl(var(--background))] bg-[var(--accent-color)] sm:-left-[calc(2rem+5px)]"
               />
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 <span className="rounded-full bg-[hsl(var(--highlight))] px-2.5 py-0.5 font-mono text-[13px] font-semibold text-[hsl(var(--text-1))]">

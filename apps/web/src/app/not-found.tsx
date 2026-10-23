@@ -37,7 +37,7 @@ export default function NotFound() {
           style={{
             width: 16,
             height: 16,
-            background: "hsl(var(--accent))",
+            background: "var(--accent-color)",
             borderRadius: 4,
             display: "inline-flex",
             alignItems: "center",

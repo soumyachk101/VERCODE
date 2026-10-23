@@ -131,7 +131,7 @@ export function SigninClient() {
             style={{
               width: 16,
               height: 16,
-              background: "hsl(var(--accent))",
+              background: "var(--accent-color)",
               borderRadius: 4,
               display: "inline-flex",
               alignItems: "center",
@@ -170,7 +170,7 @@ export function SigninClient() {
           justifyContent: "center",
           gap: 20,
           background: "var(--surface)",
-          borderLeft: "1px solid hsl(var(--border))",
+          borderLeft: "1px solid var(--hard-border)",
         }}
       >
         {step === "org" ? (

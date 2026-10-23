@@ -53,7 +53,7 @@ export function KpiStrip({
       className={cn("grid", className)}
       style={{
         gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-        border: "1px solid hsl(var(--border))",
+        border: "1px solid var(--hard-border)",
         borderRadius: "var(--radius-card)",
         background: "var(--surface)",
       }}
