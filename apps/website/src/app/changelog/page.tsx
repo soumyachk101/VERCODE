@@ -3,7 +3,7 @@
  *
  * H1 + a 1-sentence orientation + the feed, newest first. Each entry is an
  * <article>: a <time datetime> 13px hsl(var(--faint)) line, a semver mono chip,
- * a 17px/600 title, the 1-sentence summary, and the sections as a 13px
+ * a 17px/600 title, the 16px 1-sentence summary, and the sections as a 13px
  * group-label + <ul> of bullets.
  *
  * An ItemList JSON-LD of the latest 10 releases (STRUCTURED_DATA.md §3.9's
