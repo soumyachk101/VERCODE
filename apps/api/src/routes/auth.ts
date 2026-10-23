@@ -191,7 +191,6 @@ export async function authRoutes(app: FastifyInstance) {
     "/github/start",
     {
       schema: {
-        config: { capability: "auth" },
         querystring: z.object({ redirect: z.string().url().optional() }),
       },
     },
@@ -241,10 +240,7 @@ export async function authRoutes(app: FastifyInstance) {
   app.get(
     "/github/callback",
     {
-      schema: {
-        config: { capability: "auth" },
-        querystring: GithubCallbackSchema,
-      },
+      schema: { querystring: GithubCallbackSchema },
     },
     async (req, reply) => {
       const db = app.auth.db;
@@ -374,9 +370,7 @@ export async function authRoutes(app: FastifyInstance) {
     },
   );
 
-  app.post(
-    "/github/disconnect",
-    { schema: { config: { capability: "auth" } } },
+  app.post("/github/disconnect",
     async (req, reply) => {
       const db = app.auth.db;
       const userId = req.user.userId ?? "";

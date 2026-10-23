@@ -1,45 +1,79 @@
 @import "tailwindcss";
 
-/* VERCODE design tokens (DESIGN_SYSTEM.md §4). Light + dark themes, the tight
-   radius family (4–8px), a single data hue (saturated blue-teal) outside the
-   severity palette, severity ramp critical→low + positive green.
-   No gradients, no tinted tiles, 1px borders only, flat surfaces. */
+/* VERCODE design tokens — single dark palette. Surfaces are deep indigo
+   neutrals, one accent hue (red), a positive green, and a 3-step ink
+   ramp. No light theme, no gradients, no tinted tiles, 1px borders only,
+   flat surfaces. */
 
 :root {
-  /* ground / surfaces (4.2) */
-  --ground: #f9fafb;
-  --surface: #ffffff;
-  --raised: #f9f9f9;
-  --active: #eeeeee;
-  --border: #e8e8e8;
-  --rule: #f2f2f2;
-  --control: #d1d5db;
-  --text: #111111;
-  --muted: #5f6368; /* 4.5:1 on white */
-  --faint: #6b6b6b; /* the lightest grey that holds on white */
-  --primary: #1d1f20;
-  --primary-ink: #ffffff;
-  /* the single data hue (plan-spend / verdict data element / primary):
-     a strong blue-teal, deliberately outside the severity ramp */
-  --accent: #0e7490;
-  --grid: #e5e5e5;
-  /* severity ramp (4.1) */
-  --sev-critical: #c4242a;
-  --sev-high: #d97706;
-  --sev-medium: #2563eb;
-  --sev-low: #6b7280;
-  --sev-positive: #247b50;
+  /* the shared dark palette (exact values) — used by the marketing
+     surface (hsl(var(--token)) triplets) and mirrored as hex below for
+     the dashboard (var(--token)) */
+  --background: 240 60% 4%;
+  --foreground: 0 0% 98%;
+  --muted: 240 30% 12%;
+  --muted-foreground: 240 10% 66%;
+  --accent: 0 90% 55%;
+  --accent-foreground: 0 0% 100%;
+  --border: 240 25% 18%;
+  --panel: 240 40% 9%;
+  --line: 240 25% 16%;
+  --highlight: 240 35% 14%;
+  --success: 150 60% 45%;
+  --text-1: 0 0% 100%;
+  --text-2: 240 10% 80%;
+  --text-3: 240 8% 58%;
+
+  /* the same palette, hex-mirrored for the dashboard's var() tokens.
+     Names are kept so existing class/inline styles keep working. */
+  --background-hex: hsl(240 60% 4%);
+  --foreground-hex: hsl(0 0% 98%);
+  --muted-hex: hsl(240 30% 12%);
+  --muted-foreground-hex: hsl(240 10% 66%);
+  --accent-hex: hsl(0 90% 55%);
+  --accent-foreground-hex: hsl(0 0% 100%);
+  --border-hex: hsl(240 25% 18%);
+  --panel-hex: hsl(240 40% 9%);
+  --line-hex: hsl(240 25% 16%);
+  --highlight-hex: hsl(240 35% 14%);
+  --success-hex: hsl(150 60% 45%);
+  --text-1-hex: hsl(0 0% 100%);
+  --text-2-hex: hsl(240 10% 80%);
+  --text-3-hex: hsl(240 8% 58%);
+
+  /* ground / surfaces — the indigo scale */
+  --ground: hsl(240 60% 4%);
+  --surface: hsl(240 40% 9%);
+  --raised: hsl(240 30% 12%);
+  --active: hsl(240 35% 14%);
+  --border: hsl(240 25% 18%);
+  --rule: hsl(240 25% 16%);
+  --control: hsl(240 25% 18%);
+  --text: hsl(0 0% 98%);
+  --muted: hsl(240 10% 66%);
+  --faint: hsl(240 8% 58%);
+  --primary: hsl(0 0% 100%);
+  --primary-ink: hsl(240 60% 4%);
+  /* the single data hue — the accent */
+  --accent: hsl(0 90% 55%);
+  --grid: hsl(240 25% 16%);
+  /* severity ramp (critical→low): the accent, stepped down to text-2 */
+  --sev-critical: hsl(0 90% 55%);
+  --sev-high: hsl(0 45% 68%);
+  --sev-medium: hsl(0 30% 78%);
+  --sev-low: hsl(240 10% 80%);
+  --sev-positive: hsl(150 60% 45%);
   /* the good/bad pair for deltas (colour says good-or-bad, not up-or-down) */
-  --positive: #247b50;
-  --negative: #c4242a;
-  /* status pill pairs (pale tint + dark same-hue ink, 4.2) */
-  --pill-positive-bg: #dcfae5;
-  --pill-positive-ink: #04250e;
-  --pill-negative-bg: #ffedea;
-  --pill-negative-ink: #831c1e;
-  --pill-warning-bg: #fffbeb;
-  --pill-warning-ink: #92400e;
-  --notice-border: #fde68a;
+  --positive: hsl(150 60% 45%);
+  --negative: hsl(0 90% 55%);
+  /* status pill pairs (a same-hue tint + same-hue ink) */
+  --pill-positive-bg: hsl(150 60% 45% / 15%);
+  --pill-positive-ink: hsl(150 60% 45%);
+  --pill-negative-bg: hsl(0 90% 55% / 15%);
+  --pill-negative-ink: hsl(0 90% 55%);
+  --pill-warning-bg: hsl(0 90% 55% / 10%);
+  --pill-warning-ink: hsl(0 40% 74%);
+  --notice-border: hsl(0 45% 68%);
   /* radii (tight family 4–8px) */
   --radius-card: 8px;
   --radius-control: 6px;
@@ -51,53 +85,17 @@
   --nav-row: 34px;
   --control-height: 32px;
   --row-height: 48px;
-  /* motion (DESIGN_SYSTEM §8, emil-design-eng) */
+  /* motion */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   --font: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-:root[data-theme="dark"] {
-  /* true neutral (4.3): black + lightness steps, no navy tint */
-  --ground: #000000;
-  --surface: #111111;
-  --raised: #222222;
-  --active: #222222;
-  --border: #1a1a1a;
-  --rule: #161616;
-  --control: #444444;
-  --text: #ffffff;
-  --muted: #b4b4b4;
-  --faint: #949494;
-  --primary: #ffffff;
-  --primary-ink: #000000;
-  --accent: #2dd4bf;
-  --grid: #2b2b2b;
-  --sev-critical: #e5566f;
-  --sev-high: #f59e0b;
-  --sev-medium: #3b82f6;
-  --sev-low: #9ca3af;
-  --sev-positive: #3fc07a;
-  --positive: #3fc07a;
-  --negative: #e5566f;
-  --pill-positive-bg: #0b2c1a;
-  --pill-positive-ink: #6ee7a0;
-  --pill-negative-bg: #2c1a20;
-  --pill-negative-ink: #e5566f;
-  --pill-warning-bg: #2a2410;
-  --pill-warning-ink: #f5c563;
-  --notice-border: #8a6d1a;
-}
-
 html {
-  color-scheme: light;
-  font-family: var(--font);
-  font-size: 14px; /* body base (DESIGN_SYSTEM §2) */
-}
-
-:root[data-theme="dark"] {
   color-scheme: dark;
+  font-family: var(--font);
+  font-size: 14px;
 }
 
 body {
@@ -127,7 +125,7 @@ body {
   width: 100%;
 }
 
-/* ---- type tiers (DESIGN_SYSTEM §2) ---------------------------------- */
+/* ---- type tiers ------------------------------------------------------ */
 .h1 {
   font-size: 24px;
   font-weight: 600;
@@ -161,14 +159,14 @@ body {
   font-family: var(--font-mono);
 }
 
-/* ---- focus ring (ACCESSIBILITY.md §2: visible on every focusable) --- */
+/* ---- focus ring ------------------------------------------------------ */
 :focus-visible {
   outline: 2px solid var(--control);
   outline-offset: 1px;
   border-radius: 2px;
 }
 
-/* ---- press feedback (DESIGN_SYSTEM §8: :active scale(0.97), 160ms) -- */
+/* ---- press feedback -------------------------------------------------- */
 .pressable {
   transition: transform 160ms var(--ease-out);
 }
@@ -176,7 +174,7 @@ body {
   transform: scale(0.97);
 }
 
-/* ---- enter from starting style (menu/panel open, Emil rules) -------- */
+/* ---- enter from starting style --------------------------------------- */
 .popover-enter {
   transform-origin: var(--popover-origin, top left);
   animation: vc-popover-in 150ms var(--ease-out);
@@ -201,7 +199,7 @@ body {
   display: none;
 }
 
-/* ---- reduced motion: opacity-only, no travel (NFR-25) --------------- */
+/* ---- reduced motion: opacity-only, no travel ------------------------ */
 @media (prefers-reduced-motion: reduce) {
   .pressable,
   .nav-sheet {
@@ -230,7 +228,7 @@ body {
   }
 }
 
-/* hover is gated behind fine pointers (Emil: no false hover on touch) */
+/* hover is gated behind fine pointers */
 @media (hover: hover) and (pointer: fine) {
   .hover-lift:hover {
     background: var(--active);
@@ -244,12 +242,12 @@ body {
   padding: 0;
   margin: -1px;
   overflow: hidden;
-  clip: rect(0, 0, 0, 0);
+  clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
 }
 
-/* The skeleton loading bar: flat grey at real size, no shimmer (6.6) */
+/* The skeleton loading bar: flat surface at real size, no shimmer */
 .skeleton {
   background: var(--raised);
   border: 1px solid var(--rule);

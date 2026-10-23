@@ -90,19 +90,13 @@ function matchActive(p: string): string {
 export function OrgShell({ children }: { children: ReactNode }) {
   const s = useOrgShell();
   const router = useRouter();
-  // Route guard: no session at all → back to sign-in (once — the sign-in
-  // page resolves /auth/me on load, so an existing session that has just
-  // expired is re-signed-in there, and a valid session never lands here).
-  if (s.me.isError) {
-    useEffect(() => {
-      router.replace("/signin");
-    }, [router]);
-  }
-  // No session yet (loading) or a session without an org (a fresh
-  // account mid-bootstrap, a 404 /me while the dashboard API is down):
-  // render the shell chrome with a designed empty state — no blank page,
-  // no redirect loop.
-  if (s.me.isLoading || (s.orgs.length === 0 && !s.me.isError)) {
+  // No session yet (loading), or a session that has no orgs (a fresh
+  // account mid-bootstrap, a 401 /me, a down dashboard API): render the
+  // shell chrome with a designed empty state — no blank page, no
+  // redirect loop. The empty state offers the one action that fits:
+  // "create your organization" (a valid session without an org) or
+  // "sign in" (no session / API problem).
+  if (s.me.isLoading || s.orgs.length === 0) {
     return (
       <Shell
         orgName={s.orgName}
@@ -116,10 +110,7 @@ export function OrgShell({ children }: { children: ReactNode }) {
         user={s.user}
       >
         <LiveRegion />
-        <EmptyShellState
-          onSignIn={() => router.replace("/signin")}
-          creatingOrg={s.orgs.length === 0 && !s.me.isLoading}
-        />
+        <EmptyShellState hasSession={!!s.user} onSignOut={s.user ? () => s.signOut() : undefined} />
         {children}
       </Shell>
     );
@@ -135,6 +126,7 @@ export function OrgShell({ children }: { children: ReactNode }) {
       bottomItems={s.bottom}
       active={s.activeKey}
       user={s.user}
+      onSignOut={s.signOut}
     >
       <LiveRegion />
       {children}
@@ -143,12 +135,13 @@ export function OrgShell({ children }: { children: ReactNode }) {
 }
 
 function EmptyShellState({
-  onSignIn,
-  creatingOrg,
+  hasSession,
+  onSignOut,
 }: {
-  onSignIn: () => void;
-  creatingOrg: boolean;
+  hasSession: boolean;
+  onSignOut?: () => void;
 }) {
+  const router = useRouter();
   return (
     <div
       style={{
@@ -159,21 +152,18 @@ function EmptyShellState({
         maxWidth: 420,
       }}
     >
-      <h1
-        className="h1"
-        style={{ margin: 0, fontSize: 22, color: "var(--text)" }}
-      >
-        {creatingOrg ? "Finish your setup" : "No organization"}
+      <h1 className="h1" style={{ margin: 0, fontSize: 22, color: "var(--text)" }}>
+        {hasSession ? "Create your organization" : "Sign in to continue"}
       </h1>
       <p className="finding-line" style={{ margin: 0 }}>
-        {creatingOrg
-          ? "Your account needs one organization to hold reviews."
-          : "Sign in to your account to reach the dashboard."}
+        {hasSession
+          ? "Your account is signed in but has no organization yet — create one to hold reviews."
+          : "You are not signed in (or the session expired). Sign in to reach the dashboard."}
       </p>
       <button
         type="button"
         className="pressable"
-        onClick={onSignIn}
+        onClick={() => router.replace(hasSession ? "/signin" : "/signin")}
         style={{
           alignSelf: "flex-start",
           height: 38,
@@ -187,8 +177,18 @@ function EmptyShellState({
           cursor: "pointer",
         }}
       >
-        {creatingOrg ? "Create an organization" : "Sign in"}
+        {hasSession ? "Create organization" : "Sign in"}
       </button>
+      {hasSession && onSignOut && (
+        <button
+          type="button"
+          className="pressable"
+          onClick={onSignOut}
+          style={{ alignSelf: "flex-start", background: "none", border: 0, color: "var(--muted)", fontSize: 13, cursor: "pointer" }}
+        >
+          Sign out instead
+        </button>
+      )}
     </div>
   );
 }
