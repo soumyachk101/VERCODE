@@ -275,8 +275,8 @@ export default function Home() {
 
       {/* Block 6 — the FAQ teaser (the top-5 items; the byte-equivalence rule
           WFR-204 — the same strings /faq renders, from the same array). */}
-      <Reveal>
-        <section
+      <Reveal as="section">
+        <div
           aria-labelledby="faq-teaser-heading"
           className="mx-auto max-w-2xl px-5 py-16"
         >
@@ -304,17 +304,14 @@ export default function Home() {
           >
             All questions
           </a>
-        </section>
+        </div>
       </Reveal>
 
       {/* Block 7 — the closing CTA (a full-width raised band, no rules:
           the tone step + space do the separating; one button, the
           TAGLINE line). */}
-      <Reveal>
-        <section
-          aria-labelledby="cta-heading"
-          className="mt-8 bg-[var(--raised)] py-16"
-        >
+      <Reveal as="section">
+        <div aria-labelledby="cta-heading" className="mt-8 bg-[var(--raised)] py-16">
           <div className="mx-auto flex max-w-2xl flex-col items-center px-5 text-center">
             <h2
               id="cta-heading"
@@ -329,7 +326,7 @@ export default function Home() {
               Start a free review
             </a>
           </div>
-        </section>
+        </div>
       </Reveal>
     </>
   );

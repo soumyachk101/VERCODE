@@ -44,19 +44,19 @@ function AccountBody() {
 
   // The GitHub OAuth return trip: the API's callback redirects to
   // `/settings/account?github=connected` (or `?github=error` on a
-  // failure). A the client strips the param + refetches the profile so
-  // the "Connected as <handle>" row updates (a the token is stored
-  // server-side, a the refetch is the honest read).
-  const [searchParams, setSearchParams] = useSearchParams();
+  // failure). A the client refetches the profile so the "Connected as
+  // <handle>" row updates (a the token is stored server-side, a the
+  // refetch is the honest read). The param is left in the URL — it's
+  // harmless and re-visits just re-read the current state.
+  const [isGitHubReturn] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return new URLSearchParams(window.location.search).get("github") != null;
+  });
   useEffect(() => {
-    if (!searchParams) return;
-    const gh = searchParams.get("github");
-    if (!gh) return;
-    void profile.refetch();
-    const next = new URLSearchParams(searchParams);
-    next.delete("github");
-    setSearchParams(next, { replace: true });
-  }, [searchParams, profile, setSearchParams]);
+    if (isGitHubReturn) {
+      void profile.refetch();
+    }
+  }, [isGitHubReturn, profile]);
 
   const p = profile.data;
   const sess = sessions.data ?? [];

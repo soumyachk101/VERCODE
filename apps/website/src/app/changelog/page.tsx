@@ -121,7 +121,7 @@ export default function ChangelogIndexPage() {
       <style>{`
         .cl-bc { font-size: 13px; color: var(--faint); margin: 0 0 2rem; }
         .cl-orient { font-size: 16px; color: var(--muted); margin: 0 0 3rem; max-width: 40rem; }
-        .cl article { padding: 1.75rem 0; border-top: 1px solid var(--rule); }
+        .cl article { padding: 1.75rem 0; }
         .cl-meta { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
         .cl-time { font-size: 13px; color: var(--faint); }
         .cl-chip { font-family: var(--font-mono); font-size: 12px; padding: 2px 8px; border: 1px solid var(--border); border-radius: var(--radius-chip); color: var(--muted); }
@@ -130,11 +130,11 @@ export default function ChangelogIndexPage() {
         .cl-title a:hover { color: var(--accent-ink); }
         .cl-summary { font-size: 15px; color: var(--muted); margin: 0 0 1rem; line-height: 1.5; }
         .cl-sec { font-size: 13px; font-weight: 600; letter-spacing: 0.05em; color: var(--faint); margin: 0 0 0.375rem; }
-        .cl ul { margin: 0; padding-left: 1.25rem; font-size: 15px; color: var(--text); line-height: 1.5; }
+        .cl ul { margin: 0; padding-left: 1.25rem; font-size: 16px; color: var(--text); line-height: 1.5; }
         .cl li { margin-bottom: 0.375rem; }
         .cl li a { color: var(--accent-ink); }
         .cl li code { font-family: var(--font-mono); font-size: 0.85em; background: var(--raised); padding: 0.1em 0.35em; border-radius: var(--radius-chip); }
-        .cl-docs { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 15px; color: var(--muted); }
+        .cl-docs { margin-top: 3rem; padding-top: 1.5rem; font-size: 16px; color: var(--muted); }
         .cl-docs a { color: var(--accent-ink); }
       `}</style>
 

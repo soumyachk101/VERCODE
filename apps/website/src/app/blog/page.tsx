@@ -54,7 +54,7 @@ export default function BlogIndexPage() {
       <style>{`
         .bl-bc { font-size: 13px; color: var(--faint); margin: 0 0 2rem; }
         .bl-orient { font-size: 16px; color: var(--muted); margin: 0 0 3rem; max-width: 40rem; }
-        .bl article { padding: 1.75rem 0; border-top: 1px solid var(--rule); }
+        .bl article { padding: 1.75rem 0; }
         .bl-meta { font-size: 13px; color: var(--faint); display: flex; gap: 0.75rem; margin-bottom: 0.375rem; flex-wrap: wrap; }
         .bl-meta time { font-variant-numeric: tabular-nums; }
         .bl-title { font-size: 17px; font-weight: 600; margin: 0 0 0.375rem; }
