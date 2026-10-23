@@ -137,9 +137,9 @@ export default async function BlogArticlePage({
         .br li { font-size: 16px; margin-bottom: 0.375rem; }
         .br a { color: var(--accent-ink); }
         .br code { font-family: var(--font-mono); font-size: 0.85em; background: var(--raised); padding: 0.1em 0.35em; border-radius: var(--radius-chip); }
-        .code-block { background: var(--raised); border: 1px solid hsl(var(--border)); border-radius: var(--radius-card); padding: 1rem; overflow-x: auto; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; margin: 1.5rem 0; }
+        .code-block { background: var(--raised); border: 1px solid var(--hard-border); border-radius: var(--radius-card); padding: 1rem; overflow-x: auto; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; margin: 1.5rem 0; }
         .code-block code { background: none; padding: 0; font-size: inherit; }
-        .br blockquote { margin: 1.5rem 0; padding: 0.5rem 1rem; border-left: 2px solid hsl(var(--accent)); background: var(--accent-soft); color: hsl(var(--muted)); }
+        .br blockquote { margin: 1.5rem 0; padding: 0.5rem 1rem; border-left: 2px solid var(--accent-color); background: var(--accent-soft); color: hsl(var(--muted)); }
         .br hr { display: none; }
         .br-related { margin-top: 3rem; padding-top: 1.5rem; font-size: 16px; color: hsl(var(--muted)); }
         .br-related-title { font-size: 13px; font-weight: 600; letter-spacing: 0.05em; color: hsl(var(--faint)); margin: 0 0 0.5rem; }

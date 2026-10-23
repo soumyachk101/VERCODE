@@ -56,7 +56,7 @@ export function Prose({ children, toc }: ProseProps) {
               <li key={e.id}>
                 <a
                   href={`#${e.id}`}
-                  className="block border-l border-transparent pl-3 text-[13px] text-[hsl(var(--muted))] transition-colors hover:border-[hsl(var(--accent))] hover:text-[var(--text)]"
+                  className="block border-l border-transparent pl-3 text-[13px] text-[hsl(var(--muted))] transition-colors hover:border-[var(--accent-color)] hover:text-[var(--text)]"
                 >
                   {e.label}
                 </a>

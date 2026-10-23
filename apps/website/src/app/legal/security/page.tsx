@@ -210,7 +210,7 @@ export default function LegalSecurityPage() {
               Write to{" "}
               <a
                 href="mailto:security@vercode.com"
-                className="text-[hsl(var(--accent))] underline underline-offset-2"
+                className="text-[var(--accent-color)] underline underline-offset-2"
               >
                 security@vercode.com
               </a>
@@ -222,7 +222,7 @@ export default function LegalSecurityPage() {
               and verification tests) is in the repo:{" "}
               <a
                 href={`${GITHUB_REPO}/tree/main/docs/SECURITY/SECURITY_ARCHITECTURE.md`}
-                className="text-[hsl(var(--accent))] underline underline-offset-2"
+                className="text-[var(--accent-color)] underline underline-offset-2"
               >
                 docs/SECURITY/SECURITY_ARCHITECTURE.md
               </a>

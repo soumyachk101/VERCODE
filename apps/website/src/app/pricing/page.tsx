@@ -97,8 +97,8 @@ export default function Pricing() {
                   key={plan}
                   className={`flex flex-col rounded-[var(--radius-card)] p-6 ${
                     isTeam
-                      ? "border-2 border-[hsl(var(--accent))]"
-                      : "border border-[hsl(var(--border))]"
+                      ? "border-2 border-[var(--accent-color)]"
+                      : "border border-[var(--hard-border)]"
                   }`}
                 >
                   <h3 className="text-[16px] font-semibold capitalize text-[var(--text)]">

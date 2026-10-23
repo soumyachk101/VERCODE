@@ -167,12 +167,12 @@ export default function Features() {
               </p>
               {/* A live finding, the exact shape the pipeline publishes
                   (a pre in the prose styles, via the Prose wrapper). */}
-              <pre className="mt-5 overflow-x-auto rounded-[var(--radius-card)] border border-[hsl(var(--border))] bg-[var(--raised)] p-5 font-mono text-[14px] leading-relaxed text-[var(--text)]">
+              <pre className="mt-5 overflow-x-auto rounded-[var(--radius-card)] border border-[var(--hard-border)] bg-[var(--raised)] p-5 font-mono text-[14px] leading-relaxed text-[var(--text)]">
                 <code>{pillar.fragment}</code>
               </pre>
               <a
                 href={pillar.docs}
-                className="mt-4 inline-block text-[16px] font-medium text-[hsl(var(--accent))] underline-offset-4 hover:underline"
+                className="mt-4 inline-block text-[16px] font-medium text-[var(--accent-color)] underline-offset-4 hover:underline"
               >
                 How it works
               </a>
@@ -208,7 +208,7 @@ export default function Features() {
                 </p>
                 <a
                   href={story.docs}
-                  className="mt-2 inline-block text-[16px] font-medium text-[hsl(var(--accent))] underline-offset-4 hover:underline"
+                  className="mt-2 inline-block text-[16px] font-medium text-[var(--accent-color)] underline-offset-4 hover:underline"
                 >
                   The docs
                 </a>

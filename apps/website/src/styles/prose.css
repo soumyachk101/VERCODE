@@ -54,7 +54,7 @@
   font-size: 0.8125rem;
   line-height: 1.6;
   background: var(--raised);
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--hard-border);
   padding: 0.75rem;
   border-radius: var(--radius-card);
   overflow-x: auto;
@@ -77,7 +77,7 @@
 }
 
 .prose-vercode blockquote {
-  border-left: 2px solid hsl(var(--border));
+  border-left: 2px solid var(--hard-border);
   padding-left: 0.75rem;
   color: hsl(var(--muted));
   font-style: italic;
@@ -86,7 +86,7 @@
 
 .prose-vercode hr {
   border: 0;
-  border-top: 1px solid hsl(var(--border));
+  border-top: 1px solid var(--hard-border);
   margin: 1.5rem 0;
 }
 
@@ -105,7 +105,7 @@
   font-weight: 500;
   text-align: left;
   padding: 0.5rem;
-  border-bottom: 1px solid hsl(var(--border));
+  border-bottom: 1px solid var(--hard-border);
 }
 
 .prose-vercode td {
@@ -116,7 +116,7 @@
 }
 
 .prose-vercode a {
-  color: hsl(var(--accent));
+  color: var(--accent-color);
   text-decoration: underline;
   text-underline-offset: 2px;
 }

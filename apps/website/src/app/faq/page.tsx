@@ -103,7 +103,7 @@ export default function FaqPage() {
                 <li key={g.id}>
                   <a
                     href={`#${groupId(g.id)}`}
-                    className="block border-l border-transparent pl-3 text-[13px] text-[hsl(var(--muted))] transition-colors hover:border-[hsl(var(--accent))] hover:text-[var(--text)]"
+                    className="block border-l border-transparent pl-3 text-[13px] text-[hsl(var(--muted))] transition-colors hover:border-[var(--accent-color)] hover:text-[var(--text)]"
                   >
                     {g.label}
                   </a>

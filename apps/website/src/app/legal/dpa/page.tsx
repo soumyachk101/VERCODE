@@ -120,7 +120,7 @@ export default function LegalDpaPage() {
               ephemeral" rule; see the{" "}
               <a
                 href="/legal/privacy/"
-                className="text-[hsl(var(--accent))] underline underline-offset-2"
+                className="text-[var(--accent-color)] underline underline-offset-2"
               >
                 privacy policy
               </a>{" "}

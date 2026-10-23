@@ -1,0 +1,104 @@
+/* The site's motion set (DESIGN_SYSTEM_AND_TYPOGRAPHY.md §5, the
+   `emil-design-eng` skill's rules applied to a *read* surface: a
+   one-time 100ms scroll-reveal, a 100ms CTA hover, an enter-only
+   `@starting-style` animation on the one mount/unmount case —
+   the mobile nav sheet). `output: "export"` + a static host keep
+   this file in the shipped HTML (a `next.config.mjs` `eslint:
+   false` build still bundles every `@import`'d stylesheet —
+   `globals.css`'s `tailwind` import is in the out/ CSS, so the
+   motion rules are in the same bundle). */
+
+/* The one-time scroll reveal (DESIGN_SYSTEM_AND_TYPOGRAPHY.md §5) —
+   disabled under prefers-reduced-motion (PERFORMANCE_AND_ACCESSIBILITY.md
+   WNFR-08).
+
+   The `.js` gate: an inline script in `src/app/layout.tsx` adds a `.js`
+   class to `<html>` before first paint. The reveal is hidden ONLY
+   when that class is present, so a no-JS crawler (or a JS failure)
+   always sees every element (the "content is visible by default"
+   rule, a `PERFORMANCE_AND_ACCESSIBILITY.md`'s a11y fallback). */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 100ms ease-out,
+    transform 100ms ease-out;
+}
+.js .reveal.is-in {
+  opacity: 1;
+  transform: none;
+  /* A stagger only delays the *out → in* travel: a `Reveal` sets a
+     `transition-delay` inline (a `data-stagger` index × 60ms, capped
+     at 240ms). The `.is-in` state carries `transition-delay: 0s`,
+     so the revealed state never lags a later CSS state change. */
+  transition-delay: 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* The mobile nav sheet's one-time enter (DESIGN_SYSTEM_AND_TYPOGRAPHY.md
+   §5's `emil-design-eng` "a mount/unmount case gets a 100–200ms
+   opacity+transform enter" rule; `@starting-style`, so the animation
+   lives in CSS — no `useEffect`-mounted-flag JS in `SiteHeader.tsx`).
+
+   The sheet is a `position: fixed inset-0` overlay that mounts on open
+   and unmounts on close (a `SiteHeader.tsx` conditional render) — an
+   *enter-only* animation is enough: on close the sheet unmounts
+   instantly, which is the correct "no exit animation" behavior for a
+   dialog that's a few links away from the next page. The scrim is a
+   sibling `span` inside the sheet: it fades in on the same 150ms
+   (an `opacity` 0→1, a `transform` is a no-op on a full-viewport
+   element — only the top panel travels).
+
+   `prefers-reduced-motion: reduce` skips the whole animation
+   (a `PERFORMANCE_AND_ACCESSIBILITY.md`'s `WNFR-08` "no-animation
+   under reduced-motion" rule — an `emil-design-eng` "keep opacity,
+   remove travel" spirit: the sheet appears instantly, no fade, no
+   travel). */
+#site-header-sheet {
+  transition: opacity 150ms ease-out;
+}
+#site-header-sheet .site-header-sheet-panel {
+  transition:
+    opacity 150ms ease-out,
+    transform 150ms ease-out;
+}
+#site-header-sheet .site-header-sheet-scrim {
+  transition: opacity 150ms ease-out;
+}
+@starting-style {
+  #site-header-sheet {
+    opacity: 0;
+  }
+  #site-header-sheet .site-header-sheet-panel {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  #site-header-sheet .site-header-sheet-scrim {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #site-header-sheet,
+  #site-header-sheet .site-header-sheet-panel,
+  #site-header-sheet .site-header-sheet-scrim {
+    transition: none;
+  }
+  @starting-style {
+    #site-header-sheet {
+      opacity: 1;
+    }
+    #site-header-sheet .site-header-sheet-panel {
+      opacity: 1;
+      transform: none;
+    }
+    #site-header-sheet .site-header-sheet-scrim {
+      opacity: 1;
+    }
+  }
+}

@@ -97,7 +97,7 @@ export default function DocsIndexPage() {
           rule; the SUCCESS_METRICS activation KPI's "a first review
           within 10 minutes of install" is the card's body). */}
       <div className="mx-auto max-w-2xl px-5 pt-8">
-        <div className="rounded-[var(--radius-card)] border border-[hsl(var(--border))] bg-[var(--surface)] p-6">
+        <div className="rounded-[var(--radius-card)] border border-[var(--hard-border)] bg-[var(--surface)] p-6">
           <h2 className="text-[20px] font-semibold text-[var(--text)]">
             Get your first review in 10 minutes
           </h2>
@@ -110,7 +110,7 @@ export default function DocsIndexPage() {
           <p className="mt-3">
             <a
               href="/docs/quickstart/"
-              className="text-[16px] font-medium text-[hsl(var(--accent))] underline underline-offset-2"
+              className="text-[16px] font-medium text-[var(--accent-color)] underline underline-offset-2"
             >
               Start here
             </a>
@@ -137,7 +137,7 @@ export default function DocsIndexPage() {
                     <dd key={d.slug}>
                       <a
                         href={`/docs/${d.slug}/`}
-                        className="text-[16px] font-semibold text-[hsl(var(--accent))] underline underline-offset-2"
+                        className="text-[16px] font-semibold text-[var(--accent-color)] underline underline-offset-2"
                       >
                         {d.front.title}
                       </a>

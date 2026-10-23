@@ -124,7 +124,7 @@ export default function ChangelogIndexPage() {
         .cl article { padding: 1.75rem 0; }
         .cl-meta { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
         .cl-time { font-size: 13px; color: hsl(var(--faint)); }
-        .cl-chip { font-family: var(--font-mono); font-size: 12px; padding: 2px 8px; border: 1px solid hsl(var(--border)); border-radius: var(--radius-chip); color: hsl(var(--muted)); }
+        .cl-chip { font-family: var(--font-mono); font-size: 12px; padding: 2px 8px; border: 1px solid var(--hard-border); border-radius: var(--radius-chip); color: hsl(var(--muted)); }
         .cl-title { font-size: 17px; font-weight: 600; margin: 0 0 0.375rem; }
         .cl-title a { color: var(--text); text-decoration: none; }
         .cl-title a:hover { color: var(--accent-ink); }
