@@ -137,7 +137,7 @@ export default function Features() {
         <h1 className="text-[40px] font-bold tracking-tight text-[var(--text)]">
           Features
         </h1>
-        <p className="mt-4 text-[17px] leading-relaxed text-[var(--muted)]">
+        <p className="mt-4 text-[17px] leading-relaxed text-[hsl(var(--muted))]">
           The question this page answers: what does VERCODE do that a
           model-only AI reviewer does not? The short version — a pipeline that
           is deterministic first, evidence-backed, cost-disciplined, and a
@@ -162,17 +162,17 @@ export default function Features() {
               >
                 {pillar.title}
               </h2>
-              <p className="mt-2 text-[16px] leading-relaxed text-[var(--muted)]">
+              <p className="mt-2 text-[16px] leading-relaxed text-[hsl(var(--muted))]">
                 {pillar.body}
               </p>
               {/* A live finding, the exact shape the pipeline publishes
                   (a pre in the prose styles, via the Prose wrapper). */}
-              <pre className="mt-5 overflow-x-auto rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--raised)] p-5 font-mono text-[14px] leading-relaxed text-[var(--text)]">
+              <pre className="mt-5 overflow-x-auto rounded-[var(--radius-card)] border border-[hsl(var(--border))] bg-[var(--raised)] p-5 font-mono text-[14px] leading-relaxed text-[var(--text)]">
                 <code>{pillar.fragment}</code>
               </pre>
               <a
                 href={pillar.docs}
-                className="mt-4 inline-block text-[16px] font-medium text-[var(--accent)] underline-offset-4 hover:underline"
+                className="mt-4 inline-block text-[16px] font-medium text-[hsl(var(--accent))] underline-offset-4 hover:underline"
               >
                 How it works
               </a>
@@ -200,15 +200,15 @@ export default function Features() {
                 <h3 className="text-[17px] font-semibold text-[var(--text)]">
                   {story.title}
                 </h3>
-                <p className="mt-2 text-[16px] leading-relaxed text-[var(--muted)]">
+                <p className="mt-2 text-[16px] leading-relaxed text-[hsl(var(--muted))]">
                   {story.body}
                 </p>
-                <p className="mt-2 font-mono text-[13px] text-[var(--faint)]">
+                <p className="mt-2 font-mono text-[13px] text-[hsl(var(--faint))]">
                   {story.fr}
                 </p>
                 <a
                   href={story.docs}
-                  className="mt-2 inline-block text-[16px] font-medium text-[var(--accent)] underline-offset-4 hover:underline"
+                  className="mt-2 inline-block text-[16px] font-medium text-[hsl(var(--accent))] underline-offset-4 hover:underline"
                 >
                   The docs
                 </a>

@@ -45,7 +45,7 @@ export default function AboutPage() {
         {/* The company story in 3 short paragraphs (IA §3.8's rule):
             the why (the noise problem), the answer (deterministic-first),
             the posture (open source). */}
-        <section aria-label="Why VERCODE" className="mt-6 space-y-4 text-[16px] leading-[1.6] text-[var(--muted)]">
+        <section aria-label="Why VERCODE" className="mt-6 space-y-4 text-[16px] leading-[1.6] text-[hsl(var(--muted))]">
           <p>
             AI code review has a noise problem. A reviewer that posts a
             long list of low-confidence comments trains a team to stop
@@ -77,21 +77,21 @@ export default function AboutPage() {
           <h2 className="text-[20px] font-semibold text-[var(--text)]">
             Read the source
           </h2>
-          <p className="mt-3 text-[16px] leading-[1.6] text-[var(--muted)]">
+          <p className="mt-3 text-[16px] leading-[1.6] text-[hsl(var(--muted))]">
             The repository is MIT-licensed:
           </p>
           <p className="mt-2">
             <a
               href={GITHUB_REPO}
-              className="text-[15px] font-medium text-[var(--accent)] underline underline-offset-2"
+              className="text-[15px] font-medium text-[hsl(var(--accent))] underline underline-offset-2"
             >
               {GITHUB_REPO}
             </a>
           </p>
-          <p className="mt-3 text-[15px] text-[var(--muted)]">
+          <p className="mt-3 text-[15px] text-[hsl(var(--muted))]">
             MIT-licensed — use it, read it, build on it.
           </p>
-          <ul className="mt-4 space-y-2 text-[15px] text-[var(--muted)]">
+          <ul className="mt-4 space-y-2 text-[15px] text-[hsl(var(--muted))]">
             <li>
               <strong className="text-[var(--text)]">The MIT license.</strong>{" "}
               The code is at LICENSE.md in the repo; a fork is a right, not
@@ -121,21 +121,21 @@ export default function AboutPage() {
           <h2 className="text-[20px] font-semibold text-[var(--text)]">
             The team
           </h2>
-          <p className="mt-3 text-[16px] leading-[1.6] text-[var(--muted)]">
+          <p className="mt-3 text-[16px] leading-[1.6] text-[hsl(var(--muted))]">
             The VERCODE team.
           </p>
-          <p className="mt-2 text-[15px] leading-[1.6] text-[var(--muted)]">
+          <p className="mt-2 text-[15px] leading-[1.6] text-[hsl(var(--muted))]">
             Named authors and team details land with the public launch; the
             source and the docs are the team&rsquo;s first introduction.
           </p>
         </section>
 
         {/* A link to /blog/ (IA §3.8's closing link). */}
-        <p className="mt-10 text-[15px] text-[var(--muted)]">
+        <p className="mt-10 text-[15px] text-[hsl(var(--muted))]">
           The team&rsquo;s thinking is written up on the{" "}
           <a
             href="/blog/"
-            className="text-[var(--accent)] underline underline-offset-2"
+            className="text-[hsl(var(--accent))] underline underline-offset-2"
           >
             blog
           </a>

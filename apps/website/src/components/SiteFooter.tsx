@@ -23,7 +23,7 @@ function GitHubIcon() {
       height={16}
       fill="none"
       aria-hidden="true"
-      className="text-[var(--faint)]"
+      className="text-[hsl(var(--faint))]"
     >
       <path
         d="M8 1.375c-3.618 0-6.545 2.927-6.545 6.545 0 2.903 1.881 5.378 4.518 6.288.33.06.448-.14.448-.313 0-.155-.005-.675-.01-1.32-1.844.401-2.24-.813-2.24-.813-.306-.77-.75-1.05-.75-1.05-.61-.446.047-.44.047-.44.675.052 1.03.696 1.03.696.601 1.034 1.58.735 1.965.563.06-.925.317-1.57.575-1.934-1.742-.36-3.58-1.04-3.58-4.644 0-1.02.365-1.85.97-2.506-.097-.24-.42-1.205.093-2.51 0 0 .79-.255 2.583.97.75-.212 1.546-.318 2.342-.321.796.003 1.592.11 2.343.32 1.792-1.224 2.58-.97 2.58-.97.513 1.306.19 2.27.093 2.51.606.656.97 1.486.97 2.506 0 3.61-1.84 4.285-3.586 4.636.283.291.536.858.536 1.728 0 1.248-.011 2.251-.011 2.562 0 .176.114.38.45.31 2.632-.91 4.51-3.384 4.51-6.287C14.545 4.302 11.618 1.375 8 1.375Z"
@@ -39,7 +39,7 @@ export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-[var(--border)] bg-[var(--ground)]">
+    <footer className="border-t border-[hsl(var(--border))] bg-[var(--ground)]">
       <div className="container py-12">
         {/* The 4 columns (IA §4: "a 4 col (Product / Resources /
             Company / Legal) + a *social* row (GitHub, X)"). */}
@@ -82,7 +82,7 @@ export function SiteFooter() {
 
         {/* The bottom row: the © year, a "MIT License" note, a status
             link (IA §4: "a 'status' link (`/legal/status`)"). */}
-        <div className="mt-6 flex flex-col gap-2 text-[13px] text-[var(--faint)] md:flex-row md:items-center md:justify-between">
+        <div className="mt-6 flex flex-col gap-2 text-[13px] text-[hsl(var(--faint))] md:flex-row md:items-center md:justify-between">
           <p className="tnum">© {year} Vercode · MIT License</p>
           <a
             href="/legal/status/"

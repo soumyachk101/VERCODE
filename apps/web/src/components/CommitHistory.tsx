@@ -122,7 +122,7 @@ export function CommitHistory({
                   )}
                   {detailHref && (
                     <a
-                      className="text-sm font-medium text-[var(--accent)]"
+                      className="text-sm font-medium text-[hsl(var(--accent))]"
                       href={detailHref(job)}
                       style={{ display: "inline-block", marginTop: 8 }}
                     >

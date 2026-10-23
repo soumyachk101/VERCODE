@@ -68,7 +68,7 @@ export default function Pricing() {
         <h1 className="text-[40px] font-bold tracking-tight text-[var(--text)]">
           Pricing
         </h1>
-        <p className="mt-4 text-[18px] text-[var(--muted)]">
+        <p className="mt-4 text-[18px] text-[hsl(var(--muted))]">
           Start free. Pay when your team grows.
         </p>
       </div>
@@ -97,8 +97,8 @@ export default function Pricing() {
                   key={plan}
                   className={`flex flex-col rounded-[var(--radius-card)] p-6 ${
                     isTeam
-                      ? "border-2 border-[var(--accent)]"
-                      : "border border-[var(--border)]"
+                      ? "border-2 border-[hsl(var(--accent))]"
+                      : "border border-[hsl(var(--border))]"
                   }`}
                 >
                   <h3 className="text-[16px] font-semibold capitalize text-[var(--text)]">
@@ -108,11 +108,11 @@ export default function Pricing() {
                     <span className="tnum text-[32px] font-semibold text-[var(--text)]">
                       {priceParts(offer).figure}
                     </span>{" "}
-                    <span className="text-[13px] text-[var(--muted)]">
+                    <span className="text-[13px] text-[hsl(var(--muted))]">
                       {priceParts(offer).unit}
                     </span>
                   </p>
-                  <p className="mt-3 text-[14px] leading-relaxed text-[var(--muted)]">
+                  <p className="mt-3 text-[14px] leading-relaxed text-[hsl(var(--muted))]">
                     {offer.positioning}
                   </p>
                   <a
@@ -155,7 +155,7 @@ export default function Pricing() {
                 <tr>
                   <th
                     scope="col"
-                    className="border-b border-[var(--rule)] py-3 pr-4 text-[13px] font-medium text-[var(--muted)]"
+                    className="border-b border-[var(--rule)] py-3 pr-4 text-[13px] font-medium text-[hsl(var(--muted))]"
                   >
                     Quota
                   </th>
@@ -163,7 +163,7 @@ export default function Pricing() {
                     <th
                       key={plan}
                       scope="col"
-                      className="border-b border-[var(--rule)] py-3 pr-4 text-right text-[13px] font-medium capitalize text-[var(--muted)]"
+                      className="border-b border-[var(--rule)] py-3 pr-4 text-right text-[13px] font-medium capitalize text-[hsl(var(--muted))]"
                     >
                       {plan}
                     </th>
@@ -182,7 +182,7 @@ export default function Pricing() {
                     {PLAN_ORDER.map((plan) => (
                       <td
                         key={plan}
-                        className="tnum border-b border-[var(--rule)] py-3 pr-4 text-right text-[14px] text-[var(--muted)]"
+                        className="tnum border-b border-[var(--rule)] py-3 pr-4 text-right text-[14px] text-[hsl(var(--muted))]"
                       >
                         {row[plan]}
                       </td>
@@ -214,7 +214,7 @@ export default function Pricing() {
                 <dt className="text-[16px] font-semibold text-[var(--text)]">
                   {item.q}
                 </dt>
-                <dd className="text-[16px] leading-relaxed text-[var(--muted)]">
+                <dd className="text-[16px] leading-relaxed text-[hsl(var(--muted))]">
                   {item.a}
                 </dd>
               </div>
@@ -227,7 +227,7 @@ export default function Pricing() {
       <Reveal>
         <section
           aria-labelledby="pricing-cta-heading"
-          className="border-y border-[var(--border)] bg-[var(--surface)] py-16"
+          className="border-y border-[hsl(var(--border))] bg-[var(--surface)] py-16"
         >
           <div className="mx-auto flex max-w-2xl flex-col items-center px-5 text-center">
             <h2
@@ -236,7 +236,7 @@ export default function Pricing() {
             >
               Start a free review
             </h2>
-            <p className="mt-3 text-[16px] text-[var(--muted)]">
+            <p className="mt-3 text-[16px] text-[hsl(var(--muted))]">
               The Free tier is permanent, not a trial. Install the App and see
               the first verdict on your next pull request.
             </p>

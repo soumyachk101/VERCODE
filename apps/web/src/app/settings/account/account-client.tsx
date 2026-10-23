@@ -72,7 +72,7 @@ function AccountBody() {
       <div
         style={{
           background: "var(--surface)",
-          border: "1px solid var(--border)",
+          border: "1px solid hsl(var(--border))",
           borderRadius: 8,
           padding: "0 20px",
           display: "flex",
@@ -218,7 +218,7 @@ function AccountBody() {
                   height: 32,
                   padding: "0 14px",
                   borderRadius: "var(--radius-control)",
-                  border: `1px solid ${theme === t ? "var(--control)" : "var(--border)"}`,
+                  border: `1px solid ${theme === t ? "var(--control)" : "hsl(var(--border))"}`,
                   background: theme === t ? "var(--active)" : "var(--surface)",
                   color: "var(--text)",
                   fontSize: 13,

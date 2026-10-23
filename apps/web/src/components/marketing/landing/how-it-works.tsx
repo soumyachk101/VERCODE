@@ -21,7 +21,7 @@ export function HowItWorks() {
     <section className="border-y border-[hsl(var(--line))] bg-[hsl(var(--panel))]">
       <div className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
         <div className="max-w-2xl">
-          <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[hsl(var(--accent))]">
+          <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[hsl(hsl(var(--accent)))]">
             How it works
           </span>
           <h2 className="mt-3 text-[28px] font-bold tracking-[-0.01em] text-[hsl(var(--text-1))] sm:text-[34px]">
@@ -39,7 +39,7 @@ export function HowItWorks() {
               key={step.num}
               className="rounded-[10px] border border-[hsl(var(--line))] bg-[hsl(var(--background))] p-6"
             >
-              <span className="font-mono text-[32px] font-bold leading-none text-[hsl(var(--accent))]">
+              <span className="font-mono text-[32px] font-bold leading-none text-[hsl(hsl(var(--accent)))]">
                 {step.num}
               </span>
               <h3 className="mt-4 text-[17px] font-semibold text-[hsl(var(--text-1))]">

@@ -64,7 +64,7 @@ export function SettingsPage({
   return (
     <div>
       <PageHead title={title} finding={finding} />
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8 }}>
+      <div style={{ background: "var(--surface)", border: "1px solid hsl(var(--border))", borderRadius: 8 }}>
         {children}
       </div>
     </div>
