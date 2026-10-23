@@ -24,6 +24,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 //
 // ---------------------------------------------------------------------------
 // WHAT THIS SPEC EXERCISES + THE PRODUCT DEFECTS IT SURFACES:
@@ -64,6 +65,8 @@ import { describe, it, expect } from "vitest";
 import type { Role } from "@prisma/client";
 import type { Capability } from "../../../apps/api/src/plugins/tenant.js";
 =======
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 =======
