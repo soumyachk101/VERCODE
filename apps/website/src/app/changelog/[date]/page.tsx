@@ -81,7 +81,7 @@ export default async function ChangelogEntryPage({
         .ce h1 { font-size: 32px; font-weight: 600; margin: 0 0 0.5rem; }
         .ce-summary { font-size: 16px; color: var(--muted); margin: 0 0 2rem; line-height: 1.6; }
         .ce-sec { font-size: 13px; font-weight: 600; letter-spacing: 0.05em; color: var(--faint); margin: 0 0 0.375rem; }
-        .ce ul { margin: 0 0 1.5rem; padding-left: 1.25rem; font-size: 15px; line-height: 1.6; }
+        .ce ul { margin: 0 0 1.5rem; padding-left: 1.25rem; font-size: 16px; line-height: 1.6; }
         .ce li { margin-bottom: 0.375rem; }
         .ce li code { font-family: var(--font-mono); font-size: 0.85em; background: var(--raised); padding: 0.1em 0.35em; border-radius: var(--radius-chip); }
         .ce-upgrade { margin: 0 0 1.5rem; padding: 1rem; background: var(--raised); border-radius: var(--radius-card); font-size: 15px; }

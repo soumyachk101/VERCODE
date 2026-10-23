@@ -17,7 +17,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    // data-theme="dark" is rendered server-side so the single dark palette
+    // (globals.css :root) is painted from the first byte — no light flash.
+    <html lang="en" data-theme="dark">
       <body>
         <AppProviders>{children}</AppProviders>
       </body>

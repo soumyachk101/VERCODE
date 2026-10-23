@@ -1,10 +1,16 @@
 "use client";
 
-// The theme controller (ACCESSIBILITY / DESIGN_SYSTEM §4.3): light/dark/
-// system. A <button> in the user row (or the account page) drives this;
-// a :root[data-theme] swap is the one place the palette flips. The choice
-// persists to localStorage. The "system" option reads prefers-color-scheme
-// and follows it live (a media-query change re-themes without a reload).
+// The theme controller. VERCODE ships ONE palette: the dark indigo/red
+// palette defined in globals.css (:root). There is no light variant any
+// more, so the controller resolves to "dark" unconditionally and pins
+// data-theme="dark" on <html> — the markup is rendered with the same
+// attribute (see src/app/layout.tsx), so there is no light flash before
+// hydration.
+//
+// The "theme" preference is still stored in localStorage so a stale
+// preference from before the palette change cannot re-introduce a light
+// theme, and the API surface (useTheme) is unchanged so the settings UI
+// keeps working.
 
 import { useEffect, useState } from "react";
 
@@ -12,19 +18,15 @@ type Theme = "light" | "dark" | "system";
 
 const KEY = "vercode_theme";
 
-function resolve(t: Theme): "light" | "dark" {
-  if (t !== "system") return t;
-  if (typeof matchMedia !== "undefined") {
-    return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
-  return "light";
+function resolve(t: Theme): "dark" {
+  // one palette — "light" and "system" both resolve to the dark palette.
+  void t;
+  return "dark";
 }
 
-export function applyTheme(t: Theme) {
-  const resolved = resolve(t);
+export function applyTheme(_t: Theme) {
   const el = document.documentElement;
-  if (resolved === "dark") el.setAttribute("data-theme", "dark");
-  else el.removeAttribute("data-theme");
+  el.setAttribute("data-theme", "dark");
 }
 
 export function useTheme() {
@@ -34,15 +36,11 @@ export function useTheme() {
 
   useEffect(() => {
     setMounted(true);
+    applyTheme("dark");
     if (typeof localStorage !== "undefined") {
       const stored = localStorage.getItem(KEY) as Theme | null;
-      if (stored) {
-        setTheme(stored);
-        applyTheme(stored);
-        return;
-      }
+      if (stored) setTheme(stored);
     }
-    applyTheme("system");
   }, []);
 
   useEffect(() => {
@@ -52,21 +50,6 @@ export function useTheme() {
       localStorage.setItem(KEY, theme);
     }
   }, [theme, mounted]);
-
-  useEffect(() => {
-    // the "system" option follows the OS live (no reload, no flash)
-    let mq: MediaQueryList | null = null;
-    const onMq = () => {
-      if (theme === "system") applyTheme("system");
-    };
-    if (typeof matchMedia !== "undefined") {
-      mq = matchMedia("(prefers-color-scheme: dark)");
-      mq.addEventListener("change", onMq);
-    }
-    return () => {
-      mq?.removeEventListener("change", onMq);
-    };
-  }, [theme]);
 
   return { theme, setTheme, resolved: resolve(theme), mounted };
 }
