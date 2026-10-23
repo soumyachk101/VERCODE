@@ -25,7 +25,6 @@
   /* ---- 1. the palette (exact values, HSL triples) ------------------ */
   --background: 240 60% 4%;
   --foreground: 0 0% 98%;
-  --muted: 240 30% 12%;
   --muted-foreground: 240 10% 66%;
   --accent: 0 90% 55%;
   --accent-foreground: 0 0% 100%;
@@ -39,22 +38,22 @@
 
   /* ---- 2. the site's semantic tokens, from the palette ------------- */
   /* Surfaces — the indigo scale. */
-  --ground: hsl(var(--background));
+  --ground: hsl(240 60% 4%);
   --surface: hsl(var(--panel));
-  --raised: hsl(var(--muted));
+  --raised: hsl(240 30% 12%);
   --active: hsl(var(--highlight));
   --hard-border: hsl(240 25% 18%);
   --rule: hsl(var(--line));
 
-  /* Ink — 3-step ramp. Body/muted copy is --muted-ink; --faint stays
+  /* Ink — 3-step ramp. Body/muted copy is --muted; --faint stays
      reserved for decorative labels (low contrast on the dark ground). */
   --text: hsl(var(--foreground));
   --faint: hsl(var(--text-3));
-  --muted-ink: hsl(var(--muted-foreground));
+  --muted: hsl(var(--muted-foreground));
 
   /* The one data hue — the red accent. The accent is the fill of the one
      primary action (white text, the 4.5:1 floor held). */
-  --accent-color: hsl(0 90% 55%);
+  --accent-color: hsl(var(--accent));
   --accent-ink: hsl(var(--accent));
   --accent-soft: hsl(var(--highlight));
   --accent-cta: var(--accent-color);
