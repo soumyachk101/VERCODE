@@ -201,7 +201,7 @@ export default function LegalPrivacyPage() {
               write to{" "}
               <a
                 href="mailto:privacy@vercode.com"
-                className="text-[hsl(var(--accent))] underline underline-offset-2"
+                className="text-[var(--accent-color)] underline underline-offset-2"
               >
                 privacy@vercode.com
               </a>

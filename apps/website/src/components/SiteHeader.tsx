@@ -82,7 +82,7 @@ export function SiteHeader() {
   return (
     <header
       className={`sticky top-0 z-40 bg-[var(--ground)] transition-[border-color] duration-100 ${
-        borderVisible ? "border-b border-[hsl(var(--border))]" : "border-b border-transparent"
+        borderVisible ? "border-b border-[var(--hard-border)]" : "border-b border-transparent"
       }`}
     >
       <div className="container flex h-14 items-center justify-between">
@@ -173,7 +173,7 @@ export function SiteHeader() {
               opacity+translateY(8px) travel — the one "mount"
               moment in the site's motion set (§5's `emil-design-
               eng` rule). */}
-          <div className="site-header-sheet-panel absolute inset-x-0 top-0 border-b border-[hsl(var(--border))] bg-[var(--surface)]">
+          <div className="site-header-sheet-panel absolute inset-x-0 top-0 border-b border-[var(--hard-border)] bg-[var(--surface)]">
             <nav aria-label="Primary (mobile)" className="container flex flex-col py-4">
               <ul className="flex flex-col">
                 {NEXT_LINKS.map((link) => (

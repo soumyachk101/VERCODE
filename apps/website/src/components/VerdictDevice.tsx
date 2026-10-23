@@ -44,7 +44,7 @@ function SevMark({
 export function VerdictDevice() {
   return (
     <div
-      className="max-w-[420px] rounded-[var(--radius-card)] border border-[hsl(var(--border))] bg-[var(--surface)] p-5"
+      className="max-w-[420px] rounded-[var(--radius-card)] border border-[var(--hard-border)] bg-[var(--surface)] p-5"
       role="group"
       aria-label="A representative VERCODE review verdict (preview data)"
     >

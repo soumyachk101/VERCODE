@@ -200,7 +200,7 @@ export default function Home() {
           >
             Built on four principles
           </h2>
-          <div className="mt-10 grid grid-cols-1 gap-px bg-[hsl(var(--border))] sm:grid-cols-2">
+          <div className="mt-10 grid grid-cols-1 gap-px bg-[var(--hard-border)] sm:grid-cols-2">
             {PILLARS.map((pillar, i) => (
               <Reveal key={pillar.title} dataStagger={i}>
                 <div className="bg-[var(--surface)] p-8">
@@ -241,8 +241,8 @@ export default function Home() {
                   <div
                     className={`rounded-[var(--radius-card)] p-6 ${
                       isTeam
-                        ? "border-2 border-[hsl(var(--accent))]"
-                        : "border border-[hsl(var(--border))]"
+                        ? "border-2 border-[var(--accent-color)]"
+                        : "border border-[var(--hard-border)]"
                     }`}
                   >
                     <h3 className="text-[16px] font-semibold capitalize text-[var(--text)]">
@@ -261,7 +261,7 @@ export default function Home() {
                     </p>
                     <a
                       href="/pricing/"
-                      className="mt-4 inline-block text-[16px] font-medium text-[hsl(var(--accent))] underline-offset-4 hover:underline"
+                      className="mt-4 inline-block text-[16px] font-medium text-[var(--accent-color)] underline-offset-4 hover:underline"
                     >
                       See all plans
                     </a>
@@ -300,7 +300,7 @@ export default function Home() {
           </dl>
           <a
             href="/faq/"
-            className="mt-6 inline-block text-[16px] font-medium text-[hsl(var(--accent))] underline-offset-4 hover:underline"
+            className="mt-6 inline-block text-[16px] font-medium text-[var(--accent-color)] underline-offset-4 hover:underline"
           >
             All questions
           </a>

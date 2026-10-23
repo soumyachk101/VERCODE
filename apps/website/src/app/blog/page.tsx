@@ -3,7 +3,7 @@
  *
  * H1 "Notes on the pipeline" + a 1-sentence orientation + the article
  * list: a <time>-stamped 13px hsl(var(--faint)) date, a 17px/600 title, a
- * 15px hsl(var(--muted)) dek (the description field), a 13px tag row, and a
+ * 16px hsl(var(--muted)) dek (the description field), a 13px tag row, and a
  * "N min read" computed at build time (~200 wpm from the word count).
  *
  * An ItemList JSON-LD of the published articles (STRUCTURED_DATA.md

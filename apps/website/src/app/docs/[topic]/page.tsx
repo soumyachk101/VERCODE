@@ -140,7 +140,7 @@ export default async function DocsTopicPage({
                 <li key={r.href}>
                   <a
                     href={r.href}
-                    className="text-[16px] text-[hsl(var(--accent))] underline underline-offset-2"
+                    className="text-[16px] text-[var(--accent-color)] underline underline-offset-2"
                   >
                     {r.label}
                   </a>

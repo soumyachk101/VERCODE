@@ -122,13 +122,13 @@ export default function LegalStatusPage() {
               incident log behind it is a lie, RELEASE_CRITERIA's
               "a claim without a measurement is a banned claim"). */}
 
-          <div className="mt-8 rounded-lg border border-[hsl(var(--border))] bg-[var(--surface)] p-4">
+          <div className="mt-8 rounded-lg border border-[var(--hard-border)] bg-[var(--surface)] p-4">
             <p className="text-[13px] font-medium text-[hsl(var(--faint))]">
               Incident history
             </p>
             <a
               href={STATUS_SERVICE_URL}
-              className="mt-1 block text-[16px] font-medium text-[hsl(var(--accent))] underline underline-offset-2"
+              className="mt-1 block text-[16px] font-medium text-[var(--accent-color)] underline underline-offset-2"
             >
               {STATUS_SERVICE_URL}
             </a>
