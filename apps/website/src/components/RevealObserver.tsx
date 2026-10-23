@@ -15,6 +15,56 @@ import { useEffect } from "react";
 let observer: IntersectionObserver | null = null;
 const observed = new Set<Element>();
 
+// The safety net: if a `.reveal` element's intersection callback never
+// fires (a headless browser, a broken / absent `IntersectionObserver`,
+// a late-mount on a client-side routed page), a 1.5s timer force-adds
+// `is-in` to every still-un-revealed element — so a broken observer
+// can never leave content hidden. Reduced-motion users get `is-in`
+// synchronously, so they never wait.
+let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleFallback(): void {
+  if (fallbackTimer !== null) {
+    return;
+  }
+  fallbackTimer = setTimeout(() => {
+    fallbackTimer = null;
+    for (const el of observed) {
+      el.classList.add("is-in");
+    }
+    observed.clear();
+    if (observer !== null) {
+      observer.disconnect();
+      observer = null;
+    }
+  }, 1500);
+}
+
+function cancelFallback(): void {
+  if (fallbackTimer !== null) {
+    clearTimeout(fallbackTimer);
+    fallbackTimer = null;
+  }
+}
+
+function revealEl(el: Element): void {
+  if (el.classList.contains("is-in")) {
+    return;
+  }
+  el.classList.add("is-in");
+  observed.delete(el);
+  // Every element is `is-in` now: drop the timer + disconnect the
+  // observer (a `WNFR-01`'s "zero-JS default" spirit: the observer is
+  // a one-time effect, not a persistent listener).
+  if (observed.size === 0) {
+    cancelFallback();
+    if (observer !== null) {
+      observer.disconnect();
+      observer = null;
+    }
+  }
+}
+
 function ensureObserver(): IntersectionObserver {
   if (observer !== null) {
     return observer;
@@ -37,6 +87,7 @@ function ensureObserver(): IntersectionObserver {
         if (observer === obs) {
           observer = null;
         }
+        cancelFallback();
       }
     },
     { threshold: 0.1, rootMargin: "0px 0px -10% 0px" },
@@ -66,6 +117,8 @@ export function observeReveal(el: Element): void {
   const obs = ensureObserver();
   observed.add(el);
   obs.observe(el);
+  // The fallback, so a broken IntersectionObserver never hides content.
+  scheduleFallback();
 }
 
 /**

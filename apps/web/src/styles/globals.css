@@ -1,14 +1,26 @@
 @import "tailwindcss";
 
-/* VERCODE design tokens — single dark palette. Surfaces are deep indigo
-   neutrals, one accent hue (red), a positive green, and a 3-step ink
-   ramp. No light theme, no gradients, no tinted tiles, 1px borders only,
-   flat surfaces. */
+/* VERCODE design tokens — one dark palette.
+ *
+ * TWO NAMESPACES, ONE PALETTE:
+ *
+ * 1. The palette itself (the exact user values, HSL triples). The marketing
+ *    surface consumes them as hsl(var(--token)); the dashboard's colour
+ *    tokens below are defined FROM them, so both surfaces are literally the
+ *    same palette. Names here are fixed:
+ *      --background --foreground --muted --muted-foreground --accent
+ *      --accent-foreground --border --panel --line --highlight --success
+ *      --text-1 --text-2 --text-3
+ *
+ * 2. The dashboard's semantic colour tokens (--ground, --surface, --text,
+ *    --muted-ink ...) — legacy names the components already use, each
+ *    defined from the palette above.
+ *
+ * No light theme, no gradients, no tinted tiles, 1px borders only, flat
+ * surfaces. */
 
 :root {
-  /* the shared dark palette (exact values) — used by the marketing
-     surface (hsl(var(--token)) triplets) and mirrored as hex below for
-     the dashboard (var(--token)) */
+  /* ---- 1. the palette (exact values) -------------------------------- */
   --background: 240 60% 4%;
   --foreground: 0 0% 98%;
   --muted: 240 30% 12%;
@@ -24,56 +36,40 @@
   --text-2: 240 10% 80%;
   --text-3: 240 8% 58%;
 
-  /* the same palette, hex-mirrored for the dashboard's var() tokens.
-     Names are kept so existing class/inline styles keep working. */
-  --background-hex: hsl(240 60% 4%);
-  --foreground-hex: hsl(0 0% 98%);
-  --muted-hex: hsl(240 30% 12%);
-  --muted-foreground-hex: hsl(240 10% 66%);
-  --accent-hex: hsl(0 90% 55%);
-  --accent-foreground-hex: hsl(0 0% 100%);
-  --border-hex: hsl(240 25% 18%);
-  --panel-hex: hsl(240 40% 9%);
-  --line-hex: hsl(240 25% 16%);
-  --highlight-hex: hsl(240 35% 14%);
-  --success-hex: hsl(150 60% 45%);
-  --text-1-hex: hsl(0 0% 100%);
-  --text-2-hex: hsl(240 10% 80%);
-  --text-3-hex: hsl(240 8% 58%);
-
-  /* ground / surfaces — the indigo scale */
-  --ground: hsl(240 60% 4%);
-  --surface: hsl(240 40% 9%);
-  --raised: hsl(240 30% 12%);
-  --active: hsl(240 35% 14%);
-  --border: hsl(240 25% 18%);
-  --rule: hsl(240 25% 16%);
-  --control: hsl(240 25% 18%);
-  --text: hsl(0 0% 98%);
-  --muted: hsl(240 10% 66%);
-  --faint: hsl(240 8% 58%);
-  --primary: hsl(0 0% 100%);
-  --primary-ink: hsl(240 60% 4%);
-  /* the single data hue — the accent */
-  --accent: hsl(0 90% 55%);
-  --grid: hsl(240 25% 16%);
-  /* severity ramp (critical→low): the accent, stepped down to text-2 */
-  --sev-critical: hsl(0 90% 55%);
-  --sev-high: hsl(0 45% 68%);
-  --sev-medium: hsl(0 30% 78%);
-  --sev-low: hsl(240 10% 80%);
-  --sev-positive: hsl(150 60% 45%);
+  /* ---- 2. the dashboard's semantic tokens, from the palette --------- */
+  /* surfaces */
+  --ground: hsl(var(--background));
+  --surface: hsl(var(--panel));
+  --raised: hsl(var(--muted));
+  --active: hsl(var(--highlight));
+  --rule: hsl(var(--line));
+  --control: hsl(var(--border));
+  --grid: hsl(var(--line));
+  /* ink */
+  --text: hsl(var(--foreground));
+  /* the muted body/meta ink (--muted-foreground): text-3 (58%) is too low
+     contrast for copy, so it stays for decorative labels only. */
+  --muted-ink: hsl(var(--muted-foreground));
+  --faint: hsl(var(--text-3));
+  --primary: hsl(var(--text-1));
+  --primary-ink: hsl(var(--background));
+  /* severity ramp (critical→low): the accent, stepped, then the ink ramp */
+  --sev-critical: hsl(var(--accent));
+  --sev-high: hsl(var(--accent) / 0.7);
+  --sev-medium: hsl(var(--text-2));
+  --sev-low: hsl(var(--text-3));
+  --sev-positive: hsl(var(--success));
   /* the good/bad pair for deltas (colour says good-or-bad, not up-or-down) */
-  --positive: hsl(150 60% 45%);
-  --negative: hsl(0 90% 55%);
-  /* status pill pairs (a same-hue tint + same-hue ink) */
-  --pill-positive-bg: hsl(150 60% 45% / 15%);
-  --pill-positive-ink: hsl(150 60% 45%);
-  --pill-negative-bg: hsl(0 90% 55% / 15%);
-  --pill-negative-ink: hsl(0 90% 55%);
-  --pill-warning-bg: hsl(0 90% 55% / 10%);
-  --pill-warning-ink: hsl(0 40% 74%);
-  --notice-border: hsl(0 45% 68%);
+  --positive: hsl(var(--success));
+  --negative: hsl(var(--accent));
+  /* status pill pairs (a same-hue tint + the same hue as the ink) */
+  --pill-positive-bg: hsl(var(--success) / 0.15);
+  --pill-positive-ink: hsl(var(--success));
+  --pill-negative-bg: hsl(var(--accent) / 0.15);
+  --pill-negative-ink: hsl(var(--accent));
+  --pill-warning-bg: hsl(var(--highlight));
+  --pill-warning-ink: hsl(var(--text-2));
+  --notice-border: hsl(var(--accent) / 0.5);
   /* radii (tight family 4–8px) */
   --radius-card: 8px;
   --radius-control: 6px;
@@ -134,7 +130,7 @@ body {
 }
 .finding-line {
   font-size: 14px;
-  color: var(--muted);
+  color: var(--muted-ink);
   line-height: 1.5;
 }
 .section-title {
@@ -144,12 +140,12 @@ body {
 }
 .meta {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--muted-ink);
 }
 .label {
   font-size: 12px;
   font-weight: 500;
-  color: var(--muted);
+  color: var(--muted-ink);
 }
 .tabular {
   font-variant-numeric: tabular-nums;
@@ -264,6 +260,6 @@ body {
   align-items: center;
   justify-content: center;
   padding: 8px 16px;
-  color: var(--muted);
+  color: var(--muted-ink);
   font-size: 14px;
 }
