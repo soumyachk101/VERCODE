@@ -6,10 +6,12 @@
 // eyebrow label, no feature cards; one form, one primary.
 //
 // The local login path: email + password against the API's cookie session
-// (POST /auth/signin or /auth/signup; a seeded local user in dev). No SSO —
-// GitHub SSO does not exist in local dev, so this surface is the only
-// way in. After sign-in, a fresh account without an org gets a "create
-// your organization" step, then every screen lands on /overview.
+// (POST /auth/signin, or /auth/signup via ?mode=signup) — no SSO (GitHub
+// SSO does not exist in local dev, so this surface is the way in). A
+// session that already exists on load is detected and the user is sent
+// straight to the dashboard, so the shell never loops back to sign-in. A
+// fresh account without an org yet gets a "create your organization"
+// step, then every screen lands on /overview.
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
@@ -24,21 +26,22 @@ interface MeResponse {
 export function SigninClient() {
   const router = useRouter();
   const params = useSearchParams();
-  // ?mode=signup flips the form to the "create an account" mode (the
-  // pre-existing link); ?next=/x keeps the post-sign-in redirect.
-  const signup = params.get("mode") === "signup";
-  const next = (params.get("next") ?? "").startsWith("/") ? params.get("next")! : "/overview";
+  // ?mode=signup switches the same form to a create-account (one field
+  // set, the API handles both: /auth/signin + /auth/signup).
+  const mode = params.get("mode") === "signup" ? "signup" : "signin";
+  // ?next=/x keeps the post-sign-in redirect (a relative path only).
+  const next = params.get("next")?.startsWith("/") ? params.get("next")! : "/overview";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [orgName, setOrgName] = useState("");
-  const [step, setStep] = useState<"auth" | "org">(() => (signup ? "auth" : "auth"));
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  // A session that already exists on load: resolve /auth/me and bounce
-  // straight to the dashboard so the shell never loops back to sign-in.
-  const [restored, setRestored] = useState(false);
+  // "auth" (sign in / sign up) or "org" (a fresh account without an org).
+  const [step, setStep] = useState<"auth" | "org">("auth");
 
+  // A session that already exists on load: resolve /auth/me and bounce
+  // straight to the dashboard (or to the org step for a fresh account).
   useEffect(() => {
     let live = true;
     api
@@ -48,17 +51,11 @@ export function SigninClient() {
         if (me.orgs && me.orgs.length > 0) {
           router.replace(next);
         } else {
-          // a session without an org yet (a fresh account) — stay on the
-          // page and offer the org-creation step.
           setStep("org");
-          setRestored(true);
         }
       })
       .catch(() => {
         // no session — the sign-in form is the correct surface.
-      })
-      .finally(() => {
-        if (live) setRestored(true);
       });
     return () => {
       live = false;
@@ -66,45 +63,34 @@ export function SigninClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const afterAuth = async (res: MeResponse | null) => {
-    if (res?.orgs && res.orgs.length > 0) {
-      router.replace(next);
-      return;
-    }
-    setStep("org");
-  };
-
   const submit = async () => {
     setErr(null);
     setBusy(true);
     try {
-      if (step === "auth") {
-        const res = signup
-          ? await api.post<MeResponse>(
-              "/auth/signup",
-              name ? { email, password, name: name.trim() } : { email, password },
-            )
-          : await api.post<MeResponse>("/auth/signin", { email, password });
-        // /auth/signin|signup return { user } without orgs — resolve the
-        // session's orgs from /auth/me before deciding where to land.
-        const me = await api.get<MeResponse>("/auth/me").catch(() => res);
-        if (me.orgs && me.orgs.length > 0) {
-          router.replace(next);
-        } else {
-          setStep("org");
-        }
-      } else {
-        const created = await api.post<{ org: { id: string } }>("/orgs", {
-          name: orgName.trim(),
+      if (step === "org") {
+        await api.post<{ org: { id: string } }>("/orgs", { name: orgName.trim() });
+        router.replace(next);
+        return;
+      }
+      if (mode === "signup") {
+        await api.post("/auth/signup", {
+          email,
+          password,
+          name: name.trim() || email.split("@")[0],
         });
-        await afterAuth({ orgs: [{ id: created.org.id, name: orgName }] });
+      } else {
+        await api.post("/auth/signin", { email, password });
+      }
+      // The sign-in/sign-up response has no orgs — resolve the session's
+      // orgs from /auth/me and land on the dashboard or the org step.
+      const me = await api.get<MeResponse>("/auth/me").catch(() => null);
+      if (me?.orgs && me.orgs.length > 0) {
+        router.replace(next);
+      } else {
+        setStep("org");
       }
     } catch (e) {
-      setErr(
-        e instanceof ApiError
-          ? friendly(e.code, e.message)
-          : "Sign in failed — check your email and password.",
-      );
+      setErr(friendly(e, mode === "signup" && step === "auth"));
     } finally {
       setBusy(false);
     }
@@ -188,43 +174,15 @@ export function SigninClient() {
           borderLeft: "1px solid var(--border)",
         }}
       >
-        {restored && step === "org" ? (
-          <OrgForm
-            email={email}
-            busy={busy}
-            err={err}
-            onBusy={(b) => {
-              setBusy(b);
-            }}
-            onSubmit={async () => {
-              setErr(null);
-              setBusy(true);
-              try {
-                const created = await api.post<{ org: { id: string } }>("/orgs", {
-                  name: orgName.trim(),
-                });
-                await afterAuth({ orgs: [{ id: created.org.id, name: orgName }] });
-              } catch (e) {
-                setErr(
-                  e instanceof ApiError
-                    ? friendly(e.code, e.message)
-                    : "Something went wrong creating your organization.",
-                );
-              } finally {
-                setBusy(false);
-              }
-            }}
-            orgName={orgName}
-            onOrgName={(v) => setOrgName(v)}
-          />
-        ) : step === "auth" ? (
+        {step === "org" ? (
           <>
             <div style={{ display: "flex", flexDirection: "column", gap: 4, maxWidth: 320 }}>
               <h1 className="h1" style={{ margin: 0 }}>
-                {signup ? "Create an account" : "Sign in"}
+                Create your organization
               </h1>
               <p className="finding-line" style={{ margin: 0 }}>
-                Your session cookie is set on sign-in and rides every API call.
+                {email || "Your account"} has no organization yet — one is required
+                to hold reviews.
               </p>
             </div>
             <form
@@ -234,7 +192,45 @@ export function SigninClient() {
               }}
               style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 320 }}
             >
-              {signup && (
+              <div>
+                <Label htmlFor="org-name">Organization name</Label>
+                <Input
+                  id="org-name"
+                  value={orgName}
+                  onChange={(e) => setOrgName(e.target.value)}
+                  placeholder="acme"
+                />
+              </div>
+              {err && (
+                <p role="alert" className="meta" style={{ color: "var(--negative)" }}>
+                  {err}
+                </p>
+              )}
+              <Button type="submit" disabled={busy || orgName.trim().length < 2} size="lg">
+                {busy ? "Creating…" : "Create organization"}
+              </Button>
+              <TextButton onClick={() => setStep("auth")}>Back to sign in</TextButton>
+            </form>
+          </>
+        ) : (
+          <>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, maxWidth: 320 }}>
+              <h1 className="h1" style={{ margin: 0 }}>
+                {mode === "signup" ? "Create an account" : "Sign in"}
+              </h1>
+              <p className="finding-line" style={{ margin: 0 }}>
+                Your session cookie is set on {mode === "signup" ? "sign-up" : "sign-in"} and rides
+                every API call.
+              </p>
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void submit();
+              }}
+              style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 320 }}
+            >
+              {mode === "signup" && (
                 <div>
                   <Label htmlFor="name">Name</Label>
                   <Input
@@ -256,11 +252,13 @@ export function SigninClient() {
                 />
               </div>
               <div>
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">
+                  {mode === "signup" ? "Password (min 8 characters)" : "Password"}
+                </Label>
                 <Input
                   id="password"
                   type="password"
-                  autoComplete={signup ? "new-password" : "current-password"}
+                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -272,19 +270,27 @@ export function SigninClient() {
               )}
               <Button
                 type="submit"
-                disabled={busy || !email || !password || (signup ? false : false)}
+                disabled={
+                  busy || !email || !password || (mode === "signup" && password.length < 8)
+                }
                 size="lg"
               >
-                {busy ? "Signing in…" : signup ? "Create account" : "Sign in"}
+                {busy
+                  ? mode === "signup"
+                    ? "Creating account…"
+                    : "Signing in…"
+                  : mode === "signup"
+                    ? "Create account"
+                    : "Sign in"}
               </Button>
               <TextButton
-                onClick={() => router.push(signup ? "/signin" : "/signin?mode=signup")}
+                onClick={() => router.push(mode === "signup" ? "/signin" : "/signin?mode=signup")}
               >
-                {signup ? "I already have an account" : "Create an account"}
+                {mode === "signup" ? "Already have an account? Sign in" : "Create an account"}
               </TextButton>
             </form>
           </>
-        ) : null}
+        )}
       </div>
       <style>{`
         @media (max-width: 900px) {
@@ -295,71 +301,18 @@ export function SigninClient() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// The org-creation step (a fresh account, a session without an org).
-// ---------------------------------------------------------------------------
-function OrgForm({
-  email,
-  orgName,
-  onOrgName,
-  err,
-  busy,
-  onBusy,
-  onSubmit,
-}: {
-  email: string;
-  orgName: string;
-  onOrgName: (v: string) => void;
-  err: string | null;
-  busy: boolean;
-  onBusy: (b: boolean) => void;
-  onSubmit: () => Promise<void>;
-}) {
-  return (
-    <>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4, maxWidth: 320 }}>
-        <h1 className="h1" style={{ margin: 0 }}>
-          Create your organization
-        </h1>
-        <p className="finding-line" style={{ margin: 0 }}>
-          {email || "Your account"} needs one organization to hold reviews.
-        </p>
-      </div>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onBusy(true);
-          void onSubmit().finally(() => onBusy(false));
-        }}
-        style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 320 }}
-      >
-        <div>
-          <Label htmlFor="org-name">Organization name</Label>
-          <Input
-            id="org-name"
-            value={orgName}
-            onChange={(e) => onOrgName(e.target.value)}
-            placeholder="acme"
-          />
-        </div>
-        {err && (
-          <p role="alert" className="meta" style={{ color: "var(--negative)" }}>
-            {err}
-          </p>
-        )}
-        <Button type="submit" disabled={busy || orgName.trim().length < 2} size="lg">
-          {busy ? "Creating…" : "Create organization"}
-        </Button>
-      </form>
-    </>
-  );
-}
-
-function friendly(code: string, message: string): string {
-  if (code === "EMAIL_TAKEN") return "That email already has an account — sign in instead.";
-  if (code === "UNAUTHENTICATED") return "Invalid credentials — check your email and password.";
-  if (code === "ACCOUNT_LOCKED") return "Too many attempts. Try later.";
-  if (code === "SLUG_TAKEN") return "That organization name is already in use — pick another.";
-  if (message && message.length > 0) return message;
+function friendly(e: unknown, signup: boolean): string {
+  if (!(e instanceof ApiError)) {
+    return signup
+      ? "Sign up failed — try again."
+      : "Sign in failed — check your email and password.";
+  }
+  if (e.code === "EMAIL_TAKEN") return "That email already has an account — sign in instead.";
+  if (e.code === "UNAUTHENTICATED")
+    return "Invalid credentials — check your email and password.";
+  if (e.code === "ACCOUNT_LOCKED") return "Too many attempts. Try later.";
+  if (e.code === "SLUG_TAKEN") return "That organization name is already in use — pick another.";
+  if (e.code === "VALIDATION_ERROR") return e.message || "Invalid request.";
+  if (e.message && e.message.length > 0) return e.message;
   return "Something went wrong.";
 }
