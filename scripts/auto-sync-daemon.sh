@@ -52,12 +52,8 @@ while true; do
       gh pr merge "$pr_branch" --merge --admin --delete-branch 2>&1 || gh pr merge "$pr_branch" --merge --auto --delete-branch 2>&1 || true
 
       log "Syncing main locally..."
-      # If there are any stray changes while PR was merging, stash them safely
-      git stash --include-untracked 2>/dev/null || true
       git checkout main || true
       git pull origin main || true
-      git stash pop 2>/dev/null || true
-
       git branch -D "$pr_branch" 2>/dev/null || true
       log "Cycle complete successfully!"
     else
