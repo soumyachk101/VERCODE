@@ -244,7 +244,17 @@ export function useGithubDisconnect() {
 export function useSessions() {
   return useQuery({
     queryKey: ["me", "sessions"],
-    queryFn: () => api.get<Session[]>(`/me/sessions`),
+    queryFn: async () => {
+      const res = await api.get<{ sessions?: Session[] } | Session[]>(`/me/sessions`);
+      const raw = Array.isArray(res) ? res : (res?.sessions ?? []);
+      return raw.map((s: any) => ({
+        id: s.id,
+        device: s.device ?? s.userAgent ?? "Web session",
+        ip: s.ip ?? s.sourceIp ?? "127.0.0.1",
+        lastActiveAt: s.lastActiveAt ?? (s.createdAt ? String(s.createdAt) : new Date().toISOString()),
+        current: s.current ?? false,
+      })) as Session[];
+    },
   });
 }
 

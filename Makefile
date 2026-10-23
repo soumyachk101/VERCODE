@@ -49,7 +49,7 @@
 #                       #   is a the generated artifact + a the checked in
 #                       #   (a the no secret, a the doc-drift check)")
 
-.PHONY: check smoke e2e benchmark benchmark-baseline env clean help
+.PHONY: check smoke e2e benchmark benchmark-baseline env clean help supabase-db
 
 # A the default target (a the `make` with no args).
 .DEFAULT_GOAL := check
@@ -64,6 +64,7 @@ help:
 	@echo "  benchmark           a the benchmark harness (a the BENCHMARK_DATASET §4 'a the scoring')"
 	@echo "  benchmark-baseline  a the first run's baseline save (a the BENCHMARK_DATASET §6 'a the determinism + a the reproducibility rule')"
 	@echo "  env                 a the .env.example's doc-drift check (a the ENVIRONMENT_VARIABLES §10 'a the .env.example is a the generated artifact + a the checked in')"
+	@echo "  supabase-db         a the push a the Prisma schema to a the Supabase Postgres (a the DATABASE_URL from a the .env; a the no code changes — a the session pooler URL is a the value to use)"
 
 # ---------------------------------------------------------------------------
 # a the "a the verified state" gate (a the T8.1–T8.3 "a the M8 done").
@@ -161,6 +162,35 @@ check-website:
 env:
 	@echo "a the .env.example's doc-drift check (a the ENVIRONMENT_VARIABLES §10 'a the .env.example is a the generated artifact + a the checked in')"
 	node scripts/env-drift-check.mjs
+
+# ---------------------------------------------------------------------------
+# Supabase (managed Postgres) database provisioning.
+#
+# Replaces the local Docker Postgres for development. Supabase exposes a
+# standard Postgres wire protocol, so the Prisma schema works against it
+# with zero code changes. The pooler connection string (via the Supabase
+# "Session pooler" / "Transaction pooler" URL) is what Prisma should use:
+#
+#   postgresql://postgres.<project_ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres
+#
+# The `supabase-db` target:
+#   1. Generates the Prisma client.
+#   2. Pushes the schema to the DATABASE_URL (no migration folder required
+#      because this is a greenfield Postgres — use `db push`).
+#   3. Seeds the schema so the API can boot.
+#
+# To use it: set DATABASE_URL in `.env` to your Supabase pooler string,
+# then run `make supabase-db` once. Subsequent runs are idempotent.
+# ---------------------------------------------------------------------------
+supabase-db:
+	@echo "Pushing Prisma schema to Supabase (DATABASE_URL from .env)..."
+	@test -f .env || (echo ".env not found — copy .env.example and fill in your Supabase pooler DATABASE_URL" && exit 1)
+	set -a; source .env; set +a
+	pnpm --filter @vercode/database db:generate
+	cd packages/database && npx prisma db push --skip-generate
+	@echo "Schema pushed. Ready to boot the API with Supabase."
+
+.PHONY: supabase-db
 
 clean:
 	rm -rf tests/e2e/playwright-report tests/e2e/test-results

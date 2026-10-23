@@ -7,6 +7,8 @@
 // ENVIRONMENT_VARIABLES.md §9 "a process.env.X outside config is a
 // review defect").
 
+import fs from "node:fs";
+import path from "node:path";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
@@ -103,6 +105,24 @@ export type AppConfig = z.infer<typeof AppConfigSchema>;
  * fails fast, with the var named, not a mid-run crash").
  */
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
+  if (env === process.env && !process.env.DATABASE_URL && typeof process.loadEnvFile === "function") {
+    let dir = process.cwd();
+    for (let i = 0; i < 5; i++) {
+      const candidate = path.join(dir, ".env");
+      if (fs.existsSync(candidate)) {
+        try {
+          process.loadEnvFile(candidate);
+          break;
+        } catch {
+          // ignore parsing error if any
+        }
+      }
+      const parent = path.dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+  }
+
   // Read only the documented vars (the "a variable not in the doc doesn't
   // exist" gate), then shape them into the nested config + validate.
   const flat = pick(env);

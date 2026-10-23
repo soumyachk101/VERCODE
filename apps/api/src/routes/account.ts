@@ -4,6 +4,7 @@
 import type { FastifyInstance } from "fastify";
 import argon2 from "argon2";
 import { z } from "zod";
+import { SESSION_COOKIE } from "../plugins/auth.js";
 
 const UpdateAccountSchema = z.object({
   name: z.string().min(1).optional(),
@@ -119,11 +120,21 @@ export async function accountRoutes(app: FastifyInstance) {
       reply.code(401).send({ error: { code: "UNAUTHENTICATED", message: "No session." } });
       return;
     }
-    const sessions = await db.session.findMany({
+    const currentToken = req.cookies[SESSION_COOKIE];
+    const currentTokenHash = currentToken ? app.auth.hashToken(currentToken) : null;
+
+    const rows = await db.session.findMany({
       where: { userId, expiresAt: { gt: new Date() }, revokedAt: null },
-      select: { id: true, userAgent: true, sourceIp: true, createdAt: true, expiresAt: true },
+      select: { id: true, userAgent: true, sourceIp: true, createdAt: true, expiresAt: true, tokenHash: true },
       orderBy: { createdAt: "desc" },
     });
+    const sessions = rows.map((s) => ({
+      id: s.id,
+      device: s.userAgent ?? "Web session",
+      ip: s.sourceIp ?? "127.0.0.1",
+      lastActiveAt: s.createdAt.toISOString(),
+      current: currentTokenHash ? s.tokenHash === currentTokenHash : false,
+    }));
     reply.send({ sessions });
   });
 }
