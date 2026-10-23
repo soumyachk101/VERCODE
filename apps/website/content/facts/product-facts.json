@@ -1,0 +1,183 @@
+{
+  "asOf": "2026-10-23",
+  "groups": [
+    {
+      "heading": "What VERCODE is",
+      "facts": [
+        {
+          "id": "product.tagline",
+          "label": "Tagline",
+          "value": "Ship better code. Catch bugs earlier.",
+          "unit": "",
+          "sentence": "VERCODE is the AI code review a team actually reads: deterministic static analysis runs first, task-routed AI reasoning runs on the bounded diff, and the result is published back to the pull request as a verdict plus evidence-backed inline findings.",
+          "source": "/features",
+          "asOf": "2026-10-23"
+        },
+        {
+          "id": "product.openSource",
+          "label": "Open source?",
+          "value": "yes, MIT",
+          "unit": "",
+          "sentence": "The VERCODE source is open under the MIT license. The hosted service runs on a publicly installable GitHub App.",
+          "source": "/about",
+          "asOf": "2026-10-23"
+        },
+        {
+          "id": "product.selfHosted",
+          "label": "Self-hosted?",
+          "value": "pipeline runs on your provider keys; the service is hosted",
+          "unit": "",
+          "sentence": "VERCODE analyzes code; it does not execute the pull request's own tests in the current release. The review pipeline runs in VERCODE's service; enterprise organizations can route model calls to their own providers via BYOK or a self-hosted Ollama deployment.",
+          "source": "/faq",
+          "asOf": "2026-10-23"
+        }
+      ]
+    },
+    {
+      "heading": "Performance",
+      "facts": [
+        {
+          "id": "latency.p50",
+          "label": "Review latency p50",
+          "value": "120",
+          "unit": "seconds, upper bound",
+          "sentence": "A review is published to the pull request in under 120 seconds at p50, from webhook receipt to GitHub publication.",
+          "source": "/docs/api",
+          "asOf": "2026-10-23"
+        },
+        {
+          "id": "latency.p95",
+          "label": "Review latency p95",
+          "value": "300",
+          "unit": "seconds, upper bound",
+          "sentence": "95% of reviews are published within 300 seconds of webhook receipt.",
+          "source": "/docs/api",
+          "asOf": "2026-10-23"
+        }
+      ]
+    },
+    {
+      "heading": "Pricing",
+      "facts": [
+        {
+          "id": "pricing.free.price",
+          "label": "Free plan price",
+          "value": "0",
+          "unit": "USD per month",
+          "sentence": "The Free plan costs 0 USD per month and is a permanent tier, not a trial.",
+          "source": "/pricing",
+          "asOf": "2026-10-23"
+        },
+        {
+          "id": "pricing.developer.price",
+          "label": "Developer plan price",
+          "value": "24",
+          "unit": "USD per month",
+          "sentence": "The Developer plan costs 24 USD per month.",
+          "source": "/pricing",
+          "asOf": "2026-10-23"
+        },
+        {
+          "id": "pricing.team.price",
+          "label": "Team plan price",
+          "value": "199",
+          "unit": "USD per month",
+          "sentence": "The Team plan costs 199 USD per month and includes strong-model access and 5,000 reviews per month.",
+          "source": "/pricing",
+          "asOf": "2026-10-23"
+        },
+        {
+          "id": "pricing.enterprise.price",
+          "label": "Enterprise plan price",
+          "value": "custom",
+          "unit": "negotiated",
+          "sentence": "Enterprise pricing is negotiated per account; BYOK and Ollama customers fund their own model spend.",
+          "source": "/pricing",
+          "asOf": "2026-10-23"
+        }
+      ]
+    },
+    {
+      "heading": "Quotas and limits",
+      "facts": [
+        {
+          "id": "quota.free.reviewsPerMonth",
+          "label": "Free reviews per month",
+          "value": "50",
+          "unit": "reviews per month",
+          "sentence": "The Free plan includes 50 reviews per month.",
+          "source": "/pricing",
+          "asOf": "2026-10-23"
+        },
+        {
+          "id": "quota.developer.reviewsPerMonth",
+          "label": "Developer reviews per month",
+          "value": "500",
+          "unit": "reviews per month",
+          "sentence": "The Developer plan includes 500 reviews per month.",
+          "source": "/pricing",
+          "asOf": "2026-10-23"
+        },
+        {
+          "id": "quota.team.reviewsPerMonth",
+          "label": "Team reviews per month",
+          "value": "5000",
+          "unit": "reviews per month",
+          "sentence": "The Team plan includes 5,000 reviews per month.",
+          "source": "/pricing",
+          "asOf": "2026-10-23"
+        },
+        {
+          "id": "quota.team.filesPerReview",
+          "label": "Team files per review",
+          "value": "100",
+          "unit": "changed files per review",
+          "sentence": "A Team review processes up to 100 changed files; larger diffs degrade to the highest-risk files with a note.",
+          "source": "/pricing",
+          "asOf": "2026-10-23"
+        },
+        {
+          "id": "quota.team.concurrentReviews",
+          "label": "Team concurrent reviews",
+          "value": "10",
+          "unit": "in-flight review jobs",
+          "sentence": "A Team organization can have 10 review jobs in flight; jobs beyond the cap are queued, not skipped.",
+          "source": "/pricing",
+          "asOf": "2026-10-23"
+        },
+        {
+          "id": "confidenceFloor.default",
+          "label": "Default confidence floor",
+          "value": "0.6",
+          "unit": "",
+          "sentence": "Findings below the confidence floor (default 0.6) are not posted by default; the floor is configurable per organization.",
+          "source": "/docs/rules",
+          "asOf": "2026-10-23"
+        }
+      ]
+    },
+    {
+      "heading": "Security and privacy",
+      "facts": [
+        {
+          "id": "security.codeStorage",
+          "label": "Where source code is stored",
+          "value": "analyzed, not persisted",
+          "unit": "",
+          "sentence": "VERCODE reads the pull request diff and bounded context; it does not store your source repository in its database. Findings are retained per the plan's retention window, then purged.",
+          "source": "/legal/privacy",
+          "asOf": "2026-10-23"
+        },
+        {
+          "id": "security.githubPermissions",
+          "label": "GitHub App permissions",
+          "value": "contents:read, pull_requests:write, checks:write, metadata:read, issues:read",
+          "unit": "",
+          "sentence": "The VERCODE GitHub App requests the least-privilege scope set: contents:read, pull_requests:write, checks:write, metadata:read, issues:read. It does not request admin:org or any secrets scope.",
+          "source": "/docs/github-app",
+          "asOf": "2026-10-23"
+        }
+      ]
+    }
+  ]
+}

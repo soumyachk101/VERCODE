@@ -53,7 +53,7 @@ const CAPS: Record<Role, Set<Capability>> = {
 };
 
 export function buildTenantPlugin() {
-  return async (app: FastifyInstance) => {
+  const plugin = async (app: FastifyInstance) => {
     const db = new PrismaClient();
 
     // A preHandler that resolves the tenant for a `/orgs/:id/*` request.
@@ -133,6 +133,8 @@ export function buildTenantPlugin() {
 
     app.decorate("tenant", { db });
   };
+  (plugin as any)[Symbol.for("skip-override")] = true;
+  return plugin;
 }
 
 declare module "fastify" {

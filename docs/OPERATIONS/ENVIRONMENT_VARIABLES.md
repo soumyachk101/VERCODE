@@ -85,6 +85,14 @@ These are **defaults** — an org-level override is in the DB (`org_settings`), 
 | `KMS_BYOK_MASTER_KEY_ID` | the KMS CMK that wraps the per-org BYOK keys |
 | `KMS_APP_KEY_KEY_ID` | the KMS CMK that wraps `GITHUB_APP_PRIVATE_KEY` at rest |
 
+## 8.5. Website (the public-website surface, `docs/WEBSITE/TECHNICAL_ARCHITECTURE.md §6`)
+
+| Var | The one-line comment |
+| --- | --- |
+| `VERCODE_WEBSITE_BASE_URL` | the canonical domain of the website (a `sitemap.xml` + a `robots.txt` + a `canonical` + an `og:url` source; a static export reads it at build time, not at runtime) |
+| `VERCODE_WEBSITE_OG_DEFAULT` | the default OG image path (a per-blog-slug image is a front-matter field, `docs/WEBSITE/CONTENT_SCHEMAS.md`'s `ogImage`) |
+| `VERCODE_BEACON_SECRET` | the HMAC key for a `POST /api/track` (a cookieless first-party beacon, a `WFR-504`; the API route verifies it — the secret is never in the website's static export, `docs/WEBSITE/TECHNICAL_ARCHITECTURE.md §4.2`) |
+
 ## 9. Rules (the config-inventory gate)
 
 - **No secret in `.env.example`** — placeholders only (`NFR-31`, `SECRETS_MANAGEMENT §4`); a committed `.env` with a real value is a CI-secret-scanner defect.

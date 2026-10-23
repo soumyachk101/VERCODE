@@ -76,6 +76,16 @@ const KMS_VARS = new Set([
 // no-training classification, a the config package's no-read var,
 // a the .env.example's projection includes it per a the §10 "a the
 // .env.example is a the doc's projection" rule).
+//
+// NOTE: a the 3 website vars (a the ENVIRONMENT_VARIABLES §8.5 "a the
+// website": VERCODE_WEBSITE_BASE_URL / VERCODE_WEBSITE_OG_DEFAULT /
+// VERCODE_BEACON_SECRET, a the docs/WEBSITE/TECHNICAL_ARCHITECTURE.md §6)
+// are in a the KNOWN_VARS (a the config package validates them: a the
+// API app's /api/track route reads the beacon key, a the website's
+// static export reads VERCODE_WEBSITE_BASE_URL at build time) — a the
+// .env.example's §9-website rows are covered by a the KNOWN_VARS set,
+// a the DOC_ONLY set holds only the doc's vars a the config package
+// genuinely doesn't read.
 const DOC_ONLY_VARS = new Set(["AI_FOBID_TRAINING"]);
 
 // A the doc-drift check (a the .env.example' vars == a the doc's var

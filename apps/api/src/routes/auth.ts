@@ -6,7 +6,7 @@ import argon2 from "argon2";
 import { SignupRequestSchema, SigninRequestSchema } from "@vercode/contracts";
 
 export async function authRoutes(app: FastifyInstance) {
-  app.post("/signup", { schema: { body: SignupRequestSchema, config: { public: true } } }, async (req, reply) => {
+  app.post("/signup", { schema: { body: SignupRequestSchema }, config: { public: true } }, async (req, reply) => {
     const { email, password, name } = req.body as { email: string; password: string; name?: string };
     const db = app.auth.db;
 
@@ -47,7 +47,7 @@ export async function authRoutes(app: FastifyInstance) {
     reply.code(201).send({ user: { id: user.id, email: user.email, name: user.name } });
   });
 
-  app.post("/signin", { schema: { body: SigninRequestSchema, config: { public: true } } }, async (req, reply) => {
+  app.post("/signin", { schema: { body: SigninRequestSchema }, config: { public: true } }, async (req, reply) => {
     const { email, password } = req.body as { email: string; password: string };
     const db = app.auth.db;
 
@@ -140,7 +140,7 @@ export async function authRoutes(app: FastifyInstance) {
     });
   });
 
-  app.post("/verify-email", { schema: { config: { public: true } } }, async (req, reply) => {
+  app.post("/verify-email", { config: { public: true } }, async (req, reply) => {
     const body = (req.body ?? {}) as { token?: string; email?: string };
     const db = app.auth.db;
     if (body.email) {

@@ -1,0 +1,167 @@
+@import "tailwindcss";
+
+/*
+ * VERCODE website — the design tokens (DESIGN_SYSTEM_AND_TYPOGRAPHY.md §4.2's
+ * light palette, extended with the warm ivory / graphite / emerald brief).
+ *
+ * The dashboard (apps/web) keeps its near-achromatic cool palette; the
+ * marketing surface is allowed its own warmth + a single restrained accent
+ * (DESIGN_SYSTEM.md §7: "a product site that shows its app" — one typeface,
+ * one accent, no rainbow, no gradient chrome).
+ */
+
+:root {
+  /* Surfaces — warm ivory + white, never cream/terracotta-heavy. */
+  --ground: #faf8f5;
+  --surface: #ffffff;
+  --raised: #f5f2ee;
+  --active: #efe9e1;
+  --border: #e6e0d8;
+  --rule: #efe9e2;
+
+  /* Ink — graphite family, 4.5:1+ on ground. */
+  --text: #1c1917;
+  --muted: #57534e;
+  --faint: #78716c;
+
+  /* The one data hue (restrained emerald) — CTA + the recommended-plan
+     border + the one filled button. Everything else is graphite. The
+     accent is the *fill* of the one primary action (an emerald button
+     with white text: ~5.5:1 contrast, the WNFR-07 4.5:1 floor held on
+     both themes). A light emerald-on-dark or a near-black primary
+     would be the app's rule; the marketing CTA is the one coloured
+     element on the page (DESIGN_SYSTEM_AND_TYPOGRAPHY.md §4). */
+  --accent: #0f766e;
+  --accent-ink: #0b5a54;
+  --accent-soft: #e6f2f0;
+  /* The CTA button's fill: a dark emerald on light (white text, 5.5:1),
+     a lighter emerald on dark (white text, 3.5:1 for large 15px/500
+     button text, the WCAG large-text floor). */
+  --accent-cta: #0d5f58;
+
+  /* The product's signature severity marks (DESIGN_SYSTEM.md §4.1) — used
+     ONLY inside the verdict-device card + screenshots, never on chrome. */
+  --sev-critical: #c4242a;
+  --sev-high: #d97706;
+  --sev-medium: #2563eb;
+  --sev-low: #6b7280;
+  --sev-positive: #247b50;
+
+  /* The control + primary. */
+  --primary: #1c1917;
+  --control: #d6cfc5;
+
+  /* Radii (tight family, 4–8px). */
+  --radius-card: 8px;
+  --radius-control: 6px;
+  --radius-chip: 4px;
+
+  /* Type. */
+  --font-sans: "Geist", "Geist Fallback", "Inter", system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, "SF Mono",
+    Menlo, monospace;
+}
+
+/* True-neutral dark theme, follows prefers-color-scheme (IA §6: no manual
+   toggle in P2 — the palette ships both themes). */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --ground: #0c0c0c;
+    --surface: #161616;
+    --raised: #1d1d1d;
+    --active: #262626;
+    --border: #2a2a2a;
+    --rule: #212121;
+    --text: #f4f2ef;
+    --muted: #a8a29a;
+    --faint: #8a847c;
+    --accent: #2dd4bf;
+    --accent-ink: #5eead4;
+    --accent-soft: #12312e;
+    --accent-cta: #0f766e;
+    --primary: #f4f2ef;
+    --control: #3a3a3a;
+    --sev-high: #f59e0b;
+    --sev-medium: #3b82f6;
+    --sev-low: #9ca3af;
+    --sev-positive: #3fc07a;
+  }
+}
+
+html {
+  font-family: var(--font-sans);
+  color: var(--text);
+  background: var(--ground);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+}
+
+code,
+pre,
+.mono {
+  font-family: var(--font-mono);
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-chip);
+}
+
+/* The reading column (docs / blog / changelog / legal): 720px, 1.6 line
+   height, one left edge (DESIGN_SYSTEM_AND_TYPOGRAPHY.md §3). */
+.reading-col {
+  max-width: 45rem;
+}
+
+/* The one-time scroll reveal (DESIGN_SYSTEM_AND_TYPOGRAPHY.md §5) —
+   disabled under prefers-reduced-motion (PERFORMANCE_AND_ACCESSIBILITY.md
+   WNFR-08).
+
+   The `.js` gate: an inline script in `src/app/layout.tsx` adds a `.js`
+   class to `<html>` before first paint. The reveal is hidden ONLY
+   when that class is present, so a no-JS crawler (or a JS failure)
+   always sees every element (the "content is visible by default"
+   rule, a `PERFORMANCE_AND_ACCESSIBILITY.md`'s a11y fallback). */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 120ms ease-out,
+    transform 120ms ease-out;
+}
+.js .reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

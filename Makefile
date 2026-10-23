@@ -108,6 +108,42 @@ e2e:
 	pnpm exec playwright test tests/e2e/onboarding.spec.ts
 
 # ---------------------------------------------------------------------------
+# The website's "verified state" gate (docs/WEBSITE/TECHNICAL_ARCHITECTURE.md
+# §5 "a gate 14, a new website-specific lane" + docs/WEBSITE/DEPLOYMENT_AND_
+# TESTING.md "the check-website target").
+#
+# The 4 sub-gates (measured numbers, the "a pass is a measurement" rule,
+# RELEASE_CRITERIA §2):
+#   1. The @vercode/website build (the `next build` static export; the
+#      content/ schema gate + the sitemap.xml count assertion + the
+#      robots.txt/llms.txt emission).
+#   2. The website typecheck (the `tsc --noEmit`).
+#   3. The website unit tests (the `UT-web-*` vitest suite: the pricing-
+#      drift + the FAQ byte-equivalence + the sitemap-count + the llms
+#      triple-source).
+#   4. The anti-slop lint (the DESIGN_SYSTEM §9/§11 tells over the
+#      marketing surface — the 0-FAIL gate).
+# The Lighthouse ≥90 + the axe 0-critical + the JSON-LD 0-error lanes are
+# host-side (a Chrome-headless + the @axe-core/playwright + the tool
+# binaries; DEPLOYMENT_AND_TESTING.md §3's "the host-side" note) — the
+# CI lane runs them (the RELEASE_CRITERIA gate-14 row); this target runs
+# the 4 sub-gates on the host.
+# ---------------------------------------------------------------------------
+check-website:
+	@echo "a the website's verified-state gate (a the docs/WEBSITE/TECHNICAL_ARCHITECTURE.md §5 'a gate 14')"
+	@echo "a the @vercode/website build (a the static export + a the content schema + a the sitemap/robots/llms emission)"
+	pnpm --filter @vercode/website build
+	@echo "a the website typecheck"
+	pnpm --filter @vercode/website typecheck
+	@echo "a the website unit tests (a the UT-web-* suite)"
+	pnpm --filter @vercode/website test
+	@echo "a the anti-slop lint (a the 0-FAIL gate)"
+	pnpm --filter @vercode/website lint
+	@echo "a the Lighthouse + a the axe + a the JSON-LD lanes are host-side (a the Chrome + a the tool binaries); a the CI lane runs them (a the docs/WEBSITE/DEPLOYMENT_AND_TESTING.md §3)."
+
+.PHONY: check-website
+
+# ---------------------------------------------------------------------------
 # a the .env.example's doc-drift check (a the ENVIRONMENT_VARIABLES §10
 # "a the .env.example is a the generated artifact + a the checked in
 # (a the no secret, a the doc-drift check)").

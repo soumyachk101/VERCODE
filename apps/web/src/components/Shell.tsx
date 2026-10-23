@@ -65,6 +65,8 @@ export function Shell({
     <div
       className={cn("flex min-h-screen", className)}
       style={{
+        display: "flex",
+        minHeight: "100vh",
         background: "var(--ground)",
         fontSize: 14,
       }}
