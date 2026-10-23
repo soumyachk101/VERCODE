@@ -6,15 +6,25 @@
  * positive green. No light theme, no warm-ivory brief, no gradient chrome
  * (DESIGN_SYSTEM §7: one typeface, one accent, no rainbow).
  *
- * The palette itself is defined as HSL triples (--background, --foreground,
- * --muted, --muted-foreground, --accent, --accent-foreground, --border,
- * --panel, --line, --highlight, --success, --text-1, --text-2,
- * --text-3); the marketing surface consumes them as hsl(var(--token)) —
- * the tokens below are derived FROM those triples.
+ * The palette itself is defined as HSL triples (--background,
+ * --foreground, --muted, --muted-foreground, --accent,
+ * --accent-foreground, --border, --panel, --line, --highlight, --success,
+ * --text-1, --text-2, --text-3). The marketing surface consumes those
+ * names as hsl(var(--token)) (Tailwind arbitrary values + inline <style>
+ * blocks), so those names must STAY as raw triples. The site's legacy
+ * semantic tokens (--ground, --text, --muted-ink, ...) are defined FROM
+ * the triples and are used in CSS rules as colors.
+ *
+ * One caveat: the triples' own names collide with the legacy semantic
+ * names --border / --muted / --faint / --accent (a CSS custom property
+ * cannot hold two values). The semantic side takes a new name where it
+ * collides: --rule is the soft divider, --border is the hard border,
+ * --muted-ink the secondary ink, and --accent-soft / --accent-cta keep
+ * their own names.
  */
 
 :root {
-  /* ---- the palette (exact values, HSL triples) --------------------- */
+  /* ---- 1. the palette (exact values, HSL triples) ------------------ */
   --background: 240 60% 4%;
   --foreground: 0 0% 98%;
   --muted: 240 30% 12%;
@@ -30,25 +40,24 @@
   --text-2: 240 10% 80%;
   --text-3: 240 8% 58%;
 
-  /* ---- the site's semantic tokens, from the palette ---------------- */
+  /* ---- 2. the site's semantic tokens, from the palette ------------- */
   /* Surfaces — the indigo scale. */
   --ground: hsl(var(--background));
   --surface: hsl(var(--panel));
   --raised: hsl(var(--muted));
   --active: hsl(var(--highlight));
-  --border: hsl(var(--border));
   --rule: hsl(var(--line));
 
   /* Ink — 3-step ramp. The body/muted ink is --muted-foreground;
      --text-3 stays reserved for decorative labels (low contrast on the
-     dark ground). */
+     dark ground). --faint is aliased off a distinct token to keep the
+     triple name free. */
   --text: hsl(var(--foreground));
-  --muted: hsl(var(--muted-foreground));
-  --faint: hsl(var(--text-3));
+  --faint-color: hsl(var(--text-3));
+  --muted-ink: hsl(var(--muted-foreground));
 
-  /* The one data hue — the red accent. The accent is the fill of the one
-     primary action (white text, the 4.5:1 floor held). */
-  --accent: hsl(var(--accent));
+  /* The one data hue — the red accent. --accent (the triple) drives
+     hsl(var(--accent)); the button fill reuses it. */
   --accent-ink: hsl(var(--accent));
   --accent-soft: hsl(var(--highlight));
   --accent-cta: hsl(var(--accent));
@@ -91,137 +100,4 @@ html {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-}
-
-body {
-  margin: 0;
-  background: var(--ground);
-}
-
-code,
-pre,
-.mono {
-  font-family: var(--font-mono);
-}
-
-.tnum {
-  font-variant-numeric: tabular-nums;
-}
-
-::selection {
-  background: var(--accent-soft);
-  color: var(--text);
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-a:focus-visible,
-button:focus-visible {
-  outline: 2px solid hsl(var(--accent));
-  outline-offset: 2px;
-  border-radius: var(--radius-chip);
-}
-
-/* The reading column (docs / blog / changelog / legal): 720px, 1.6 line
-   height, one left edge (DESIGN_SYSTEM_AND_TYPOGRAPHY.md §3). */
-.reading-col {
-  max-width: 45rem;
-}
-
-/* The one-time scroll reveal (DESIGN_SYSTEM_AND_TYPOGRAPHY.md §5) —
-   disabled under prefers-reduced-motion (PERFORMANCE_AND_ACCESSIBILITY.md
-   WNFR-08).
-
-   The `.js` gate: an inline script in `src/app/layout.tsx` adds a `.js`
-   class to `<html>` before first paint. The reveal is hidden ONLY
-   when that class is present, so a no-JS crawler (or a JS failure)
-   always sees every element (the "content is visible by default"
-   rule, a `PERFORMANCE_AND_ACCESSIBILITY.md`'s a11y fallback). */
-.js .reveal {
-  opacity: 0;
-  transform: translateY(8px);
-  transition:
-    opacity 100ms ease-out,
-    transform 100ms ease-out;
-}
-.js .reveal.is-in {
-  opacity: 1;
-  transform: none;
-  /* A stagger only delays the *out → in* travel: a `Reveal` sets a
-     `transition-delay` inline (a `data-stagger` index × 60ms, capped
-     at 240ms). The `.is-in` state carries `transition-delay: 0s`,
-     so the revealed state never lags a later CSS state change. */
-  transition-delay: 0s;
-}
-@media (prefers-reduced-motion: reduce) {
-  .js .reveal {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
-}
-
-/* The mobile nav sheet's one-time enter (DESIGN_SYSTEM_AND_TYPOGRAPHY.md
-   §5's `emil-design-eng` "a mount/unmount case gets a 100–200ms
-   opacity+transform enter" rule; `@starting-style`, so the animation
-   lives in CSS — no `useEffect`-mounted-flag JS in `SiteHeader.tsx`).
-
-   The sheet is a `position: fixed inset-0` overlay that mounts on open
-   and unmounts on close (a `SiteHeader.tsx` conditional render) — an
-   *enter-only* animation is enough: on close the sheet unmounts
-   instantly, which is the correct "no exit animation" behavior for a
-   dialog that's a few links away from the next page. The scrim is a
-   sibling `span` inside the sheet: it fades in on the same 150ms
-   (an `opacity` 0→1, a `transform` is a no-op on a full-viewport
-   element — only the top panel travels).
-
-   `prefers-reduced-motion: reduce` skips the whole animation
-   (a `PERFORMANCE_AND_ACCESSIBILITY.md`'s `WNFR-08` "no-animation
-   under reduced-motion" rule — an `emil-design-eng` "keep opacity,
-   remove travel" spirit: the sheet appears instantly, no fade, no
-   travel). */
-#site-header-sheet {
-  transition: opacity 150ms ease-out;
-}
-#site-header-sheet .site-header-sheet-panel {
-  transition:
-    opacity 150ms ease-out,
-    transform 150ms ease-out;
-}
-#site-header-sheet .site-header-sheet-scrim {
-  transition: opacity 150ms ease-out;
-}
-@starting-style {
-  #site-header-sheet {
-    opacity: 0;
-  }
-  #site-header-sheet .site-header-sheet-panel {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  #site-header-sheet .site-header-sheet-scrim {
-    opacity: 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  #site-header-sheet,
-  #site-header-sheet .site-header-sheet-panel,
-  #site-header-sheet .site-header-sheet-scrim {
-    transition: none;
-  }
-  @starting-style {
-    #site-header-sheet {
-      opacity: 1;
-    }
-    #site-header-sheet .site-header-sheet-panel {
-      opacity: 1;
-      transform: none;
-    }
-    #site-header-sheet .site-header-sheet-scrim {
-      opacity: 1;
-    }
-  }
 }

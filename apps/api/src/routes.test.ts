@@ -311,6 +311,10 @@ function setupTestApp() {
     db: mockDb,
     hashToken: (t: string) => `hash_${t}`,
     newSessionToken: () => "mock-token",
+    config: {
+      core: { WEB_BASE_URL: "http://localhost:3000" },
+      github: { GITHUB_API_BASE: "https://api.github.com" },
+    },
   } as any);
 
   // Mock user session on request
@@ -594,6 +598,80 @@ describe("Dashboard REST API Complete Route Specification", () => {
       expect(res.statusCode).toBe(204);
       expect(res.headers["access-control-allow-credentials"]).toBe("true");
       expect(res.headers["access-control-allow-origin"]).toBe("http://localhost:3000");
+    });
+  });
+
+  describe("Per-user GitHub OAuth (the account page's GitHub block)", () => {
+    it("GET /auth/github/start builds an authorize URL with a state token", async () => {
+      const prevId = process.env.GITHUB_CLIENT_ID;
+      const prevSecret = process.env.GITHUB_CLIENT_SECRET;
+      process.env.GITHUB_CLIENT_ID = "test-client-id";
+      process.env.GITHUB_CLIENT_SECRET = "test-client-secret";
+      try {
+        const res = await app.inject({
+          method: "GET",
+          url: "/auth/github/start",
+        });
+        expect(res.statusCode).toBe(200);
+        const body = JSON.parse(res.body);
+        expect(body.url).toMatch(/^https:\/\/github\.com\/login\/oauth\/authorize\?/);
+        expect(body.url).toContain("client_id=test-client-id");
+        expect(body.url).toContain("scope=user%3Aread");
+        expect(body.state).toMatch(/^[0-9a-f]{64}$/);
+        expect(store.oauthStates.length).toBe(1);
+        expect(store.oauthStates[0].token).toBe(body.state);
+        expect(store.oauthStates[0].userId).toBe("user-1");
+      } finally {
+        if (prevId) process.env.GITHUB_CLIENT_ID = prevId;
+        else delete process.env.GITHUB_CLIENT_ID;
+        if (prevSecret) process.env.GITHUB_CLIENT_SECRET = prevSecret;
+        else delete process.env.GITHUB_CLIENT_SECRET;
+      }
+    });
+
+    it("GET /auth/github/start with no GITHUB_CLIENT_ID returns 503 not-configured", async () => {
+      const prevId = process.env.GITHUB_CLIENT_ID;
+      delete process.env.GITHUB_CLIENT_ID;
+      try {
+        const res = await app.inject({
+          method: "GET",
+          url: "/auth/github/start",
+        });
+        expect(res.statusCode).toBe(503);
+        const body = JSON.parse(res.body);
+        expect(body.error.code).toBe("GITHUB_OAUTH_NOT_CONFIGURED");
+        expect(store.oauthStates.length).toBe(0);
+      } finally {
+        if (prevId) process.env.GITHUB_CLIENT_ID = prevId;
+      }
+    });
+
+    it("GET /me exposes githubConnected + githubHandle", async () => {
+      store.users[0].githubProviderToken = "gh-oauth-token-abc";
+      store.users[0].githubHandle = "testdev";
+      const res = await app.inject({
+        method: "GET",
+        url: "/me",
+      });
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(body.user.githubConnected).toBe(true);
+      expect(body.user.githubHandle).toBe("testdev");
+
+      // A disconnect clears the token + the handle.
+      const disc = await app.inject({
+        method: "POST",
+        url: "/auth/github/disconnect",
+      });
+      expect(disc.statusCode).toBe(200);
+      expect(disc.body).toBe('{"ok":true}');
+      expect(store.users[0].githubProviderToken).toBeNull();
+      expect(store.users[0].githubHandle).toBeNull();
+
+      const me2 = await app.inject({ method: "GET", url: "/me" });
+      const body2 = JSON.parse(me2.body);
+      expect(body2.user.githubConnected).toBe(false);
+      expect(body2.user.githubHandle).toBeNull();
     });
   });
 });
