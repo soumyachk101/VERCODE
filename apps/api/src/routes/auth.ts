@@ -1,9 +1,22 @@
 // The auth routes: /auth/signup, /auth/signin, /auth/signout, /auth/signout-all
-// (AUTHENTICATION.md §3–§7). Public routes (no session required).
+// (AUTHENTICATION.md §3–§7), plus the per-user GitHub OAuth (a the
+// account-page "GitHub" block's connect/disconnect, API_SPECIFICATION.md
+// "Auth & account"). Public routes (no session required) unless noted.
 
 import type { FastifyInstance } from "fastify";
+import { randomBytes } from "node:crypto";
 import argon2 from "argon2";
 import { SignupRequestSchema, SigninRequestSchema } from "@vercode/contracts";
+import { z } from "zod";
+
+// GitHub OAuth callback params (zod-validated; an unknown `error` string
+// is 400, not a 500).
+const GithubCallbackSchema = z.object({
+  code: z.string().min(1).optional(),
+  state: z.string().min(1).optional(),
+  error: z.string().optional(),
+});
+type GithubCallbackParams = z.infer<typeof GithubCallbackSchema>;
 
 export async function authRoutes(app: FastifyInstance) {
   app.post("/signup", { schema: { body: SignupRequestSchema }, config: { public: true } }, async (req, reply) => {
