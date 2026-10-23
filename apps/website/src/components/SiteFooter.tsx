@@ -39,7 +39,7 @@ export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-[hsl(var(--border))] bg-[var(--ground)]">
+    <footer className="bg-[var(--raised)]">
       <div className="container py-12">
         {/* The 4 columns (IA §4: "a 4 col (Product / Resources /
             Company / Legal) + a *social* row (GitHub, X)"). */}
@@ -68,7 +68,7 @@ export function SiteFooter() {
 
         {/* The social row (IA §4: "a *social* row (GitHub, X)" — a
             single GitHub icon, `--muted`, no stock icon library). */}
-        <div className="mt-10 flex items-center gap-4 border-t border-[var(--rule)] pt-6">
+        <div className="mt-10 flex items-center gap-4 pt-6">
           <a
             href={GITHUB_REPO}
             target="_blank"

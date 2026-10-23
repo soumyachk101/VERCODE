@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { personHue, initials } from "@/lib/format";
 
 /**
  * The shell (INFORMATION_ARCHITECTURE §2): a labelled 230px sidebar on the
@@ -400,7 +401,7 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
 }
 
 function Avatar({ name }: { name: string }) {
-  const hue = personHueExport(name);
+  const hue = personHue(name);
   return (
     <span
       aria-hidden="true"
@@ -408,7 +409,7 @@ function Avatar({ name }: { name: string }) {
         width: 32,
         height: 32,
         borderRadius: 8,
-        background: `hsl(${hue} 30% 18%)`,
+        background: `color-mix(in srgb, hsl(${hue} 30% 18%) 50%, hsl(var(--panel)))`,
         color: "var(--text)",
         display: "inline-flex",
         alignItems: "center",
@@ -419,21 +420,9 @@ function Avatar({ name }: { name: string }) {
         border: "1px solid var(--rule)",
       }}
     >
-      {initialsOf(name)}
+      {initials(name)}
     </span>
   );
-}
-
-function personHueExport(idOrName: string): number {
-  let h = 0;
-  for (let i = 0; i < idOrName.length; i++) h = (h * 31 + idOrName.charCodeAt(i)) % 360;
-  return h;
-}
-function initialsOf(name: string): string {
-  const p = name.split(/\s+/).filter(Boolean);
-  if (p.length === 0) return "?";
-  if (p.length === 1) return p[0][0].toUpperCase();
-  return (p[0][0] + p[p.length - 1][0]).toUpperCase();
 }
 
 function Header() {

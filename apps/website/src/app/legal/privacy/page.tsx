@@ -138,7 +138,7 @@ export default function LegalPrivacyPage() {
                   Findings retained 30 days; audit events retained 180 days.
                 </dd>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-1">
                 <dt className="text-[16px] font-semibold text-[var(--text)]">
                   Developer
                 </dt>
@@ -146,7 +146,7 @@ export default function LegalPrivacyPage() {
                   Findings retained 90 days; audit events retained 180 days.
                 </dd>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-1">
                 <dt className="text-[16px] font-semibold text-[var(--text)]">
                   Team
                 </dt>
@@ -154,7 +154,7 @@ export default function LegalPrivacyPage() {
                   Findings retained 365 days; audit events retained 180 days.
                 </dd>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-1">
                 <dt className="text-[16px] font-semibold text-[var(--text)]">
                   Enterprise
                 </dt>
