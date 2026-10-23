@@ -100,6 +100,12 @@ function matchActive(p: string): string {
   return "overview";
 }
 
+// ---------------------------------------------------------------------------
+// The sign-out action (the Shell's user row + the empty state): revoke the
+// session server-side, then back to the sign-in surface (a hard replace —
+// the shell must not stay mounted).
+// ---------------------------------------------------------------------------
+
 export function OrgShell({ children }: { children: ReactNode }) {
   const s = useOrgShell();
   const router = useRouter();
