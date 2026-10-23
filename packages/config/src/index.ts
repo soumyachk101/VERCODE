@@ -216,6 +216,12 @@ export const KNOWN_VARS = [
   "USE_MOCK_GITHUB",
   "USE_MOCK_AI",
   "USE_MOCK_BILLING",
+  // website (the public-website surface; docs/WEBSITE/TECHNICAL_ARCHITECTURE.md §6 —
+  // the config package validates the set; the website's static export reads
+  // VERCODE_WEBSITE_BASE_URL at build time, the /api/track route reads the HMAC key)
+  "VERCODE_WEBSITE_BASE_URL",
+  "VERCODE_WEBSITE_OG_DEFAULT",
+  "VERCODE_BEACON_SECRET",
 ] as const;
 
 function pick(env: NodeJS.ProcessEnv): Record<string, string | undefined> {

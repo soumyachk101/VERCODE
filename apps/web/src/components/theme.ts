@@ -28,16 +28,32 @@ export function applyTheme(t: Theme) {
 }
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof localStorage === "undefined") return "system";
-    const stored = localStorage.getItem(KEY) as Theme | null;
-    return stored ?? "system";
-  });
+  // Always initialize with "system" so SSR output and initial client render match identically.
+  const [theme, setTheme] = useState<Theme>("system");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    applyTheme(theme);
-    localStorage.setItem(KEY, theme);
+    setMounted(true);
+    if (typeof localStorage !== "undefined") {
+      const stored = localStorage.getItem(KEY) as Theme | null;
+      if (stored) {
+        setTheme(stored);
+        applyTheme(stored);
+        return;
+      }
+    }
+    applyTheme("system");
+  }, []);
 
+  useEffect(() => {
+    if (!mounted) return;
+    applyTheme(theme);
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(KEY, theme);
+    }
+  }, [theme, mounted]);
+
+  useEffect(() => {
     // the "system" option follows the OS live (no reload, no flash)
     let mq: MediaQueryList | null = null;
     const onMq = () => {
@@ -52,5 +68,5 @@ export function useTheme() {
     };
   }, [theme]);
 
-  return { theme, setTheme, resolved: resolve(theme) };
+  return { theme, setTheme, resolved: resolve(theme), mounted };
 }

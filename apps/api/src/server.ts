@@ -8,6 +8,7 @@
 import Fastify from "fastify";
 import fastifyCookie from "@fastify/cookie";
 import fastifySensible from "@fastify/sensible";
+import fastifyCors from "@fastify/cors";
 import { loadConfig, type AppConfig } from "@vercode/config";
 import { buildAuthPlugin } from "./plugins/auth.js";
 import { buildTenantPlugin } from "./plugins/tenant.js";
@@ -33,6 +34,33 @@ export function buildServer(opts: { config?: AppConfig; logger?: boolean } = {})
         message: status >= 500 ? "Internal error" : e.message ?? "Request failed.",
       },
     });
+  });
+
+  // CORS for cross-origin web client (apps/web on :3000 -> api on :4000)
+  app.register(fastifyCors, {
+    origin: (origin, cb) => {
+      if (!origin) {
+        cb(null, true);
+        return;
+      }
+      const allowed = [
+        config.core.WEB_BASE_URL,
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+      ];
+      if (
+        allowed.includes(origin) ||
+        origin.startsWith("http://localhost:") ||
+        origin.startsWith("http://127.0.0.1:")
+      ) {
+        cb(null, true);
+        return;
+      }
+      cb(new Error("Not allowed by CORS"), false);
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Idempotency-Key"],
   });
 
   app.register(fastifyCookie);

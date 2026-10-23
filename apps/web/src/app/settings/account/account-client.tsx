@@ -137,11 +137,12 @@ function AccountBody() {
           label="Theme"
           description="The dashboard follows your choice. 'System' tracks the OS colour scheme live."
         >
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8 }} suppressHydrationWarning>
             {(["light", "dark", "system"] as const).map((t) => (
               <button
                 key={t}
                 type="button"
+                suppressHydrationWarning
                 aria-pressed={theme === t}
                 className="pressable"
                 onClick={() => setTheme(t)}

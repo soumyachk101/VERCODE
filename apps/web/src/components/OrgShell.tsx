@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuthMe, useReviews, useSecurity } from "@/lib/hooks";
 import { Shell, type NavItem } from "@/components/Shell";
 import { LiveRegion } from "@/components/announcer";
-import type { ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 
 /**
  * The org shell (INFORMATION_ARCHITECTURE §2): the seven destinations in
@@ -18,7 +18,14 @@ import type { ReactNode } from "react";
 export function useOrgShell() {
   const me = useAuthMe();
   const orgs = me.data?.orgs ?? [];
-  const active = orgs.find((o) => o.id === sessionStorageGet()) ?? orgs[0];
+  const [activeOrgId, setActiveOrgId] = useState<string>("");
+
+  useEffect(() => {
+    const saved = sessionStorageGet();
+    if (saved) setActiveOrgId(saved);
+  }, []);
+
+  const active = (activeOrgId ? orgs.find((o) => o.id === activeOrgId) : undefined) ?? orgs[0];
   const activeOrg = active?.id ?? "";
 
   const sec = useSecurity(activeOrg || undefined);

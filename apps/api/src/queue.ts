@@ -90,7 +90,9 @@ export class BullQueue implements Enqueueable {
       lazyConnect: true,
       maxRetriesPerRequest: 1,
       enableOfflineQueue: false,
+      retryStrategy: () => null,
     } as Partial<RedisOptions>);
+    conn.on("error", () => {});
     try {
       await conn.connect();
       const pong = await Promise.race([
@@ -100,9 +102,8 @@ export class BullQueue implements Enqueueable {
       if (pong !== "PONG") throw new Error("unexpected ping response");
       this.queue = new Queue(this.name, { connection: conn, defaultJobOptions: { removeOnComplete: 1000, removeOnFail: 5000 } });
     } catch (err) {
-      // A the probe failed: a close the conn, a the caller (the `catch` on
-      // `ready`) marks us degraded.
       await conn.quit().catch(() => {});
+      conn.disconnect(false);
       throw err;
     }
   }

@@ -1,0 +1,85 @@
+/*
+ * VERCODE website — the layout classes hand-rolled next to Tailwind.
+ *
+ * These are the few rules that are *not* one-off utilities: the canvas
+ * (DESIGN_SYSTEM_AND_TYPOGRAPHY.md §3's 1120px page canvas), the one filled
+ * CTA button, and the nav/footer link treatments. Everything else is a
+ * Tailwind arbitrary value pointing at the design tokens in globals.css.
+ */
+
+/* The page canvas — a 1120px measure with a 24px gutter
+   (DESIGN_SYSTEM_AND_TYPOGRAPHY.md §3: "a 1120px canvas for the
+   hero/features"). */
+.container {
+  width: 100%;
+  max-width: 1120px;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+/* The chrome is a flex column so a short page (a 404) still pushes the
+   footer to the bottom of the viewport. */
+body {
+  display: flex;
+  min-height: 100svh;
+  flex-direction: column;
+}
+
+main {
+  flex-grow: 1;
+}
+
+/* The one filled button on the site (DESIGN_SYSTEM_AND_TYPOGRAPHY.md §1:
+   "colour goes on the one primary action" — the CTA carries the accent
+   hue; everything else on the page is graphite). The hover is a 100ms
+   opacity 0.9 → 1 (DESIGN_SYSTEM_AND_TYPOGRAPHY.md §5: "a hover is an
+   instant feedback, 100ms"). */
+.btn-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-control);
+  background: var(--accent-cta);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+  transition: opacity 100ms ease-out;
+}
+
+.btn-cta:hover {
+  opacity: 0.85;
+}
+
+/* A header nav link — 14px meta type in graphite, warming to --text on
+   hover (a 100ms transition, the site's only motion). */
+.nav-link {
+  font-size: 14px;
+  color: var(--muted);
+  transition: color 100ms ease-out;
+}
+
+.nav-link:hover {
+  color: var(--text);
+}
+
+/* A footer column title — a label, sentence case (no uppercase: the
+   DESIGN_SYSTEM_AND_TYPOGRAPHY.md §2 rule). */
+.footer-col-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--faint);
+}
+
+/* A footer link. */
+.footer-link {
+  font-size: 14px;
+  color: var(--muted);
+  transition: color 100ms ease-out;
+}
+
+.footer-link:hover {
+  color: var(--text);
+}

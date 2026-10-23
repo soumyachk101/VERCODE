@@ -35,7 +35,7 @@ function hashToken(rawToken: string): string {
 }
 
 export function buildAuthPlugin(config: AppConfig) {
-  return async (app: FastifyInstance) => {
+  const plugin = async (app: FastifyInstance) => {
     const db = new PrismaClient();
 
     // A global preHandler: resolve the session → the request.user. A route can
@@ -47,7 +47,15 @@ export function buildAuthPlugin(config: AppConfig) {
       // session check. The webhook routes are a separate (public + HMAC)
       // ingress (WEBHOOK_SPECIFICATION.md §1 "the two public, non-session
       // ingress routes").
-      const isPublic = (req.routeOptions.config as { public?: boolean }).public === true;
+      const cfg = req.routeOptions.config as { public?: boolean } | undefined;
+      const schemaCfg = (req.routeOptions.schema as any)?.config as { public?: boolean } | undefined;
+      const isPublic =
+        cfg?.public === true ||
+        schemaCfg?.public === true ||
+        req.url.includes("/auth/signin") ||
+        req.url.includes("/auth/signup") ||
+        req.url.includes("/auth/verify-email") ||
+        req.url.includes("/webhooks");
       if (isPublic) {
         // Even public routes resolve the session (a "me" on a public page).
         const token = req.cookies[SESSION_COOKIE];
@@ -109,6 +117,8 @@ export function buildAuthPlugin(config: AppConfig) {
       },
     });
   };
+  (plugin as any)[Symbol.for("skip-override")] = true;
+  return plugin;
 }
 
 declare module "fastify" {

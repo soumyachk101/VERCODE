@@ -6,6 +6,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import Fastify, { type FastifyInstance } from "fastify";
 import fastifyCookie from "@fastify/cookie";
+import fastifyCors from "@fastify/cors";
 import { reviewRoutes } from "./routes/reviews.js";
 import { usageRoutes } from "./routes/usage.js";
 import { billingRoutes } from "./routes/billing.js";
@@ -20,6 +21,10 @@ import { createInMemoryQueue } from "./queue.js";
 function setupTestApp() {
   const app = Fastify({ logger: false });
   app.register(fastifyCookie);
+  app.register(fastifyCors, {
+    origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
+    credentials: true,
+  });
 
   app.setValidatorCompiler(({ schema }: any) => {
     return (data: any) => {
@@ -283,7 +288,7 @@ function setupTestApp() {
     db: mockDb,
     hashToken: (t: string) => `hash_${t}`,
     newSessionToken: () => "mock-token",
-  });
+  } as any);
 
   // Mock user session on request
   app.addHook("onRequest", async (req) => {
@@ -552,6 +557,20 @@ describe("Dashboard REST API Complete Route Specification", () => {
       expect(body.status).toBe("queued");
       expect(queue.enqueued.length).toBe(1);
       expect(queue.reviewJobs()[0].commitSha).toBe("sha-fresh-commit");
+    });
+
+    it("OPTIONS /api/v1/auth/me preflight returns Access-Control-Allow-Credentials: true", async () => {
+      const res = await app.inject({
+        method: "OPTIONS",
+        url: "/api/v1/auth/me",
+        headers: {
+          origin: "http://localhost:3000",
+          "access-control-request-method": "GET",
+        },
+      });
+      expect(res.statusCode).toBe(204);
+      expect(res.headers["access-control-allow-credentials"]).toBe("true");
+      expect(res.headers["access-control-allow-origin"]).toBe("http://localhost:3000");
     });
   });
 });

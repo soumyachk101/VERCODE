@@ -38,7 +38,7 @@ export function DataBlock({
   lastUpdated?: string | null;
   children: (data: NonNullable<UseQueryResult<unknown>["data"]>) => ReactNode;
 }) {
-  if (result.isLoading) {
+  if (result.isLoading || (result.data == null && !result.isError)) {
     return <Skeleton lines={3} />;
   }
   if (result.isError) {
@@ -52,7 +52,7 @@ export function DataBlock({
       />
     );
   }
-  return result.data != null ? children(result.data) : null;
+  return children(result.data!);
 }
 
 import { BlockError } from "./BlockError";

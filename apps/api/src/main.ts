@@ -3,7 +3,7 @@
 import { buildServer } from "./server.js";
 
 const app = buildServer();
-const port = 4000;
+const port = Number(process.env.PORT) || 4000;
 const host = "0.0.0.0";
 
 app
