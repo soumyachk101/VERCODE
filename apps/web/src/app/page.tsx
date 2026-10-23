@@ -1,5 +1,12 @@
 import { redirect } from "next/navigation";
-import type { Session } from "@/lib/types";
+import { headers } from "next/headers";
+import { MarketingShell } from "@/components/marketing/marketing-shell";
+import { Hero } from "@/components/marketing/landing/hero";
+import { Features } from "@/components/marketing/landing/features";
+import { LivePreview } from "@/components/marketing/landing/live-preview";
+import { HowItWorks } from "@/components/marketing/landing/how-it-works";
+import { BlogPreview } from "@/components/marketing/landing/blog-preview";
+import { Cta } from "@/components/marketing/cta";
 
 // / — two branches:
 //   no session  → the marketing landing page (hero, features, live preview,
@@ -7,48 +14,42 @@ import type { Session } from "@/lib/types";
 //   session + a resolved org → /overview (INFORMATION_ARCHITECTURE §3: the
 //                 dashboard first, not a KPI wall, for a signed-in user).
 //
-// The session check is a server-side /auth/me read (cookie, no auth header
-// needed — the cookie rides the request). If the API is unreachable the
-// server check fails open to the marketing page: a landing page that
-// requires a healthy API is not a landing page.
+// The session check reads the /auth/me endpoint server-side. The cookie
+// must be forwarded explicitly — Next.js strips request cookies on
+// server-side fetch in some configurations, so the cookie is read from
+// the incoming request and re-attached.
+//
+// If the API is unreachable the server check fails open to the marketing
+// page: a landing page that requires a healthy API is not a landing page.
 //
 // A signed-in user with no org yet (fresh account) stays on the landing
-// and the "Sign in" link in the nav resolves to /signin which carries
-// them to the org-creation step.
+// page; the "Sign in" link in the nav carries them to /signin, which
+// routes to the org-creation step.
 
-async function getSession(): Promise<{ orgId: string | null }> {
+export const dynamic = "force-dynamic";
+
+async function getOrgId(): Promise<string | null> {
   try {
     const apiBase = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:4000";
+    const h = await headers();
+    const cookie = h.get("cookie") ?? "";
+
     const res = await fetch(`${apiBase}/api/v1/auth/me`, {
       cache: "no-store",
       redirect: "manual",
+      headers: cookie ? { cookie } : undefined,
     });
-    if (!res.ok) return { orgId: null };
+    if (!res.ok) return null;
     const data = (await res.json()) as { orgs?: Array<{ id: string }> };
-    const org = data.orgs?.[0];
-    return { orgId: org?.id ?? null };
+    return data.orgs?.[0]?.id ?? null;
   } catch {
-    // API unreachable: open to the marketing page.
-    return { orgId: null };
+    return null;
   }
 }
 
 export default async function Home() {
-  const { orgId } = await getSession();
+  const orgId = await getOrgId();
   if (orgId) redirect("/overview");
-  return <LandingPage />;
-}
-
-// Re-export the marketing composition so the page component stays the
-// single export (Next.js requires a default export for a route).
-async function LandingPage() {
-  const { Hero } = await import("@/components/marketing/landing/hero");
-  const { Features } = await import("@/components/marketing/landing/features");
-  const { LivePreview } = await import("@/components/marketing/landing/live-preview");
-  const { HowItWorks } = await import("@/components/marketing/landing/how-it-works");
-  const { BlogPreview } = await import("@/components/marketing/landing/blog-preview");
-  const { Cta } = await import("@/components/marketing/cta");
-  const { MarketingShell } = await import("@/components/marketing/marketing-shell");
 
   return (
     <MarketingShell>

@@ -133,11 +133,11 @@ export default function Features() {
   return (
     <>
       <JsonLd blocks={schemaBlocks} />
-      <div className="mx-auto max-w-4xl px-5 pt-16 sm:pt-20">
-        <h1 className="text-[40px] font-bold tracking-tight text-[var(--text)]">
+      <div className="mx-auto max-w-[4xl] px-5 pt-20 sm:pt-24">
+        <h1 className="text-[40px] font-semibold tracking-[-0.02em] text-[var(--text)] sm:text-[44px]">
           Features
         </h1>
-        <p className="mt-4 text-[17px] leading-relaxed text-[var(--muted)]">
+        <p className="mt-4 max-w-[560px] text-[17px] leading-[1.65] text-[var(--muted)]">
           The question this page answers: what does VERCODE do that a
           model-only AI reviewer does not? The short version — a pipeline that
           is deterministic first, evidence-backed, cost-disciplined, and a
@@ -148,31 +148,31 @@ export default function Features() {
       {/* The 4 pillars, anchorable sections (IA §3.2: each an id, 2–4
           sentences, a real code/UI fragment, a "How it works" docs link). */}
       <Reveal>
-        <div className="mx-auto max-w-4xl px-5">
+        <div className="mx-auto max-w-[4xl] px-5 pt-4">
           {PILLARS.map((pillar) => (
             <section
               key={pillar.id}
               id={pillar.id}
               aria-labelledby={`${pillar.id}-heading`}
-              className="mt-14"
+              className="mt-16"
             >
               <h2
                 id={`${pillar.id}-heading`}
-                className="text-[20px] font-semibold tracking-tight text-[var(--text)]"
+                className="text-[22px] font-semibold tracking-[-0.01em] text-[var(--text)]"
               >
                 {pillar.title}
               </h2>
-              <p className="mt-2 text-[16px] leading-relaxed text-[var(--muted)]">
+              <p className="mt-3 max-w-[44rem] text-[16px] leading-[1.7] text-[var(--muted)]">
                 {pillar.body}
               </p>
               {/* A live finding, the exact shape the pipeline publishes
                   (a pre in the prose styles, via the Prose wrapper). */}
-              <pre className="mt-5 overflow-x-auto rounded-[var(--radius-card)] border border-[var(--hard-border)] bg-[var(--raised)] p-5 font-mono text-[14px] leading-relaxed text-[var(--text)]">
+              <pre className="mt-5 overflow-x-auto rounded-[var(--radius-card)] border border-[var(--hard-border)] bg-[var(--raised)] p-5 font-mono text-[13px] leading-[1.7] text-[var(--muted)]">
                 <code>{pillar.fragment}</code>
               </pre>
               <a
                 href={pillar.docs}
-                className="mt-4 inline-block text-[16px] font-medium text-[var(--accent-color)] underline-offset-4 hover:underline"
+                className="link-cta mt-4 inline-block"
               >
                 How it works
               </a>
@@ -186,29 +186,29 @@ export default function Features() {
       <Reveal>
         <section
           aria-labelledby="stories-heading"
-          className="mx-auto max-w-4xl px-5 py-16"
+          className="mx-auto max-w-[4xl] px-5 py-20"
         >
           <h2
             id="stories-heading"
-            className="text-[28px] font-semibold tracking-tight text-[var(--text)] sm:text-[32px]"
+            className="text-[30px] font-semibold tracking-[-0.02em] text-[var(--text)] sm:text-[34px]"
           >
             The workspace
           </h2>
-          <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2">
+          <div className="mt-10 grid grid-cols-1 gap-px overflow-hidden rounded-[var(--radius-card)] border border-[var(--hard-border)] bg-[var(--hard-border)] sm:grid-cols-2">
             {STORIES.map((story) => (
-              <article key={story.fr}>
-                <h3 className="text-[17px] font-semibold text-[var(--text)]">
+              <article key={story.fr} className="bg-[var(--surface)] p-7">
+                <h3 className="text-[16px] font-semibold text-[var(--text)]">
                   {story.title}
                 </h3>
-                <p className="mt-2 text-[16px] leading-relaxed text-[var(--muted)]">
+                <p className="mt-2 text-[15px] leading-[1.7] text-[var(--muted)]">
                   {story.body}
                 </p>
-                <p className="mt-2 font-mono text-[13px] text-[var(--faint)]">
+                <p className="mt-3 font-mono text-[12px] text-[var(--faint)] tnum">
                   {story.fr}
                 </p>
                 <a
                   href={story.docs}
-                  className="mt-2 inline-block text-[16px] font-medium text-[var(--accent-color)] underline-offset-4 hover:underline"
+                  className="link-cta mt-3 inline-block"
                 >
                   The docs
                 </a>
