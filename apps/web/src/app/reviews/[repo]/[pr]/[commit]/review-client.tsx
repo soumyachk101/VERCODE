@@ -133,7 +133,7 @@ function ReviewBody({ repo, prNumber, commitId }: { repo: string; prNumber: numb
                       Status: {jobStatusLabel(j.status, j.skipReason)}
                     </span>
                     {j.skipReason === "quota_exceeded" && (
-                      <a href="/usage" className="pressable" style={{ color: "hsl(var(--accent))", fontSize: 13 }}>
+                      <a href="/usage" className="pressable" style={{ color: "var(--accent-color)", fontSize: 13 }}>
                         View usage
                       </a>
                     )}

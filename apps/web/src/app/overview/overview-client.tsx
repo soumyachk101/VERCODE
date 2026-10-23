@@ -141,7 +141,7 @@ function SecurityQueue({ sec }: { sec: ReturnType<typeof useSecurity> }) {
     <Panel>
       <PanelTitle
         right={
-          <a href="/security" className="pressable" style={{ color: "hsl(var(--accent))", fontSize: 13 }}>
+          <a href="/security" className="pressable" style={{ color: "var(--accent-color)", fontSize: 13 }}>
             View all
           </a>
         }
@@ -192,7 +192,7 @@ function FailedQueue({
     <Panel>
       <PanelTitle
         right={
-          <a href="/reviews" className="pressable" style={{ color: "hsl(var(--accent))", fontSize: 13 }}>
+          <a href="/reviews" className="pressable" style={{ color: "var(--accent-color)", fontSize: 13 }}>
             View all
           </a>
         }

@@ -159,7 +159,7 @@ export function VcTabs({
   label: string;
 }) {
   return (
-    <div role="tablist" aria-label={label} className="flex gap-4" style={{ borderBottom: "1px solid hsl(var(--border))" }}>
+    <div role="tablist" aria-label={label} className="flex gap-4" style={{ borderBottom: "1px solid var(--hard-border)" }}>
       {tabs.map((t) => {
         const on = t.id === active;
         return (
@@ -194,7 +194,7 @@ export function VcTabs({
               fontSize: 13,
               fontWeight: 500,
               color: on ? "var(--text)" : "var(--muted-ink)",
-              borderBottom: on ? "2px solid hsl(var(--accent))" : "2px solid transparent",
+              borderBottom: on ? "2px solid var(--accent-color)" : "2px solid transparent",
               margin: "0 0 -1px",
             }}
           >

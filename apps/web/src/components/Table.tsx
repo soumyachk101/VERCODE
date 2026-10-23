@@ -31,7 +31,7 @@ export function Table({
     >
       <caption className="meta sr-only">{caption}</caption>
       <thead>
-        <tr style={{ borderBottom: "1px solid hsl(var(--border))" }}>
+        <tr style={{ borderBottom: "1px solid var(--hard-border)" }}>
           {head.map((h) => (
             <th
               key={h.label}

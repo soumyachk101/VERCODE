@@ -233,7 +233,7 @@ function PlanChoice({
         height: 32,
         padding: "0 14px",
         borderRadius: "var(--radius-control)",
-        border: `1px solid ${on ? "var(--control)" : "hsl(var(--border))"}`,
+        border: `1px solid ${on ? "var(--control)" : "var(--hard-border)"}`,
         background: on ? "var(--active)" : "var(--surface)",
         color: "var(--text)",
         fontSize: 13,

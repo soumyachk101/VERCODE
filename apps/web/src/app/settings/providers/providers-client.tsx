@@ -46,7 +46,7 @@ function ProvidersBody() {
         title="Providers"
         finding="Task routing, the BYOK key, and the configured fallback provider"
       />
-      <div style={{ background: "var(--surface)", border: "1px solid hsl(var(--border))", borderRadius: 8, padding: "0 20px" }}>
+      <div style={{ background: "var(--surface)", border: "1px solid var(--hard-border)", borderRadius: 8, padding: "0 20px" }}>
         <SettingsSection
           label="Task routing"
           description="Admin-set within the plan tier. A team-plan org can't pin a task to an Enterprise-only model — the gate is surfaced as a disabled row + a reason, never a 30% opacity wash."

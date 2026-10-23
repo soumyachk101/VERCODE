@@ -95,7 +95,7 @@ function RepoBody({ repo }: { repo: string }) {
         </Panel>
 
         <Panel>
-          <PanelTitle right={<a href={`/reviews?repo=${encodeURIComponent(repo)}`} className="pressable" style={{ color: "hsl(var(--accent))", fontSize: 13 }}>View all</a>}>
+          <PanelTitle right={<a href={`/reviews?repo=${encodeURIComponent(repo)}`} className="pressable" style={{ color: "var(--accent-color)", fontSize: 13 }}>View all</a>}>
             Open findings
           </PanelTitle>
           {secQ.data && open.length === 0 ? (
@@ -157,12 +157,12 @@ function RepoBody({ repo }: { repo: string }) {
                 <p className="finding-line" style={{ margin: 0 }}>
                   {rule.overrides.length} repo-specific rule override
                   {rule.overrides.length === 1 ? "" : "s"} in force: {rule.overrides.join(", ")}.{" "}
-                  <a href="/settings/rules" className="pressable" style={{ color: "hsl(var(--accent))" }}>Manage rules</a>
+                  <a href="/settings/rules" className="pressable" style={{ color: "var(--accent-color)" }}>Manage rules</a>
                 </p>
               ) : (
                 <p className="finding-line" style={{ margin: 0 }}>
                   No repo-specific rules — using the org default.{" "}
-                  <a href="/settings/rules" className="pressable" style={{ color: "hsl(var(--accent))" }}>Manage rules</a>
+                  <a href="/settings/rules" className="pressable" style={{ color: "var(--accent-color)" }}>Manage rules</a>
                 </p>
               )
             }

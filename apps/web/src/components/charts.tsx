@@ -15,7 +15,7 @@ import {
   YAxis,
 } from "recharts";
 
-const ACCENT = "hsl(var(--accent))";
+const ACCENT = "var(--accent-color)";
 const MUTED = "var(--muted-ink)";
 const GRID = "var(--grid)";
 
@@ -75,7 +75,7 @@ export function LineChartBlock({
             <Tooltip
               contentStyle={{
                 background: "var(--surface)",
-                border: "1px solid hsl(var(--border))",
+                border: "1px solid var(--hard-border)",
                 borderRadius: "var(--radius-card)",
                 fontSize: 12,
                 color: "var(--text)",
@@ -218,7 +218,7 @@ export function CategoryTrendChart({
           <Tooltip
             contentStyle={{
               background: "var(--surface)",
-              border: "1px solid hsl(var(--border))",
+              border: "1px solid var(--hard-border)",
               borderRadius: 8,
               fontSize: 12,
               color: "var(--text)",

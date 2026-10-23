@@ -44,7 +44,7 @@ export function Features() {
   return (
     <section className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
       <div className="max-w-2xl">
-        <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[hsl(var(--accent))]">
+        <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-color)]">
           Capabilities
         </span>
         <h2 className="mt-3 text-[28px] font-bold tracking-[-0.01em] text-[hsl(var(--text-1))] sm:text-[34px]">
@@ -61,7 +61,7 @@ export function Features() {
         {FEATURES.map((f) => (
           <article key={f.title} className="bg-[hsl(var(--panel))] p-6">
             <div className="flex h-10 w-10 items-center justify-center rounded-[8px] border border-[hsl(var(--line))] bg-[hsl(var(--highlight))]">
-              <f.icon width={20} height={20} className="text-[hsl(var(--accent))]" />
+              <f.icon width={20} height={20} className="text-[var(--accent-color)]" />
             </div>
             <h3 className="mt-5 text-[16px] font-semibold text-[hsl(var(--text-1))]">{f.title}</h3>
             <p className="mt-2 text-[14px] leading-relaxed text-[hsl(var(--text-2))]">{f.body}</p>

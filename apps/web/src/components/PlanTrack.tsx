@@ -107,7 +107,7 @@ export function PlanTrack({
         <div
           style={{
             width: `${spentFrac * 100}%`,
-            background: "hsl(var(--accent))",
+            background: "var(--accent-color)",
             height: "100%",
           }}
           data-testid="plan-spent"
@@ -115,7 +115,7 @@ export function PlanTrack({
         <div
           style={{
             width: `${committedFrac * 100}%`,
-            background: "color-mix(in srgb, hsl(var(--accent)) 40%, var(--surface))",
+            background: "color-mix(in srgb, var(--accent-color) 40%, var(--surface))",
             height: "100%",
           }}
           data-testid="plan-committed"
