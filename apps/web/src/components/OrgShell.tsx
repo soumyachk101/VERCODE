@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useAuthMe, useReviews, useSecurity, useSignOutAll } from "@/lib/hooks";
+import { useAuthMe, useReviews, useSecurity } from "@/lib/hooks";
 import { Shell, type NavItem } from "@/components/Shell";
 import { LiveRegion } from "@/components/announcer";
 import { useState, useEffect, type ReactNode } from "react";
@@ -77,6 +77,7 @@ export function useOrgShell() {
     user: me.data ? { name: me.data.name, email: me.data.email } : null,
     loading: me.isLoading,
     me,
+    signOut,
     switchOrg: (id: string) => {
       if (id) sessionStorage.setItem("vercode_org", id);
       router.push("/overview");
@@ -175,7 +176,7 @@ function EmptyShellState({
       <button
         type="button"
         className="pressable"
-        onClick={() => router.replace(hasSession ? "/signin" : "/signin")}
+        onClick={() => router.replace("/signin")}
         style={{
           alignSelf: "flex-start",
           height: 38,
