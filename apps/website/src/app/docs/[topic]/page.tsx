@@ -130,7 +130,7 @@ export default async function DocsTopicPage({
               a topic whose body omits them still satisfies the rule. */}
           <section
             aria-label="Related docs"
-            className="mt-12 border-t border-[var(--rule)] pt-6"
+            className="mt-14 pt-2"
           >
             <h2 className="text-[13px] font-semibold text-[var(--faint)]">
               Related
@@ -140,7 +140,7 @@ export default async function DocsTopicPage({
                 <li key={r.href}>
                   <a
                     href={r.href}
-                    className="text-[15px] text-[var(--accent)] underline underline-offset-2"
+                    className="text-[16px] text-[var(--accent)] underline underline-offset-2"
                   >
                     {r.label}
                   </a>

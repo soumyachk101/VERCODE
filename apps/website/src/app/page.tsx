@@ -152,9 +152,12 @@ export default function Home() {
       </section>
 
       {/* Block 2 — How it works (the 3-step row; order is shown by
-          position + a step title, no index numbers). */}
-      <Reveal>
-        <section
+          position + a step title, no index numbers). The section
+          `Reveal`'s inner `<li>`s are each a `Reveal` with a
+          `data-stagger` index: a 60ms cascade (§5 one-time 100ms
+          scroll-reveal, a `Reveal.tsx` capped at 240ms). */}
+      <Reveal as="section">
+        <div
           aria-labelledby="how-it-works-heading"
           className="mx-auto max-w-5xl px-5 py-16"
         >
@@ -168,24 +171,26 @@ export default function Home() {
             aria-label="How it works"
             className="mt-10 grid grid-cols-1 gap-10 sm:grid-cols-3"
           >
-            {STEPS.map((step) => (
-              <li key={step.title}>
+            {STEPS.map((step, i) => (
+              <Reveal as="li" key={step.title} dataStagger={i}>
                 <h3 className="text-[16px] font-semibold text-[var(--text)]">
                   {step.title}
                 </h3>
                 <p className="mt-2 text-[16px] leading-relaxed text-[var(--muted)]">
                   {step.body}
                 </p>
-              </li>
+              </Reveal>
             ))}
           </ol>
-        </section>
+        </div>
       </Reveal>
 
       {/* Block 3 — the capability narrative (the 2×2 "flat hairline" grid:
-          gap-px over a --border background, no card shadows, no icons). */}
-      <Reveal>
-        <section
+          gap-px over a --border background, no card shadows, no icons).
+          The 4 cards are `Reveal`s with a `data-stagger` index (a
+          60ms-per-item cascade, capped at 240ms in `Reveal.tsx`). */}
+      <Reveal as="section">
+        <div
           aria-labelledby="pillars-heading"
           className="mx-auto max-w-5xl px-5 py-16"
         >
@@ -196,24 +201,28 @@ export default function Home() {
             Built on four principles
           </h2>
           <div className="mt-10 grid grid-cols-1 gap-px bg-[var(--border)] sm:grid-cols-2">
-            {PILLARS.map((pillar) => (
-              <div key={pillar.title} className="bg-[var(--surface)] p-8">
-                <h3 className="text-[17px] font-semibold text-[var(--text)]">
-                  {pillar.title}
-                </h3>
-                <p className="mt-2 text-[16px] leading-relaxed text-[var(--muted)]">
-                  {pillar.body}
-                </p>
-              </div>
+            {PILLARS.map((pillar, i) => (
+              <Reveal key={pillar.title} dataStagger={i}>
+                <div className="bg-[var(--surface)] p-8">
+                  <h3 className="text-[17px] font-semibold text-[var(--text)]">
+                    {pillar.title}
+                  </h3>
+                  <p className="mt-2 text-[16px] leading-relaxed text-[var(--muted)]">
+                    {pillar.body}
+                  </p>
+                </div>
+              </Reveal>
             ))}
           </div>
-        </section>
+        </div>
       </Reveal>
 
       {/* Block 4 — the pricing teaser (3 cards; the Team card's 2px accent
-          border is the single visual differentiation, DESIGN_SYSTEM §3). */}
-      <Reveal>
-        <section
+          border is the single visual differentiation, DESIGN_SYSTEM §3).
+          The 3 cards are `Reveal`s with a `data-stagger` index (§5
+          one-time 100ms + 60ms cascade). */}
+      <Reveal as="section">
+        <div
           aria-labelledby="pricing-teaser-heading"
           className="mx-auto max-w-5xl px-5 py-16"
         >
@@ -224,43 +233,44 @@ export default function Home() {
             Pricing
           </h2>
           <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {TEASER_PLANS.map((plan) => {
+            {TEASER_PLANS.map((plan, i) => {
               const offer = planOffer(plan);
               const isTeam = plan === "team";
               return (
-                <div
-                  key={plan}
-                  className={`rounded-[var(--radius-card)] p-6 ${
-                    isTeam
-                      ? "border-2 border-[var(--accent)]"
-                      : "border border-[var(--border)]"
-                  }`}
-                >
-                  <h3 className="text-[16px] font-semibold capitalize text-[var(--text)]">
-                    {offer.plan}
-                  </h3>
-                  <p className="mt-2">
-                    <span className="tnum text-[28px] font-semibold text-[var(--text)]">
-                      {priceParts(offer).figure}
-                    </span>{" "}
-                    <span className="text-[13px] text-[var(--muted)]">
-                      {priceParts(offer).unit}
-                    </span>
-                  </p>
-                  <p className="mt-3 text-[16px] leading-relaxed text-[var(--muted)]">
-                    {offer.positioning}
-                  </p>
-                  <a
-                    href="/pricing/"
-                    className="mt-4 inline-block text-[16px] font-medium text-[var(--accent)] underline-offset-4 hover:underline"
+                <Reveal key={plan} dataStagger={i}>
+                  <div
+                    className={`rounded-[var(--radius-card)] p-6 ${
+                      isTeam
+                        ? "border-2 border-[var(--accent)]"
+                        : "border border-[var(--border)]"
+                    }`}
                   >
-                    See all plans
-                  </a>
-                </div>
+                    <h3 className="text-[16px] font-semibold capitalize text-[var(--text)]">
+                      {offer.plan}
+                    </h3>
+                    <p className="mt-2">
+                      <span className="tnum text-[28px] font-semibold text-[var(--text)]">
+                        {priceParts(offer).figure}
+                      </span>{" "}
+                      <span className="text-[13px] text-[var(--muted)]">
+                        {priceParts(offer).unit}
+                      </span>
+                    </p>
+                    <p className="mt-3 text-[16px] leading-relaxed text-[var(--muted)]">
+                      {offer.positioning}
+                    </p>
+                    <a
+                      href="/pricing/"
+                      className="mt-4 inline-block text-[16px] font-medium text-[var(--accent)] underline-offset-4 hover:underline"
+                    >
+                      See all plans
+                    </a>
+                  </div>
+                </Reveal>
               );
             })}
           </div>
-        </section>
+        </div>
       </Reveal>
 
       {/* Block 6 — the FAQ teaser (the top-5 items; the byte-equivalence rule

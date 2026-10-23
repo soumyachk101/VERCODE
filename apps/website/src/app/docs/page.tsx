@@ -132,16 +132,16 @@ export default function DocsIndexPage() {
                 <dt className="text-[13px] font-semibold text-[var(--faint)]">
                   {g.label}
                 </dt>
-                <div className="mt-3 space-y-4">
+                <div className="mt-3 space-y-5">
                   {g.docs.map((d) => (
-                    <dd key={d.slug} className="border-t border-[var(--rule)] pt-3">
+                    <dd key={d.slug}>
                       <a
                         href={`/docs/${d.slug}/`}
                         className="text-[16px] font-semibold text-[var(--accent)] underline underline-offset-2"
                       >
                         {d.front.title}
                       </a>
-                      <p className="mt-1 text-[14px] leading-[1.5] text-[var(--muted)]">
+                      <p className="mt-1 text-[16px] leading-[1.5] text-[var(--muted)]">
                         {d.front.description}
                       </p>
                     </dd>
