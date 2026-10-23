@@ -18,7 +18,7 @@ export function BlogPreview() {
     <section className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="max-w-2xl">
-          <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[hsl(var(--accent))]">
+          <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[hsl(hsl(var(--accent)))]">
             From the blog
           </span>
           <h2 className="mt-3 text-[28px] font-bold tracking-[-0.01em] text-[hsl(var(--text-1))] sm:text-[34px]">
@@ -27,7 +27,7 @@ export function BlogPreview() {
         </div>
         <Link
           href="/blog"
-          className="inline-flex items-center gap-1.5 text-[14px] font-medium text-[hsl(var(--accent))] hover:underline"
+          className="inline-flex items-center gap-1.5 text-[14px] font-medium text-[hsl(hsl(var(--accent)))] hover:underline"
         >
           Read blog
           <IconArrow width={16} height={16} />
@@ -38,7 +38,7 @@ export function BlogPreview() {
         {posts.map((post) => (
           <article
             key={post.slug}
-            className="flex flex-col rounded-[10px] border border-[hsl(var(--line))] bg-[hsl(var(--panel))] p-6 transition-colors hover:border-[hsl(var(--accent))]"
+            className="flex flex-col rounded-[10px] border border-[hsl(var(--line))] bg-[hsl(var(--panel))] p-6 transition-colors hover:border-[hsl(hsl(var(--accent)))]"
           >
             <div className="flex items-center gap-2 text-[12px] text-[hsl(var(--text-3))]">
               <time dateTime={post.date}>{formatDate(post.date)}</time>
@@ -46,7 +46,7 @@ export function BlogPreview() {
               <span>{post.readingTime}</span>
             </div>
             <h3 className="mt-3 text-[17px] font-semibold leading-snug text-[hsl(var(--text-1))]">
-              <Link href={`/blog/${post.slug}`} className="hover:text-[hsl(var(--accent))]">
+              <Link href={`/blog/${post.slug}`} className="hover:text-[hsl(hsl(var(--accent)))]">
                 {post.title}
               </Link>
             </h3>

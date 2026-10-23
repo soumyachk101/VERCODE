@@ -62,22 +62,22 @@ export default function LegalStatusPage() {
             TYPOGRAPHY.md §3 rule). */}
         <div className="reading-col min-w-0 flex-1">
           <nav aria-label="Breadcrumb" className="mb-6">
-            <p className="text-[13px] text-[var(--faint)]">
+            <p className="text-[13px] text-[hsl(var(--faint))]">
               <a
                 href="/"
-                className="text-[var(--faint)] underline underline-offset-2 hover:text-[var(--text)]"
+                className="text-[hsl(var(--faint))] underline underline-offset-2 hover:text-[var(--text)]"
               >
                 Vercode
               </a>{" "}
               /{" "}
               <a
                 href="/legal/"
-                className="text-[var(--faint)] underline underline-offset-2 hover:text-[var(--text)]"
+                className="text-[hsl(var(--faint))] underline underline-offset-2 hover:text-[var(--text)]"
               >
                 Legal
               </a>{" "}
               /{" "}
-              <span className="text-[var(--muted)]">Status</span>
+              <span className="text-[hsl(var(--muted))]">Status</span>
             </p>
           </nav>
 
@@ -85,12 +85,12 @@ export default function LegalStatusPage() {
             Status
           </h1>
 
-          <p className="mt-3 text-[13px] text-[var(--faint)]">
+          <p className="mt-3 text-[13px] text-[hsl(var(--faint))]">
             Last updated <time dateTime="2026-10-23">2026-10-23</time> ·
             Contact{" "}
             <a
               href="mailto:security@vercode.com"
-              className="text-[var(--faint)] underline underline-offset-2"
+              className="text-[hsl(var(--faint))] underline underline-offset-2"
             >
               security@vercode.com
             </a>{" "}
@@ -106,7 +106,7 @@ export default function LegalStatusPage() {
               a banned claim"). */}
 
           <section aria-label="The incident record" className="mt-8">
-            <p className="text-[16px] leading-[1.6] text-[var(--muted)]">
+            <p className="text-[16px] leading-[1.6] text-[hsl(var(--muted))]">
               The incident record is maintained at the external status
               service — this page is the link, not the record. Each entry
               is a single incident: a window (start to resolution), a
@@ -122,19 +122,19 @@ export default function LegalStatusPage() {
               incident log behind it is a lie, RELEASE_CRITERIA's
               "a claim without a measurement is a banned claim"). */}
 
-          <div className="mt-8 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
-            <p className="text-[13px] font-medium text-[var(--faint)]">
+          <div className="mt-8 rounded-lg border border-[hsl(var(--border))] bg-[var(--surface)] p-4">
+            <p className="text-[13px] font-medium text-[hsl(var(--faint))]">
               Incident history
             </p>
             <a
               href={STATUS_SERVICE_URL}
-              className="mt-1 block text-[16px] font-medium text-[var(--accent)] underline underline-offset-2"
+              className="mt-1 block text-[16px] font-medium text-[hsl(var(--accent))] underline underline-offset-2"
             >
               {STATUS_SERVICE_URL}
             </a>
           </div>
 
-          <p className="mt-6 text-[15px] leading-[1.6] text-[var(--muted)]">
+          <p className="mt-6 text-[15px] leading-[1.6] text-[hsl(var(--muted))]">
             A status page that claims 99.99% without the incident log
             behind it is a lie. The measured-not-claimed rule
             (RELEASE_CRITERIA gate 7: "a claim without a measurement is a

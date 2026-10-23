@@ -58,22 +58,22 @@ export default function LegalPrivacyPage() {
       <div className="mx-auto flex max-w-4xl gap-10 px-5 pt-14">
         <Prose toc={toc}>
           <nav aria-label="Breadcrumb" className="mb-6">
-            <p className="text-[13px] text-[var(--faint)]">
+            <p className="text-[13px] text-[hsl(var(--faint))]">
               <a
                 href="/"
-                className="text-[var(--faint)] underline underline-offset-2 hover:text-[var(--text)]"
+                className="text-[hsl(var(--faint))] underline underline-offset-2 hover:text-[var(--text)]"
               >
                 Vercode
               </a>{" "}
               /{" "}
               <a
                 href="/legal/"
-                className="text-[var(--faint)] underline underline-offset-2 hover:text-[var(--text)]"
+                className="text-[hsl(var(--faint))] underline underline-offset-2 hover:text-[var(--text)]"
               >
                 Legal
               </a>{" "}
               /{" "}
-              <span className="text-[var(--muted)]">Privacy policy</span>
+              <span className="text-[hsl(var(--muted))]">Privacy policy</span>
             </p>
           </nav>
 
@@ -81,12 +81,12 @@ export default function LegalPrivacyPage() {
             Privacy policy
           </h1>
 
-          <p className="mt-3 text-[13px] text-[var(--faint)]">
+          <p className="mt-3 text-[13px] text-[hsl(var(--faint))]">
             Last updated <time dateTime="2026-10-23">2026-10-23</time> ·
             Contact{" "}
             <a
               href="mailto:privacy@vercode.com"
-              className="text-[var(--faint)] underline underline-offset-2"
+              className="text-[hsl(var(--faint))] underline underline-offset-2"
             >
               privacy@vercode.com
             </a>{" "}
@@ -134,7 +134,7 @@ export default function LegalPrivacyPage() {
                 <dt className="text-[15px] font-semibold text-[var(--text)]">
                   Free
                 </dt>
-                <dd className="mt-1 text-[15px] text-[var(--muted)]">
+                <dd className="mt-1 text-[15px] text-[hsl(var(--muted))]">
                   Findings retained 30 days; audit events retained 180 days.
                 </dd>
               </div>
@@ -142,7 +142,7 @@ export default function LegalPrivacyPage() {
                 <dt className="text-[15px] font-semibold text-[var(--text)]">
                   Developer
                 </dt>
-                <dd className="mt-1 text-[15px] text-[var(--muted)]">
+                <dd className="mt-1 text-[15px] text-[hsl(var(--muted))]">
                   Findings retained 90 days; audit events retained 180 days.
                 </dd>
               </div>
@@ -150,7 +150,7 @@ export default function LegalPrivacyPage() {
                 <dt className="text-[15px] font-semibold text-[var(--text)]">
                   Team
                 </dt>
-                <dd className="mt-1 text-[15px] text-[var(--muted)]">
+                <dd className="mt-1 text-[15px] text-[hsl(var(--muted))]">
                   Findings retained 365 days; audit events retained 180 days.
                 </dd>
               </div>
@@ -158,7 +158,7 @@ export default function LegalPrivacyPage() {
                 <dt className="text-[15px] font-semibold text-[var(--text)]">
                   Enterprise
                 </dt>
-                <dd className="mt-1 text-[15px] text-[var(--muted)]">
+                <dd className="mt-1 text-[15px] text-[hsl(var(--muted))]">
                   Findings retained for a custom period (365 days or more,
                   negotiated per account); audit events retained 180 days
                   minimum.
@@ -201,7 +201,7 @@ export default function LegalPrivacyPage() {
               write to{" "}
               <a
                 href="mailto:privacy@vercode.com"
-                className="text-[var(--accent)] underline underline-offset-2"
+                className="text-[hsl(var(--accent))] underline underline-offset-2"
               >
                 privacy@vercode.com
               </a>

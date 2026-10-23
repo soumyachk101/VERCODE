@@ -37,7 +37,7 @@ export default function NotFound() {
           style={{
             width: 16,
             height: 16,
-            background: "var(--accent)",
+            background: "hsl(var(--accent))",
             borderRadius: 4,
             display: "inline-flex",
             alignItems: "center",
@@ -82,7 +82,8 @@ export default function NotFound() {
         </Link>
         <Link href="/changelog" style={linkStyle}>
           Changelog
-        </Link>      </nav>
+        </Link>
+      </nav>
     </div>
   );
 }

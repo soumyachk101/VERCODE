@@ -126,7 +126,7 @@ export default function Home() {
         >
           {HERO_TITLE}
         </h1>
-        <p className="mx-auto mt-5 max-w-xl text-[18px] leading-relaxed text-[var(--muted)] sm:text-[20px]">
+        <p className="mx-auto mt-5 max-w-xl text-[18px] leading-relaxed text-[hsl(var(--muted))] sm:text-[20px]">
           {HERO_SUBHEAD}
         </p>
         <div className="mt-6 flex items-center justify-center gap-3">
@@ -145,7 +145,7 @@ export default function Home() {
         </div>
         <div className="mt-10">
           <VerdictDevice />
-          <p className="mt-3 text-[13px] text-[var(--faint)]">
+          <p className="mt-3 text-[13px] text-[hsl(var(--faint))]">
             Preview data — a representative review.
           </p>
         </div>
@@ -176,7 +176,7 @@ export default function Home() {
                 <h3 className="text-[16px] font-semibold text-[var(--text)]">
                   {step.title}
                 </h3>
-                <p className="mt-2 text-[16px] leading-relaxed text-[var(--muted)]">
+                <p className="mt-2 text-[16px] leading-relaxed text-[hsl(var(--muted))]">
                   {step.body}
                 </p>
               </Reveal>
@@ -200,14 +200,14 @@ export default function Home() {
           >
             Built on four principles
           </h2>
-          <div className="mt-10 grid grid-cols-1 gap-px bg-[var(--border)] sm:grid-cols-2">
+          <div className="mt-10 grid grid-cols-1 gap-px bg-[hsl(var(--border))] sm:grid-cols-2">
             {PILLARS.map((pillar, i) => (
               <Reveal key={pillar.title} dataStagger={i}>
                 <div className="bg-[var(--surface)] p-8">
                   <h3 className="text-[17px] font-semibold text-[var(--text)]">
                     {pillar.title}
                   </h3>
-                  <p className="mt-2 text-[16px] leading-relaxed text-[var(--muted)]">
+                  <p className="mt-2 text-[16px] leading-relaxed text-[hsl(var(--muted))]">
                     {pillar.body}
                   </p>
                 </div>
@@ -241,8 +241,8 @@ export default function Home() {
                   <div
                     className={`rounded-[var(--radius-card)] p-6 ${
                       isTeam
-                        ? "border-2 border-[var(--accent)]"
-                        : "border border-[var(--border)]"
+                        ? "border-2 border-[hsl(var(--accent))]"
+                        : "border border-[hsl(var(--border))]"
                     }`}
                   >
                     <h3 className="text-[16px] font-semibold capitalize text-[var(--text)]">
@@ -252,16 +252,16 @@ export default function Home() {
                       <span className="tnum text-[28px] font-semibold text-[var(--text)]">
                         {priceParts(offer).figure}
                       </span>{" "}
-                      <span className="text-[13px] text-[var(--muted)]">
+                      <span className="text-[13px] text-[hsl(var(--muted))]">
                         {priceParts(offer).unit}
                       </span>
                     </p>
-                    <p className="mt-3 text-[16px] leading-relaxed text-[var(--muted)]">
+                    <p className="mt-3 text-[16px] leading-relaxed text-[hsl(var(--muted))]">
                       {offer.positioning}
                     </p>
                     <a
                       href="/pricing/"
-                      className="mt-4 inline-block text-[16px] font-medium text-[var(--accent)] underline-offset-4 hover:underline"
+                      className="mt-4 inline-block text-[16px] font-medium text-[hsl(var(--accent))] underline-offset-4 hover:underline"
                     >
                       See all plans
                     </a>
@@ -292,7 +292,7 @@ export default function Home() {
                 <dt className="text-[16px] font-semibold text-[var(--text)]">
                   {item.q}
                 </dt>
-                <dd className="text-[16px] leading-relaxed text-[var(--muted)]">
+                <dd className="text-[16px] leading-relaxed text-[hsl(var(--muted))]">
                   {item.a}
                 </dd>
               </div>
@@ -300,7 +300,7 @@ export default function Home() {
           </dl>
           <a
             href="/faq/"
-            className="mt-6 inline-block text-[16px] font-medium text-[var(--accent)] underline-offset-4 hover:underline"
+            className="mt-6 inline-block text-[16px] font-medium text-[hsl(var(--accent))] underline-offset-4 hover:underline"
           >
             All questions
           </a>

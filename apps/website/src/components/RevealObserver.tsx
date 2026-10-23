@@ -47,24 +47,6 @@ function cancelFallback(): void {
   }
 }
 
-function revealEl(el: Element): void {
-  if (el.classList.contains("is-in")) {
-    return;
-  }
-  el.classList.add("is-in");
-  observed.delete(el);
-  // Every element is `is-in` now: drop the timer + disconnect the
-  // observer (a `WNFR-01`'s "zero-JS default" spirit: the observer is
-  // a one-time effect, not a persistent listener).
-  if (observed.size === 0) {
-    cancelFallback();
-    if (observer !== null) {
-      observer.disconnect();
-      observer = null;
-    }
-  }
-}
-
 function ensureObserver(): IntersectionObserver {
   if (observer !== null) {
     return observer;

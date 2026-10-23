@@ -115,7 +115,7 @@ export function RevokeButton({ onRevoke }: { onRevoke: () => void }) {
         <AlertDialog.Content
           style={{
             background: "var(--surface)",
-            border: "1px solid var(--border)",
+            border: "1px solid hsl(var(--border))",
             borderRadius: "var(--radius-card)",
             boxShadow: "0 8px 24px rgba(0,0,0,.12)",
             padding: 20,

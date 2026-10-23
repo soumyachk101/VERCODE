@@ -3,8 +3,8 @@
  *
  * A WFR-305 filter: only `status === "published"` articles are generated
  * (a draft item is never rendered and never in the sitemap). The render:
- * a <time>-stamped 13px var(--faint) byline line ("Published <date> ·
- * N min read · the VERCODE team"), a 32px/600 H1, a 16px var(--muted)
+ * a <time>-stamped 13px hsl(var(--faint)) byline line ("Published <date> ·
+ * N min read · the VERCODE team"), a 32px/600 H1, a 16px hsl(var(--muted))
  * dek, the body via renderMarkdownToReact into a 720px (45rem) reading
  * column with a right-rail TOC (when a post has more than 3 sections),
  * an end-of-article "Related" block (the ≥ 1 docs link rule, IA §5), and
@@ -108,8 +108,8 @@ export default async function BlogArticlePage({
       ];
   const ctaHref = post.tags.includes("quotas") ? "/pricing/" : "/docs/rules/";
   const ctaLabel = post.tags.includes("quotas")
-    ? "See the pricing page →"
-    : "Read the docs →";
+    ? "See the pricing page"
+    : "Read the docs";
 
   return (
     <main
@@ -125,31 +125,31 @@ export default async function BlogArticlePage({
     >
       <style>{`
         .br { max-width: 45rem; }
-        .br-bc { font-size: 13px; color: var(--faint); margin: 0 0 2rem; }
-        .br-bc a { color: var(--faint); text-decoration: none; }
+        .br-bc { font-size: 13px; color: hsl(var(--faint)); margin: 0 0 2rem; }
+        .br-bc a { color: hsl(var(--faint)); text-decoration: none; }
         .br-bc a:hover { color: var(--accent-ink); }
-        .br-byline { font-size: 13px; color: var(--faint); margin: 0 0 1rem; }
+        .br-byline { font-size: 13px; color: hsl(var(--faint)); margin: 0 0 1rem; }
         .br h1 { font-size: 32px; font-weight: 600; line-height: 1.2; margin: 0 0 0.75rem; }
-        .br-dek { font-size: 16px; color: var(--muted); margin: 0 0 2.5rem; }
+        .br-dek { font-size: 16px; color: hsl(var(--muted)); margin: 0 0 2.5rem; }
         .br h2 { font-size: 22px; font-weight: 600; margin: 2.5rem 0 0.75rem; scroll-margin-top: 4rem; }
         .br h3 { font-size: 17px; font-weight: 600; margin: 1.5rem 0 0.5rem; scroll-margin-top: 4rem; }
         .br p { font-size: 16px; line-height: 1.6; margin: 0 0 1rem; }
         .br li { font-size: 16px; margin-bottom: 0.375rem; }
         .br a { color: var(--accent-ink); }
         .br code { font-family: var(--font-mono); font-size: 0.85em; background: var(--raised); padding: 0.1em 0.35em; border-radius: var(--radius-chip); }
-        .code-block { background: var(--raised); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 1rem; overflow-x: auto; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; margin: 1.5rem 0; }
+        .code-block { background: var(--raised); border: 1px solid hsl(var(--border)); border-radius: var(--radius-card); padding: 1rem; overflow-x: auto; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; margin: 1.5rem 0; }
         .code-block code { background: none; padding: 0; font-size: inherit; }
-        .br blockquote { margin: 1.5rem 0; padding: 0.5rem 1rem; border-left: 2px solid var(--accent); background: var(--accent-soft); color: var(--muted); }
-        .br hr { border: none; border-top: 1px solid var(--rule); margin: 2.5rem 0; }
-        .br-related { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 15px; color: var(--muted); }
-        .br-related-title { font-size: 13px; font-weight: 600; letter-spacing: 0.05em; color: var(--faint); margin: 0 0 0.5rem; }
+        .br blockquote { margin: 1.5rem 0; padding: 0.5rem 1rem; border-left: 2px solid hsl(var(--accent)); background: var(--accent-soft); color: hsl(var(--muted)); }
+        .br hr { display: none; }
+        .br-related { margin-top: 3rem; padding-top: 1.5rem; font-size: 16px; color: hsl(var(--muted)); }
+        .br-related-title { font-size: 13px; font-weight: 600; letter-spacing: 0.05em; color: hsl(var(--faint)); margin: 0 0 0.5rem; }
         .br-related ul { margin: 0 0 1rem; padding-left: 1.25rem; }
         .br-related a { color: var(--accent-ink); }
-        .br-cta { font-size: 15px; margin-top: 1rem; }
+        .br-cta { font-size: 16px; margin-top: 1rem; }
         .br-cta a { color: var(--accent-ink); font-weight: 500; }
         .br-toc { font-size: 13px; }
-        .br-toc-title { font-weight: 600; color: var(--muted); margin: 0 0 0.5rem; }
-        .br-toc a { display: block; padding: 0.25rem 0; color: var(--faint); text-decoration: none; }
+        .br-toc-title { font-weight: 600; color: hsl(var(--muted)); margin: 0 0 0.5rem; }
+        .br-toc a { display: block; padding: 0.25rem 0; color: hsl(var(--faint)); text-decoration: none; }
         .br-toc a:hover { color: var(--accent-ink); }
       `}</style>
 
@@ -159,7 +159,7 @@ export default async function BlogArticlePage({
           <a href="/">Vercode</a> / <a href="/blog/">Blog</a> / {post.title}
         </p>
 
-        {/* The 13px var(--faint) byline: a <time>-stamped
+        {/* The 13px hsl(var(--faint)) byline: a <time>-stamped
             "Published <date> · N min read · <author>". */}
         <p className="br-byline">
           Published <time dateTime={post.date}>{post.date}</time> ·{" "}

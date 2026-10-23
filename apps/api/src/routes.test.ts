@@ -279,6 +279,28 @@ function setupTestApp() {
     githubInstall: {
       findMany: async () => [],
     },
+    githubOAuthState: {
+      create: async ({ data }: any) => {
+        const s = { id: `ghs-${store.oauthStates.length + 1}`, ...data };
+        store.oauthStates.push(s);
+        return s;
+      },
+      findFirst: async ({ where }: any) =>
+        store.oauthStates.find((s: any) => {
+          if (where.token != null && s.token !== where.token) return false;
+          if (where.userId != null && s.userId !== where.userId) return false;
+          if (where.usedAt === null && s.usedAt != null) return false;
+          if (where.expiresAt?.gt) {
+            if (!(s.expiresAt instanceof Date && s.expiresAt.getTime() > where.expiresAt.gt.getTime())) return false;
+          }
+          return true;
+        }) ?? null,
+      update: async ({ where, data }: any) => {
+        const s = store.oauthStates.find((x: any) => x.id === where.id);
+        if (s) Object.assign(s, data);
+        return s ?? null;
+      },
+    },
   };
 
   const queue = createInMemoryQueue();

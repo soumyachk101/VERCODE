@@ -233,7 +233,7 @@ function SidebarHeader({
           style={{
             width: 16,
             height: 16,
-            background: "var(--accent)",
+            background: "hsl(var(--accent))",
             borderRadius: 4,
             display: "inline-flex",
             alignItems: "center",
@@ -261,7 +261,7 @@ function SidebarHeader({
             gap: 8,
             padding: "6px 8px",
             borderRadius: 8,
-            border: "1px solid var(--border)",
+            border: "1px solid hsl(var(--border))",
             background: "var(--surface)",
             color: "var(--text)",
             fontSize: 13,
@@ -302,7 +302,7 @@ function SidebarHeader({
               right: 0,
               zIndex: 30,
               background: "var(--surface)",
-              border: "1px solid var(--border)",
+              border: "1px solid hsl(var(--border))",
               borderRadius: "var(--radius-card)",
               boxShadow: "0 8px 24px rgba(0,0,0,.12)",
               padding: 6,
@@ -487,7 +487,7 @@ function MobileShell({
           alignItems: "center",
           height: 48,
           padding: "0 12px",
-          borderBottom: "1px solid var(--border)",
+          borderBottom: "1px solid hsl(var(--border))",
           background: "var(--surface)",
           position: "sticky",
           top: 0,
@@ -510,7 +510,7 @@ function MobileShell({
           onClick={() => setOpen((v) => !v)}
           className="pressable"
           style={{
-            border: "1px solid var(--border)",
+            border: "1px solid hsl(var(--border))",
             background: "var(--surface)",
             borderRadius: "var(--radius-control)",
             padding: "4px 10px",

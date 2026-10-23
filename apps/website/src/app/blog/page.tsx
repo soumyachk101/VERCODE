@@ -2,8 +2,8 @@
  * /blog — the article index (INFORMATION_ARCHITECTURE_AND_PAGES.md §3.7).
  *
  * H1 "Notes on the pipeline" + a 1-sentence orientation + the article
- * list: a <time>-stamped 13px var(--faint) date, a 17px/600 title, a
- * 15px var(--muted) dek (the description field), a 13px tag row, and a
+ * list: a <time>-stamped 13px hsl(var(--faint)) date, a 17px/600 title, a
+ * 15px hsl(var(--muted)) dek (the description field), a 13px tag row, and a
  * "N min read" computed at build time (~200 wpm from the word count).
  *
  * An ItemList JSON-LD of the published articles (STRUCTURED_DATA.md
@@ -52,22 +52,22 @@ export default function BlogIndexPage() {
   return (
     <main className="reading-col" style={{ margin: "0 auto", padding: "4rem 1.5rem" }}>
       <style>{`
-        .bl-bc { font-size: 13px; color: var(--faint); margin: 0 0 2rem; }
-        .bl-orient { font-size: 16px; color: var(--muted); margin: 0 0 3rem; max-width: 40rem; }
+        .bl-bc { font-size: 13px; color: hsl(var(--faint)); margin: 0 0 2rem; }
+        .bl-orient { font-size: 16px; color: hsl(var(--muted)); margin: 0 0 3rem; max-width: 40rem; }
         .bl article { padding: 1.75rem 0; }
-        .bl-meta { font-size: 13px; color: var(--faint); display: flex; gap: 0.75rem; margin-bottom: 0.375rem; flex-wrap: wrap; }
+        .bl-meta { font-size: 13px; color: hsl(var(--faint)); display: flex; gap: 0.75rem; margin-bottom: 0.375rem; flex-wrap: wrap; }
         .bl-meta time { font-variant-numeric: tabular-nums; }
         .bl-title { font-size: 17px; font-weight: 600; margin: 0 0 0.375rem; }
         .bl-title a { color: var(--text); text-decoration: none; }
         .bl-title a:hover { color: var(--accent-ink); }
-        .bl-dek { font-size: 15px; color: var(--muted); margin: 0 0 0.5rem; line-height: 1.5; }
-        .bl-tags { font-size: 13px; color: var(--faint); margin: 0; }
+        .bl-dek { font-size: 15px; color: hsl(var(--muted)); margin: 0 0 0.5rem; line-height: 1.5; }
+        .bl-tags { font-size: 13px; color: hsl(var(--faint)); margin: 0; }
         .bl-tags span + span::before { content: " · "; }
       `}</style>
 
       <JsonLd blocks={blocks} />
 
-      {/* The visible breadcrumb — "Blog" only (13px var(--faint)). */}
+      {/* The visible breadcrumb — "Blog" only (13px hsl(var(--faint))). */}
       <p className="bl-bc">Blog</p>
       <h1 style={{ fontSize: 32, fontWeight: 600, margin: "0 0 0.5rem" }}>
         Notes on the pipeline

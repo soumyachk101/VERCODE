@@ -100,7 +100,7 @@ function SecurityBody() {
           <PanelTitle
             right={
               rows.length > 0 ? (
-                <a href="/reviews" className="pressable" style={{ color: "var(--accent)", fontSize: 13 }}>
+                <a href="/reviews" className="pressable" style={{ color: "hsl(var(--accent))", fontSize: 13 }}>
                   View all
                 </a>
               ) : null
@@ -144,7 +144,7 @@ function SecurityBody() {
                           <a
                             className="tabular"
                             href={`/reviews/${encodeURIComponent(f.repoName)}/${f.prNumber}`}
-                            style={{ color: "var(--accent)", textDecoration: "none" }}
+                            style={{ color: "hsl(var(--accent))", textDecoration: "none" }}
                           >
                             #{f.prNumber}
                           </a>

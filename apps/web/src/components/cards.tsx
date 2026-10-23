@@ -13,7 +13,7 @@ export function Panel({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
       className={cn("panel", className)}
       style={{
         background: "var(--surface)",
-        border: "1px solid var(--border)",
+        border: "1px solid hsl(var(--border))",
         borderRadius: "var(--radius-card)",
         padding: 20,
       }}
@@ -150,7 +150,7 @@ export function VerdictBlock({
         {cost && <span className="meta tabular">{cost}</span>}
         {githubUrl && (
           <a
-            className="text-sm font-medium text-[var(--accent)]"
+            className="text-sm font-medium text-[hsl(var(--accent))]"
             href={githubUrl}
             target="_blank"
             rel="noreferrer"

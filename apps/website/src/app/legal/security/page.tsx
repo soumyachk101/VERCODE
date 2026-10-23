@@ -59,22 +59,22 @@ export default function LegalSecurityPage() {
       <div className="mx-auto flex max-w-4xl gap-10 px-5 pt-14">
         <Prose toc={toc}>
           <nav aria-label="Breadcrumb" className="mb-6">
-            <p className="text-[13px] text-[var(--faint)]">
+            <p className="text-[13px] text-[hsl(var(--faint))]">
               <a
                 href="/"
-                className="text-[var(--faint)] underline underline-offset-2 hover:text-[var(--text)]"
+                className="text-[hsl(var(--faint))] underline underline-offset-2 hover:text-[var(--text)]"
               >
                 Vercode
               </a>{" "}
               /{" "}
               <a
                 href="/legal/"
-                className="text-[var(--faint)] underline underline-offset-2 hover:text-[var(--text)]"
+                className="text-[hsl(var(--faint))] underline underline-offset-2 hover:text-[var(--text)]"
               >
                 Legal
               </a>{" "}
               /{" "}
-              <span className="text-[var(--muted)]">Security</span>
+              <span className="text-[hsl(var(--muted))]">Security</span>
             </p>
           </nav>
 
@@ -82,12 +82,12 @@ export default function LegalSecurityPage() {
             Security
           </h1>
 
-          <p className="mt-3 text-[13px] text-[var(--faint)]">
+          <p className="mt-3 text-[13px] text-[hsl(var(--faint))]">
             Last updated <time dateTime="2026-10-23">2026-10-23</time> ·
             Contact{" "}
             <a
               href="mailto:security@vercode.com"
-              className="text-[var(--faint)] underline underline-offset-2"
+              className="text-[hsl(var(--faint))] underline underline-offset-2"
             >
               security@vercode.com
             </a>{" "}
@@ -210,7 +210,7 @@ export default function LegalSecurityPage() {
               Write to{" "}
               <a
                 href="mailto:security@vercode.com"
-                className="text-[var(--accent)] underline underline-offset-2"
+                className="text-[hsl(var(--accent))] underline underline-offset-2"
               >
                 security@vercode.com
               </a>
@@ -222,7 +222,7 @@ export default function LegalSecurityPage() {
               and verification tests) is in the repo:{" "}
               <a
                 href={`${GITHUB_REPO}/tree/main/docs/SECURITY/SECURITY_ARCHITECTURE.md`}
-                className="text-[var(--accent)] underline underline-offset-2"
+                className="text-[hsl(var(--accent))] underline underline-offset-2"
               >
                 docs/SECURITY/SECURITY_ARCHITECTURE.md
               </a>

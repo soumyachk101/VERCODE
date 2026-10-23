@@ -70,7 +70,7 @@ export default function FaqPage() {
               if (items.length === 0) return null;
               return (
                 <div key={g.id} id={groupId(g.id)} className="mb-10">
-                  <dt className="text-[13px] font-semibold text-[var(--faint)]">
+                  <dt className="text-[13px] font-semibold text-[hsl(var(--faint))]">
                     {g.label}
                   </dt>
                   <div className="mt-3 space-y-5">
@@ -79,7 +79,7 @@ export default function FaqPage() {
                         <dt className="text-[16px] font-semibold text-[var(--text)]">
                           {item.q}
                         </dt>
-                        <dd className="mt-1 text-[15px] leading-[1.6] text-[var(--muted)]">
+                        <dd className="mt-1 text-[15px] leading-[1.6] text-[hsl(var(--muted))]">
                           {item.a}
                         </dd>
                       </div>
@@ -94,7 +94,7 @@ export default function FaqPage() {
         {/* The right-rail TOC — a sticky <aside>, hidden <lg (IA §3.4's
             TOC rule; the "On this page" label is 13px, sentence case). */}
         <aside className="sticky top-24 hidden w-44 shrink-0 self-start lg:block">
-          <p className="text-[13px] font-medium text-[var(--faint)]">
+          <p className="text-[13px] font-medium text-[hsl(var(--faint))]">
             On this page
           </p>
           <nav aria-label="On this page" className="mt-3">
@@ -103,7 +103,7 @@ export default function FaqPage() {
                 <li key={g.id}>
                   <a
                     href={`#${groupId(g.id)}`}
-                    className="block border-l border-transparent pl-3 text-[13px] text-[var(--muted)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text)]"
+                    className="block border-l border-transparent pl-3 text-[13px] text-[hsl(var(--muted))] transition-colors hover:border-[hsl(var(--accent))] hover:text-[var(--text)]"
                   >
                     {g.label}
                   </a>

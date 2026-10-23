@@ -58,22 +58,22 @@ export default function LegalDpaPage() {
       <div className="mx-auto flex max-w-4xl gap-10 px-5 pt-14">
         <Prose toc={toc}>
           <nav aria-label="Breadcrumb" className="mb-6">
-            <p className="text-[13px] text-[var(--faint)]">
+            <p className="text-[13px] text-[hsl(var(--faint))]">
               <a
                 href="/"
-                className="text-[var(--faint)] underline underline-offset-2 hover:text-[var(--text)]"
+                className="text-[hsl(var(--faint))] underline underline-offset-2 hover:text-[var(--text)]"
               >
                 Vercode
               </a>{" "}
               /{" "}
               <a
                 href="/legal/"
-                className="text-[var(--faint)] underline underline-offset-2 hover:text-[var(--text)]"
+                className="text-[hsl(var(--faint))] underline underline-offset-2 hover:text-[var(--text)]"
               >
                 Legal
               </a>{" "}
               /{" "}
-              <span className="text-[var(--muted)]">
+              <span className="text-[hsl(var(--muted))]">
                 Data processing addendum
               </span>
             </p>
@@ -83,12 +83,12 @@ export default function LegalDpaPage() {
             Data processing addendum
           </h1>
 
-          <p className="mt-3 text-[13px] text-[var(--faint)]">
+          <p className="mt-3 text-[13px] text-[hsl(var(--faint))]">
             Last updated <time dateTime="2026-10-23">2026-10-23</time> ·
             Contact{" "}
             <a
               href="mailto:privacy@vercode.com"
-              className="text-[var(--faint)] underline underline-offset-2"
+              className="text-[hsl(var(--faint))] underline underline-offset-2"
             >
               privacy@vercode.com
             </a>{" "}
@@ -120,7 +120,7 @@ export default function LegalDpaPage() {
               ephemeral" rule; see the{" "}
               <a
                 href="/legal/privacy/"
-                className="text-[var(--accent)] underline underline-offset-2"
+                className="text-[hsl(var(--accent))] underline underline-offset-2"
               >
                 privacy policy
               </a>{" "}
@@ -190,7 +190,7 @@ export default function LegalDpaPage() {
           </section>
 
           {/* The "available on request" line + the split note. */}
-          <p className="mt-8 text-[15px] text-[var(--muted)]">
+          <p className="mt-8 text-[15px] text-[hsl(var(--muted))]">
             The DPA is available to enterprise customers on request.
             {/* Note: the actual signed-DPA document is a sales-owned
                 artifact (COMPLIANCE_CONSIDERATIONS.md's "the enterprise
