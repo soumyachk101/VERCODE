@@ -247,12 +247,12 @@ export default function Home() {
                       {priceParts(offer).unit}
                     </span>
                   </p>
-                  <p className="mt-3 text-[14px] leading-relaxed text-[var(--muted)]">
+                  <p className="mt-3 text-[16px] leading-relaxed text-[var(--muted)]">
                     {offer.positioning}
                   </p>
                   <a
                     href="/pricing/"
-                    className="mt-4 inline-block text-[14px] font-medium text-[var(--accent)] underline-offset-4 hover:underline"
+                    className="mt-4 inline-block text-[16px] font-medium text-[var(--accent)] underline-offset-4 hover:underline"
                   >
                     See all plans
                   </a>
@@ -290,19 +290,20 @@ export default function Home() {
           </dl>
           <a
             href="/faq/"
-            className="mt-6 inline-block text-[14px] font-medium text-[var(--accent)] underline-offset-4 hover:underline"
+            className="mt-6 inline-block text-[16px] font-medium text-[var(--accent)] underline-offset-4 hover:underline"
           >
-            All questions →
+            All questions
           </a>
         </section>
       </Reveal>
 
-      {/* Block 7 — the closing CTA (a full-width band, border-y, one button;
-          the TAGLINE line). */}
+      {/* Block 7 — the closing CTA (a full-width raised band, no rules:
+          the tone step + space do the separating; one button, the
+          TAGLINE line). */}
       <Reveal>
         <section
           aria-labelledby="cta-heading"
-          className="border-y border-[var(--border)] bg-[var(--surface)] py-16"
+          className="mt-8 bg-[var(--raised)] py-16"
         >
           <div className="mx-auto flex max-w-2xl flex-col items-center px-5 text-center">
             <h2
