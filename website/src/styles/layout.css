@@ -1,0 +1,77 @@
+/*
+ * VERCODE website — the layout classes hand-rolled next to Tailwind.
+ *
+ * These are the few rules that are *not* one-off utilities: the canvas
+ * (DESIGN_SYSTEM_AND_TYPOGRAPHY.md §3's 1120px page canvas), the sticky
+ * header, and the nav/footer link treatments. The buttons + the CTA
+ * link treatment moved to `globals.css` next to the tokens (the
+ * premium pass, 2026-10-23). Everything else is a Tailwind arbitrary
+ * value pointing at the design tokens in `globals.css`.
+ */
+
+/* The page canvas — a 1120px measure with a 24px gutter
+   (DESIGN_SYSTEM_AND_TYPOGRAPHY.md §3: "a 1120px canvas for the
+   hero/features"). */
+.container {
+  width: 100%;
+  max-width: 1120px;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+/* The chrome is a flex column so a short page (a 404) still pushes the
+   footer to the bottom of the viewport. */
+body {
+  display: flex;
+  min-height: 100svh;
+  flex-direction: column;
+}
+
+main {
+  flex-grow: 1;
+}
+
+/* The sticky header (the premium pass, 2026-10-23): a 1px bottom border
+   that separates it from the page + a flat raised ground, no blur, no
+   shadow (the "a 1px line separates surfaces" rule, DESIGN_SYSTEM §1).
+   The 56px height is the IA §4 spec. */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: 3.5rem;
+  background: var(--raised);
+  border-bottom: 1px solid var(--rule);
+}
+
+/* A header nav link — 14px meta type in graphite, warming to --text on
+   hover (a 100ms transition, the site's only motion). */
+.nav-link {
+  font-size: 14px;
+  font-weight: 450;
+  color: var(--muted);
+  transition: color 100ms ease-out;
+}
+
+.nav-link:hover {
+  color: var(--text);
+}
+
+/* A footer column title — a label, sentence case (no uppercase: the
+   DESIGN_SYSTEM_AND_TYPOGRAPHY.md §2 rule). */
+.footer-col-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--faint);
+}
+
+/* A footer link. */
+.footer-link {
+  font-size: 14px;
+  color: var(--muted);
+  transition: color 100ms ease-out;
+}
+
+.footer-link:hover {
+  color: var(--text);
+}

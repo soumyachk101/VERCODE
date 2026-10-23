@@ -1,6 +1,7 @@
 packages:
   - "apps/*"
   - "packages/*"
+  - "website"
 # DEV-2 / RISK_REGISTER R-D1: the placeholder "esbuild: set this to true or false"
 # (PROJECT_DISCOVERY.md §4.5) is resolved deliberately. esbuild is the one
 # dependency whose install runs a postinstall (a native binary download) — allow

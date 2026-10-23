@@ -22,49 +22,19 @@ while true; do
     log "Changes detected!"
 
     timestamp="$(date '+%Y%m%d-%H%M%S')"
-    changed_files="$(git status --porcelain | awk '{print $NF}')"
+    pr_title="$(python3 "$REPO_DIR/scripts/pr_message_generator.py" --title 2>/dev/null || echo "chore: auto-sync update ($timestamp)")"
+    pr_body="$(python3 "$REPO_DIR/scripts/pr_message_generator.py" --body 2>/dev/null || echo "Automated sync PR ($timestamp)")"
 
-    feat_count=0
-    fix_count=0
-    docs_count=0
-    style_count=0
-
-    for file in $changed_files; do
-      if [[ "$file" =~ ^docs/ || "$file" =~ \.md$ ]]; then
-        ((docs_count++)) || true
-      elif [[ "$file" =~ \.(css|scss|sass)$ || "$file" =~ theme\.ts ]]; then
-        ((style_count++)) || true
-      elif [[ "$file" =~ test ]]; then
-        ((fix_count++)) || true
-      else
-        ((feat_count++)) || true
-      fi
-    done
-
-    if [[ $feat_count -gt 0 ]]; then
-      summary="feat: update application features and services"
-      branch_prefix="feat"
-    elif [[ $style_count -gt 0 ]]; then
-      summary="style: update theme styles and UI layouts"
-      branch_prefix="style"
-    elif [[ $fix_count -gt 0 ]]; then
-      summary="test: update test cases and routes verification"
-      branch_prefix="test"
-    elif [[ $docs_count -gt 0 ]]; then
-      summary="docs: update documentation and specifications"
-      branch_prefix="docs"
-    else
-      summary="chore: auto-sync updates and configuration"
-      branch_prefix="chore"
+    # Extract clean branch prefix from conventional commit type if available
+    branch_type="$(echo "$pr_title" | sed -E 's/^([a-zA-Z_-]+)(\(.*\))?:.*/\1/' | tr '[:upper:]' '[:lower:]')"
+    if [[ -z "$branch_type" || "$branch_type" == "$pr_title" ]]; then
+      branch_type="update"
     fi
-
-    pr_title="$summary ($timestamp)"
-    pr_branch="auto/${branch_prefix}-${timestamp}"
+    pr_branch="auto/${branch_type}-${timestamp}"
 
     # Stage and commit right here (even if currently on a feature/temp branch)
     git add -A
-    git commit -m "$pr_title" -m "Automated sync commit:
-$(git status --short)" || true
+    git commit -m "$pr_title" -m "$pr_body" || true
 
     # Create & push the new branch
     git checkout -b "$pr_branch" || git branch -M "$pr_branch"
@@ -72,9 +42,7 @@ $(git status --short)" || true
 
     if git push -u origin "$pr_branch" --force; then
       log "Creating PR..."
-      pr_url="$(gh pr create --base main --head "$pr_branch" --title "$pr_title" --body "### Automated Sync PR
-- Triggered automatically by 1-minute auto-sync daemon.
-- Summary: $pr_title" 2>&1 || true)"
+      pr_url="$(gh pr create --base main --head "$pr_branch" --title "$pr_title" --body "$pr_body" 2>&1 || true)"
 
       log "PR create output: $pr_url"
       log "Auto-merging PR..."

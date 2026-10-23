@@ -1,0 +1,193 @@
+@import "tailwindcss";
+
+/*
+ * VERCODE website — the design tokens. ONE dark palette, shared with the
+ * dashboard (apps/web): deep indigo neutrals, a single red accent, a
+ * positive green. No light theme, no warm-ivory brief, no gradient chrome
+ * (DESIGN_SYSTEM §7: one typeface, one accent, no rainbow).
+ *
+ * The palette itself is defined as HSL triples (--background,
+ * --foreground, --muted, --muted-foreground, --accent,
+ * --accent-foreground, --panel, --line, --highlight, --success,
+ * --text-1, --text-2, --text-3). The marketing surface consumes those
+ * names as hsl(var(--token)) (Tailwind arbitrary values + inline <style>
+ * blocks), so those names stay raw triples. The site's legacy semantic
+ * tokens (--ground, --text, ...) are defined FROM the triples and used in
+ * CSS rules as colors.
+ *
+ * Where a semantic token would collide with a triple name (the border
+ * colour, the accent colour), the semantic side takes a distinct name:
+ * --hard-border and --accent-color. The ink ramp uses --faint
+ * (decorative, low-contrast) and --muted-ink (body copy).
+ */
+
+:root {
+  /* ---- 1. the palette (exact values, HSL triples) ------------------ */
+  /* The premium pass (2026-10-23): the hue stays deep indigo but the
+     scales are lifted — a near-black flat #050508 ground, softer
+     neutrals, and one warm off-white ink ramp so type has a real
+     3-step ramp instead of white-on-black. The accent is the single
+     high-saturation hue: crimson, reserved for the primary CTA, the
+     severity marks, and one pricing card. Green marks positive
+     verdicts only. */
+  --background: 240 20% 3%;
+  --foreground: 30 14% 95%;
+  --muted-foreground: 240 6% 64%;
+  --accent: 352 85% 58%;
+  --accent-foreground: 0 0% 100%;
+  --panel: 240 14% 7%;
+  --line: 240 10% 15%;
+  --highlight: 240 12% 11%;
+  --success: 152 55% 48%;
+  --text-1: 30 14% 95%;
+  --text-2: 240 8% 76%;
+  --text-3: 240 6% 56%;
+  /* The accent's tinted panel + border (a soft red wash for one card's
+     interior, defined from --accent so a re-tint keeps it in step). */
+  --accent-tint: 352 85% 58% / 0.07;
+  --accent-border: 352 70% 52% / 0.35;
+
+  /* ---- 2. the site's semantic tokens, from the palette ------------- */
+  /* Surfaces — the lifted indigo scale. */
+  --ground: hsl(var(--background));
+  --surface: hsl(var(--panel));
+  --raised: hsl(240 12% 10%);
+  --active: hsl(var(--highlight));
+  --hard-border: hsl(var(--line));
+  --rule: hsl(var(--line));
+
+  /* Ink — 3-step ramp. */
+  --text: hsl(var(--foreground));
+  --faint: hsl(var(--text-3));
+  --muted: hsl(var(--muted-foreground));
+
+  /* The one data hue — the crimson accent. */
+  --accent-color: hsl(var(--accent));
+  --accent-ink: hsl(var(--accent));
+  --accent-soft: hsl(var(--highlight));
+  --accent-cta: var(--accent-color);
+  --accent-tint-bg: hsl(var(--accent-tint));
+  --accent-tint-border: hsl(var(--accent-border));
+
+  /* The product's signature severity marks (DESIGN_SYSTEM §4.1) — used
+     ONLY inside the verdict-device card + screenshots, never on chrome. */
+  --sev-critical: hsl(var(--accent));
+  --sev-high: hsl(var(--accent) / 0.7);
+  --sev-medium: hsl(var(--text-2));
+  --sev-low: hsl(var(--text-3));
+  --sev-positive: hsl(var(--success));
+
+  /* The control + primary. */
+  --primary: hsl(var(--text-1));
+  --control: var(--hard-border);
+
+  /* Radii (one tight family, 4–8px). */
+  --radius-card: 8px;
+  --radius-control: 6px;
+  --radius-chip: 4px;
+
+  /* Type. */
+  --font-sans: "Inter Variable", "Inter", "Geist", "Geist Fallback",
+    system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, "SF Mono",
+    Menlo, monospace;
+
+  /* The hero display type (the DESIGN_SYSTEM's one display size, used for
+     the H1 + the closing CTA line only — everything else stays 28–32px). */
+  --hero-size: clamp(2.75rem, 1.5rem + 4.5vw, 4.25rem);
+  --hero-leading: 1.04;
+  --hero-tracking: -0.03em;
+}
+
+/* The site is dark-only (the shared palette). The old light
+   prefers-color-scheme override is gone. */
+:root {
+  color-scheme: dark;
+}
+
+html {
+  font-family: var(--font-sans);
+  color: var(--text);
+  background: var(--ground);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* The tabular figures utility the marketing numbers carry (the price
+   figures, the verdict counts) — digits align in columns. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The one filled primary button (moved from layout.css, where it lived
+   duplicated against the inline Tailwind CTA classes): the accent fill,
+   white text held at 4.5:1, a 6px radius. The hover is a 100ms opacity
+   step (the emil-design-eng "instant feedback" rule) + a 1px lift; the
+   press confirms with :active. */
+.btn-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 2.5rem;
+  padding-inline: 1.25rem;
+  border-radius: var(--radius-control);
+  background: var(--accent-cta);
+  color: var(--accent-foreground);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.25;
+  transition:
+    opacity 100ms ease-out,
+    transform 100ms ease-out;
+}
+.btn-cta:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+.btn-cta:active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* The secondary button (the "Read the docs" pair): a 1px --hard-border
+   frame, transparent fill, the ink at full strength. The hover warms
+   the border to the raised tone (never an accent border — one accent
+   only). */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.5rem;
+  padding-inline: 1.25rem;
+  border: 1px solid var(--control);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 500;
+  transition:
+    border-color 100ms ease-out,
+    background-color 100ms ease-out;
+}
+.btn-secondary:hover {
+  border-color: hsl(240 12% 26%);
+  background: var(--active);
+}
+
+/* The link CTA (the pricing cards' "See all plans", the FAQ's "All
+   questions"): accent text, an underline that appears on hover with a
+   4px offset — the affordance is the underline, not a colour swap. */
+.link-cta {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--accent-color);
+  text-decoration: none;
+  text-underline-offset: 4px;
+  transition: color 100ms ease-out;
+}
+.link-cta:hover {
+  text-decoration: underline;
+}
