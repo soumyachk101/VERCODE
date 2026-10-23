@@ -138,7 +138,7 @@ function MembersBody() {
                               width: 28,
                               height: 28,
                               borderRadius: "var(--radius-control)",
-                              background: `hsl(${hue} 30% 18%)`,
+                              background: `color-mix(in srgb, hsl(${hue} 30% 18%) 50%, hsl(var(--panel)))`,
                               color: "var(--text)",
                               display: "inline-flex",
                               alignItems: "center",

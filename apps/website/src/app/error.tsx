@@ -30,7 +30,7 @@ export default function ErrorPage() {
 
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <ReloadButton />
-          <a href="/legal/status/" className="nav-link text-[15px]">
+          <a href="/legal/status/" className="nav-link text-[16px]">
             Service status
           </a>
         </div>
