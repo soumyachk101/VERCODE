@@ -29,7 +29,7 @@ export function TextButton({
     <button
       type="button"
       className={cn(
-        "pressable text-sm font-medium text-[var(--muted)] hover:text-[var(--text)] underline underline-offset-4 decoration-[var(--control)]",
+        "pressable text-sm font-medium text-[var(--muted-ink)] hover:text-[var(--text)] underline underline-offset-4 decoration-[var(--control)]",
         className,
       )}
       {...rest}

@@ -70,7 +70,7 @@ export function FindingRow({
               type="button"
               aria-label={`Copy file ${finding.file}:${finding.line}`}
               className="pressable mono"
-              style={{ fontSize: 12, color: "var(--muted)" }}
+              style={{ fontSize: 12, color: "var(--muted-ink)" }}
               onClick={async () => {
                 await copyText(`${finding.file}:${finding.line}`);
                 setCopied(true);

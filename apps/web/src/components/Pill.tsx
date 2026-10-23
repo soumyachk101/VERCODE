@@ -9,7 +9,7 @@ const TONES: Record<Tone, string> = {
   warning: "var(--pill-warning-bg)",
 };
 const INK: Record<Tone, string> = {
-  neutral: "var(--muted)",
+  neutral: "var(--muted-ink)",
   positive: "var(--pill-positive-ink)",
   negative: "var(--pill-negative-ink)",
   warning: "var(--pill-warning-ink)",

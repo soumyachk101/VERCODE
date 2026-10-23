@@ -153,7 +153,7 @@ export function SigninClient() {
           }}
         >
           Needs changes
-          <span style={{ color: "var(--muted)", fontWeight: 400 }}> · 2 high</span>
+          <span style={{ color: "var(--muted-ink)", fontWeight: 400 }}> · 2 high</span>
         </div>
         <p className="finding-line" style={{ margin: 0, maxWidth: 420 }}>
           Deterministic-first review: static findings land even when the AI stage

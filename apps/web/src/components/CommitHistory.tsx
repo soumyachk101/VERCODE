@@ -90,7 +90,7 @@ export function CommitHistory({
                     display: "inline-flex",
                     alignItems: "center",
                     gap: 6,
-                    color: "var(--muted)",
+                    color: "var(--muted-ink)",
                     fontSize: 12,
                   }}
                 >

@@ -86,7 +86,7 @@ export function Figure({
           style={{
             marginTop: 4,
             color:
-              deltaGood == null ? "var(--muted)" : deltaGood ? "var(--positive)" : "var(--negative)",
+              deltaGood == null ? "var(--muted-ink)" : deltaGood ? "var(--positive)" : "var(--negative)",
           }}
         >
           {delta}

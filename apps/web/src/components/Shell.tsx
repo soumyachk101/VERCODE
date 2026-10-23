@@ -151,7 +151,7 @@ export function Shell({
                 type="button"
                 onClick={onSignOut}
                 className="pressable"
-                style={{ color: "var(--muted)", fontSize: 12 }}
+                style={{ color: "var(--muted-ink)", fontSize: 12 }}
               >
                 Sign out
               </button>
@@ -188,7 +188,7 @@ function GroupLabel({ children }: { children: ReactNode }) {
     <div
       style={{
         fontSize: 12,
-        color: "var(--muted)",
+        color: "var(--muted-ink)",
         padding: "0 8px",
         marginBottom: 6,
         marginTop: 2,
@@ -278,7 +278,7 @@ function SidebarHeader({
               style={{
                 fontSize: 11,
                 fontWeight: 500,
-                color: "var(--muted)",
+                color: "var(--muted-ink)",
                 background: "var(--raised)",
                 border: "1px solid var(--rule)",
                 borderRadius: "var(--radius-chip)",
@@ -337,7 +337,7 @@ function SidebarHeader({
                   <span
                     style={{
                       fontSize: 10,
-                      color: "var(--muted)",
+                      color: "var(--muted-ink)",
                       textTransform: "capitalize",
                     }}
                   >
@@ -361,7 +361,7 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
         style={{
           fontSize: 11,
           fontWeight: 500,
-          color: "var(--muted)",
+          color: "var(--muted-ink)",
           background: "var(--raised)",
           border: "1px solid var(--rule)",
           borderRadius: "var(--radius-chip)",
@@ -533,7 +533,7 @@ function MobileShell({
           type="button"
           onClick={() => setOpen(false)}
           className="pressable"
-          style={{ fontSize: 13, color: "var(--muted)", marginBottom: 16 }}
+          style={{ fontSize: 13, color: "var(--muted-ink)", marginBottom: 16 }}
         >
           Close menu
         </button>
@@ -554,7 +554,7 @@ function MobileShell({
             <Avatar name={user.name} />
             <div style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{user.name}</div>
             {onSignOut && (
-              <button type="button" className="pressable" style={{ fontSize: 12, color: "var(--muted)" }} onClick={onSignOut}>
+              <button type="button" className="pressable" style={{ fontSize: 12, color: "var(--muted-ink)" }} onClick={onSignOut}>
                 Sign out
               </button>
             )}

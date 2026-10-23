@@ -16,7 +16,7 @@ import {
 } from "recharts";
 
 const ACCENT = "var(--accent)";
-const MUTED = "var(--muted)";
+const MUTED = "var(--muted-ink)";
 const GRID = "var(--grid)";
 
 /**
@@ -171,7 +171,7 @@ export function BarList({
             </div>
             <span
               className="meta tabular"
-              style={{ textAlign: "right", fontSize: 12, color: "var(--muted)" }}
+              style={{ textAlign: "right", fontSize: 12, color: "var(--muted-ink)" }}
             >
               {new Intl.NumberFormat("en-US").format(it.value)}
               {unit ? <span style={{ color: "var(--faint)" }}> {unit}</span> : null}

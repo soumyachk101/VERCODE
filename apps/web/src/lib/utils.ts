@@ -14,7 +14,7 @@ export const buttonVariants = cva(
         default: "bg-[var(--primary)] text-[var(--primary-ink)]",
         secondary:
           "bg-[var(--surface)] border border-[var(--border)] text-[var(--text)]",
-        ghost: "text-[var(--muted)] hover:text-[var(--text)]",
+        ghost: "text-[var(--muted-ink)] hover:text-[var(--text)]",
         destructive:
           "bg-[var(--surface)] border border-[var(--negative)] text-[var(--negative)]",
       },

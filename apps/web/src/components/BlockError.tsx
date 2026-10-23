@@ -29,7 +29,7 @@ export function BlockError({
       className={cn("empty-box", className)}
       style={{ minHeight: 48, justifyContent: "flex-start", gap: 12 }}
     >
-      <span style={{ color: "var(--muted)" }}>
+      <span style={{ color: "var(--muted-ink)" }}>
         Couldn&apos;t load {title}
         {lastUpdated ? ` . Last updated ${lastUpdated}` : "."}
       </span>
@@ -163,7 +163,7 @@ export function Notice({
         borderRadius: "var(--radius-card)",
         padding: "8px 12px",
         fontSize: 13,
-        color: "var(--muted)",
+        color: "var(--muted-ink)",
       }}
       role="status"
     >

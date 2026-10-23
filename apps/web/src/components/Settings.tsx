@@ -42,7 +42,7 @@ export function SettingsSection({
           <span
             className="meta"
             role="status"
-            style={{ fontSize: 12, color: "var(--muted)", textAlign: "right" }}
+            style={{ fontSize: 12, color: "var(--muted-ink)", textAlign: "right" }}
           >
             {stamp}
           </span>
