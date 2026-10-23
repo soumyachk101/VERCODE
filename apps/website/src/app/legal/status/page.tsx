@@ -134,7 +134,7 @@ export default function LegalStatusPage() {
             </a>
           </div>
 
-          <p className="mt-6 text-[15px] leading-[1.6] text-[hsl(var(--muted))]">
+          <p className="mt-6 text-[16px] leading-[1.6] text-[hsl(var(--muted))]">
             A status page that claims 99.99% without the incident log
             behind it is a lie. The measured-not-claimed rule
             (RELEASE_CRITERIA gate 7: "a claim without a measurement is a
