@@ -82,8 +82,7 @@ export default function NotFound() {
         </Link>
         <Link href="/changelog" style={linkStyle}>
           Changelog
-        </Link>
-      </nav>
+        </Link>      </nav>
     </div>
   );
 }
