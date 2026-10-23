@@ -53,7 +53,6 @@ const STEPS = [
     body: "GitHub dispatches the webhook; VERCODE verifies the signature and enqueues the review job in under 300 ms (NFR-04 — no LLM on the webhook path). The queue, not the request, does the work.",
   },
   {
-    num: "03",
     title: "Read the review",
     body: "Static analysis runs first; the task-routed AI stage runs on the bounded diff. A verdict and inline findings land on the pull request in under two minutes at p50 (NFR-02).",
   },
@@ -152,8 +151,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Block 2 — How it works (the 3-step numbered row, no icons: the
-          number is the visual, DESIGN_SYSTEM_AND_TYPOGRAPHY §2). */}
+      {/* Block 2 — How it works (the 3-step row; order is shown by
+          position + a step title, no index numbers). */}
       <Reveal>
         <section
           aria-labelledby="how-it-works-heading"
@@ -170,11 +169,8 @@ export default function Home() {
             className="mt-10 grid grid-cols-1 gap-10 sm:grid-cols-3"
           >
             {STEPS.map((step) => (
-              <li key={step.num}>
-                <span className="tnum block text-[40px] font-semibold text-[var(--faint)]">
-                  {step.num}
-                </span>
-                <h3 className="mt-3 text-[20px] font-semibold text-[var(--text)]">
+              <li key={step.title}>
+                <h3 className="text-[16px] font-semibold text-[var(--text)]">
                   {step.title}
                 </h3>
                 <p className="mt-2 text-[16px] leading-relaxed text-[var(--muted)]">

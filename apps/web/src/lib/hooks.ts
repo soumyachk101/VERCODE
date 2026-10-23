@@ -8,6 +8,7 @@ import {
 import { api } from "./api";
 import type {
   Invitation,
+  Profile,
   Session,
 } from "./types";
 
