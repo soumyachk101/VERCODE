@@ -18,7 +18,7 @@ import { generateSchemaFor } from "../lib/schema-generator";
 
 // The H1 (the SAAS_LAUNCH_PLAN §1 wedge, humanized; ≤ 12 words) + the
 // deterministic-first subhead (the WFR-201 hero spec).
-const HERO_TITLE = "AI code review your team actually reads.";
+const HERO_TITLE = "Reviews you can act on, in two minutes.";
 const HERO_SUBHEAD =
   "Static analysis runs first. Task-routed AI runs on the diff. A verdict and evidence-backed findings land on the pull request in under two minutes.";
 const META_DESCRIPTION =
@@ -120,7 +120,7 @@ export default function Home() {
           gradient, no eyebrow (the WFR-201 tells stay banned). */}
       <section
         aria-labelledby="hero-heading"
-        className="mx-auto max-w-[720px] px-5 pt-20 pb-16 text-center sm:pt-28 sm:pb-20"
+        className="mx-auto max-w-[760px] px-5 pt-16 pb-16 text-center sm:pt-24 sm:pb-20"
       >
         <h1
           id="hero-heading"

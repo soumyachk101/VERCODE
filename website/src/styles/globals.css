@@ -87,10 +87,9 @@
   --radius-chip: 4px;
 
   /* Type. */
-  --font-sans: "Inter Variable", "Inter", "Geist", "Geist Fallback",
-    system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, "SF Mono",
-    Menlo, monospace;
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", "Helvetica Neue",
+    sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
 
   /* The hero display type (the DESIGN_SYSTEM's one display size, used for
      the H1 + the closing CTA line only — everything else stays 28–32px). */
