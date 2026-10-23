@@ -82,3 +82,67 @@ function formatStamp(ms: number): string {
 export function EmptyBlock({ children }: { children: ReactNode }) {
   return <div className="empty-box">{children}</div>;
 }
+
+/**
+ * The per-user provider-connection row (the account page's "GitHub" block,
+ * API_SPECIFICATION.md "Auth & account"). A `null` / `undefined` `data` is
+ * a not-connected state: a quiet "Not connected" dash + a Connect button
+ * (a the mutation's `data` is the authorize URL — a the client navigates
+ * there, GitHub redirects back to `/settings/account?github=connected`).
+ *
+ * Visual contract (the user forbids colour changes): a single row, 12px
+ * meta, the status pill + one interaction (the button), no tint.
+ */
+export function ProviderConnectionRow({
+  label,
+  data,
+  connecting,
+  onConnect,
+  onDisconnect,
+  disconnecting,
+}: {
+  label: string;
+  /** `null` / `undefined` = not connected. */
+  data: { connected: boolean; handle?: string | null } | null | undefined;
+  connecting?: boolean;
+  onConnect: () => void;
+  onDisconnect?: () => void;
+  disconnecting?: boolean;
+}) {
+  const connected = !!data?.connected;
+  const handle = data?.handle;
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        padding: "4px 0",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        {connected ? (
+          <Pill tone="positive">
+            Connected as {handle ?? "unknown"}
+          </Pill>
+        ) : (
+          <span className="meta" style={{ color: "var(--faint)" }}>
+            Not connected
+          </span>
+        )}
+      </div>
+      {connected ? (
+        onDisconnect && (
+          <Button variant="ghost" size="sm" disabled={disconnecting} onClick={onDisconnect}>
+            {disconnecting ? "Disconnecting…" : "Disconnect"}
+          </Button>
+        )
+      ) : (
+        <Button size="sm" disabled={connecting} onClick={onConnect}>
+          {connecting ? "Opening GitHub…" : `Connect ${label}`}
+        </Button>
+      )}
+    </div>
+  );
+}

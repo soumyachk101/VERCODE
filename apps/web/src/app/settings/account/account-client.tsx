@@ -5,11 +5,18 @@
 // (light/dark/system, a segmented control), a password change (which
 // revokes sessions), and the destructive deactivate (last, consequence-
 // named, in a confirmation dialog that names the object).
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { OrgPage } from "@/components/page";
-import { useProfile, useSessions, useSignOutAll } from "@/lib/hooks";
+import {
+  useProfile,
+  useSessions,
+  useSignOutAll,
+  useGithubStart,
+  useGithubDisconnect,
+} from "@/lib/hooks";
 import { PageHead, SettingsSection } from "@/components/Settings";
-import { DataBlock, EmptyBlock } from "@/components/DataBlock";
+import { DataBlock, EmptyBlock, ProviderConnectionRow } from "@/components/DataBlock";
 import { Button, TextButton } from "@/components/Button";
 import { ConfirmDialog } from "@/components/BlockError";
 import { Input, Label } from "@/components/controls";
