@@ -183,7 +183,7 @@ export default function Features() {
 
       {/* The 6-story grid (the FR-504/505/506/507/509/510 user-facing
           dashboard features; each block names its FR ID, the W-AC-05 rule). */}
-      <Reveal>
+        <Reveal>
         <section
           aria-labelledby="stories-heading"
           className="mx-auto max-w-4xl px-5 py-16"
@@ -192,25 +192,30 @@ export default function Features() {
             id="stories-heading"
             className="text-[28px] font-semibold tracking-tight text-[var(--text)] sm:text-[32px]"
           >
-            The workspace
+            The workspace around the pull request
           </h2>
+          <p className="mt-4 max-w-xl text-[16px] leading-relaxed text-[var(--muted)]">
+            The review is one view of the organization. Around it, the dashboard
+            answers the team's other questions: where the risk is, what the
+            model costs, who changed what, and what the audit trail says.
+          </p>
           <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2">
             {STORIES.map((story) => (
               <article key={story.fr}>
                 <h3 className="text-[17px] font-semibold text-[var(--text)]">
                   {story.title}
                 </h3>
-                <p className="mt-2 text-[16px] leading-relaxed text-[var(--muted)]">
+                <p className="mt-2 max-w-prose text-[16px] leading-relaxed text-[var(--muted)]">
                   {story.body}
                 </p>
-                <p className="mt-2 font-mono text-[13px] text-[var(--faint)]">
-                  {story.fr}
+                <p className="mt-2 text-[14px] text-[var(--faint)]">
+                  Requirement: {story.fr}
                 </p>
                 <a
                   href={story.docs}
                   className="mt-2 inline-block text-[14px] font-medium text-[var(--accent)] underline-offset-4 hover:underline"
                 >
-                  The docs →
+                  The docs
                 </a>
               </article>
             ))}
