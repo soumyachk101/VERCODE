@@ -6,7 +6,7 @@ from collections import defaultdict
 
 def get_git_status():
     result = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
-    lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    lines = [line for line in result.stdout.splitlines() if line.strip()]
     return lines
 
 def analyze_changes(lines):
@@ -15,31 +15,40 @@ def analyze_changes(lines):
 
     files = []
     actions = defaultdict(list)
-    scopes = set()
+    scope_counts = defaultdict(int)
 
     for line in lines:
         status = line[:2].strip()
-        filepath = line[3:].strip()
+        filepath = line[2:].strip()
         if " -> " in filepath:
-            filepath = filepath.split(" -> ")[1]
+            filepath = filepath.split(" -> ")[1].strip()
         
         # Strip trailing slash if directory
         filepath = filepath.rstrip("/")
+        if not filepath:
+            continue
         files.append((status, filepath))
         
         parts = filepath.split("/")
-        if parts[0] == "apps" and len(parts) > 1:
-            scopes.add(f"app-{parts[1]}")
-        elif parts[0] == "packages" and len(parts) > 1:
-            scopes.add(parts[1])
-        elif parts[0] == ".github":
-            scopes.add("ci")
-        elif parts[0] == "scripts":
-            scopes.add("scripts")
-        elif parts[0] == "docs" or filepath.endswith(".md"):
-            scopes.add("docs")
+        first = parts[0]
+        if first == "apps" and len(parts) > 1:
+            scope = f"app-{parts[1]}"
+        elif first == "packages" and len(parts) > 1:
+            scope = parts[1]
+        elif first.startswith(".") or first in ["ci", "workflows"]:
+            scope = "ci"
+        elif first in ["scripts", "bin"]:
+            scope = "scripts"
+        elif first in ["tests", "test", "__tests__"]:
+            scope = "test"
+        elif first in ["docs", "doc"] or filepath.endswith(".md"):
+            scope = "docs"
+        elif first in ["src", "lib", "components", "website"]:
+            scope = first
         else:
-            scopes.add("core")
+            scope = "core"
+        
+        scope_counts[scope] += 1
 
         if status in ["??", "A"]:
             actions["add"].append(filepath)
@@ -51,12 +60,19 @@ def analyze_changes(lines):
             actions["update"].append(filepath)
 
     all_paths = [f[1] for f in files]
-    if any(p.endswith((".test.ts", ".spec.ts", ".test.js", ".spec.js")) for p in all_paths):
+    total_files = len(files)
+    test_files_count = sum(1 for p in all_paths if p.endswith((".test.ts", ".spec.ts", ".test.js", ".spec.js")) or "/tests/" in p or p.startswith("tests/"))
+    doc_files_count = sum(1 for p in all_paths if p.endswith((".md", ".txt")) or "docs/" in p)
+    build_files_count = sum(1 for p in all_paths if os.path.basename(p) in ["package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "tsconfig.json", "tsconfig.base.json", ".gitignore"])
+
+    if test_files_count == total_files:
         commit_type = "test"
-    elif any(p.endswith((".md", ".txt")) or "docs/" in p for p in all_paths):
+    elif doc_files_count == total_files:
         commit_type = "docs"
-    elif any(os.path.basename(p) in ["package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "tsconfig.json", "tsconfig.base.json", ".gitignore"] for p in all_paths):
+    elif build_files_count == total_files:
         commit_type = "build"
+    elif actions["delete"] and not actions["add"] and not actions["modify"]:
+        commit_type = "refactor"
     elif actions["add"]:
         commit_type = "feat"
     elif actions["modify"]:
@@ -66,13 +82,9 @@ def analyze_changes(lines):
     else:
         commit_type = "chore"
 
-    non_core = [s for s in scopes if s != "core"]
-    if non_core:
-        scope = non_core[0]
-    elif len(scopes) == 1:
-        scope = list(scopes)[0]
-    else:
-        scope = "core"
+    # Select the most frequently touched scope
+    sorted_scopes = sorted(scope_counts.items(), key=lambda x: x[1], reverse=True)
+    scope = sorted_scopes[0][0] if sorted_scopes else "core"
 
     action_phrases = []
     if actions["add"]:

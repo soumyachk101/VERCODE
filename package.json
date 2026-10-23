@@ -14,7 +14,7 @@
     "build": "pnpm -r build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint \"packages/**/*.ts\" \"apps/**/*.ts\" --max-warnings 0",
+    "lint": "eslint \"packages/**/*.ts\" \"apps/**/*.ts\" \"website/**/*.ts\" --max-warnings 0",
     "typecheck": "pnpm -r typecheck",
     "benchmark": "tsx --tsconfig tests/tsconfig.json tests/benchmark/harness.ts",
     "benchmark:baseline": "tsx --tsconfig tests/tsconfig.json tests/benchmark/harness.ts --save-baseline",
