@@ -190,7 +190,7 @@ export default function LegalDpaPage() {
           </section>
 
           {/* The "available on request" line + the split note. */}
-          <p className="mt-8 text-[15px] text-[hsl(var(--muted))]">
+          <p className="mt-8 text-[16px] text-[hsl(var(--muted))]">
             The DPA is available to enterprise customers on request.
             {/* Note: the actual signed-DPA document is a sales-owned
                 artifact (COMPLIANCE_CONSIDERATIONS.md's "the enterprise

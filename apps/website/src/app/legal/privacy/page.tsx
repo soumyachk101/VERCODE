@@ -129,36 +129,36 @@ export default function LegalPrivacyPage() {
               obligation, not a plan feature (NFR-27; USAGE_QUOTAS.md
               §2).
             </p>
-            <dl className="mt-4 space-y-2">
-              <div className="border-t border-[var(--rule)] pt-2">
-                <dt className="text-[15px] font-semibold text-[var(--text)]">
+            <dl className="mt-4 space-y-4">
+              <div className="space-y-1">
+                <dt className="text-[16px] font-semibold text-[var(--text)]">
                   Free
                 </dt>
-                <dd className="mt-1 text-[15px] text-[hsl(var(--muted))]">
+                <dd className="mt-1 text-[16px] text-[hsl(var(--muted))]">
                   Findings retained 30 days; audit events retained 180 days.
                 </dd>
               </div>
-              <div className="border-t border-[var(--rule)] pt-2">
-                <dt className="text-[15px] font-semibold text-[var(--text)]">
+              <div className="space-y-4">
+                <dt className="text-[16px] font-semibold text-[var(--text)]">
                   Developer
                 </dt>
-                <dd className="mt-1 text-[15px] text-[hsl(var(--muted))]">
+                <dd className="mt-1 text-[16px] text-[hsl(var(--muted))]">
                   Findings retained 90 days; audit events retained 180 days.
                 </dd>
               </div>
-              <div className="border-t border-[var(--rule)] pt-2">
-                <dt className="text-[15px] font-semibold text-[var(--text)]">
+              <div className="space-y-4">
+                <dt className="text-[16px] font-semibold text-[var(--text)]">
                   Team
                 </dt>
-                <dd className="mt-1 text-[15px] text-[hsl(var(--muted))]">
+                <dd className="mt-1 text-[16px] text-[hsl(var(--muted))]">
                   Findings retained 365 days; audit events retained 180 days.
                 </dd>
               </div>
-              <div className="border-t border-[var(--rule)] pt-2">
-                <dt className="text-[15px] font-semibold text-[var(--text)]">
+              <div className="space-y-4">
+                <dt className="text-[16px] font-semibold text-[var(--text)]">
                   Enterprise
                 </dt>
-                <dd className="mt-1 text-[15px] text-[hsl(var(--muted))]">
+                <dd className="mt-1 text-[16px] text-[hsl(var(--muted))]">
                   Findings retained for a custom period (365 days or more,
                   negotiated per account); audit events retained 180 days
                   minimum.
