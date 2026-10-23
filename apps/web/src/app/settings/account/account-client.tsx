@@ -6,7 +6,6 @@
 // revokes sessions), and the destructive deactivate (last, consequence-
 // named, in a confirmation dialog that names the object).
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { OrgPage } from "@/components/page";
 import {
   useProfile,

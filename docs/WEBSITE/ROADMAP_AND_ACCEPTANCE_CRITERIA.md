@@ -228,12 +228,17 @@ The seven open decisions from `PRD.md §8`, carried into a formal table. The str
 
 ## D. Status + next concrete task
 
-**The state:** the website is *not started* (the dashboard M1–M8 build is in flight; the website's WP1 entry gate — a P1 live-integration verified + `apps/web`/`apps/api` M1–M8 built + the `DESIGN_SYSTEM`/`USAGE_QUOTAS`/`PRICING_STRATEGY` numbers frozen — is not yet met). The roadmap + AC + decision log are the *planning* artifacts; the *build* begins at WP1/WT1.1 when P1 (gate-13) is green.
+**The state:** WP1, WP2, and WP3 are **built + verified** — `make check-website` is green (the `@vercode/website` build + typecheck + the 11 `UT-web-*` tests + the anti-slop lint, the `TECHNICAL_ARCHITECTURE.md §5` build-time sub-gates). That landed:
+- **WP1 (WT1.1–WT1.5):** the `apps/website` scaffold (a `Next.js 15` static export, `apps/website/next.config.mjs`'s `output: "export"`), the `content/` store + the `CONTENT_SCHEMAS.md` contracts, the `schema-generator.ts` single source (`apps/website/src/lib/schema-generator.ts`), and the `sitemap.xml`/`robots.txt`/`llms.txt`/`llms-full.txt` generators (`apps/website/src/lib/llms.ts`).
+- **WP2 (WT2.1–WT2.4):** the core pages — `/` + the section order, `/features` + the FR traceability, `/pricing` + the quota table from `content/pricing/pricing.json`, `/faq` + the 16-question byte-equivalence.
+- **WP3 (WT3.1–WT3.5):** the 9 `content/docs/` topics, the 2-entry changelog feed, the 2-post blog, the 5 `/legal` pages, and the draft-never-rendered rule.
 
-**The next concrete task (the first WP1 task, `SAAS_LAUNCH_PLAN §5` P1-unblocked):**
-1. **WT1.1** — scaffold `apps/website` (a `Next.js 15` static export, the `WFR-101` route shells, a `next.config.ts` with the sitemap/robots/`llms.txt` generators).
-2. **WT1.2** — the `packages/design-tokens` bridge (`DESIGN_SYSTEM.md §4`, a new package, `ADR-0xx-4`).
-3. **WT1.3** — the `content/` store + the `CONTENT_SCHEMAS.md` contracts (`WFR-304/305`).
-4. **WT1.4** — the `schema-generator.ts` single source (`WFR-402`'s generator half).
-5. **WT1.5** — the sitemap + robots + `llms.txt` generators + the count assertion.
-6. Run the `make check-website` build + schema sub-gates green; commit WP1 (a coherent, small, verified unit). The next concrete task is **WP2/WT2.1** (the `/` + section order).
+**The open state is WP4:** the *host-side* verification lanes + the two new `apps/api` routes. The Lighthouse ≥90 + the axe 0-critical + the `JSON-LD`-lint lanes are the `PERFORMANCE_AND_ACCESSIBILITY.md` host-side runs (the Chrome + tool binaries, not in the repo build); the `/api/answer` + the `/api/track` routes are a new-route-on-the-existing-Fastify (`TECHNICAL_ARCHITECTURE.md §1` + `DEPLOYMENT_AND_TESTING.md §1.1`'s "the routes deploy with the `api` unit" rule).
+
+**The next concrete task (WP4, the P2 public-launch gate's close):**
+1. **WT4.1** — the `GET /api/answer` route on the existing `apps/api` (a `contracts`-validated bounded fact lookup, *no LLM at runtime*; the `OpenAPI.yaml` updated first, `RELEASE_CRITERIA.md` gate 11).
+2. **WT4.2** — the `POST /api/track` beacon (a first-party cookieless `204`, no `Set-Cookie`, no PII, a `VERCODE_BEACON_SECRET` HMAC, `SECURITY_TEST_PLAN`'s public-surface check).
+3. **WT4.3** — the `llms.txt` + `llms-full.txt` triple-source check wired as a host-side lane (the `WFR-402` byte-consistency, `SEO_AEO_GEO.md §2`).
+4. **WT4.4** — the Lighthouse + axe + JSON-LD verification lanes: a `@lhci/cli` mobile run ≥90 on the 5 `PERFORMANCE_AND_ACCESSIBILITY.md` budget pages; a `@axe-core/playwright` 0-critical on every `WFR-101` route; a `ld-lint`/`schema-dts` 0-error on every emitted block. The `make check-website` target gains these three as *measured* pass/fail numbers (a `DEPLOYMENT_AND_TESTING.md §3` lane, gate 14's host-side half).
+
+When all four are green, the P2 public-launch checklist closes (`SAAS_LAUNCH_PLAN §5 P2`'s "domain + marketing site + pricing + docs + status" rows measured green, `RELEASE_CRITERIA.md §2`'s "a gate is a measurement, not a checkbox").
