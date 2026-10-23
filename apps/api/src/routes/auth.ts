@@ -164,6 +164,242 @@ export async function authRoutes(app: FastifyInstance) {
     }
     reply.send({ ok: true, message: "Email confirmed." });
   });
+
+  // -------------------------------------------------------------------
+  // The per-user GitHub OAuth (the account page's "GitHub" DataBlock).
+  // A signed-in user connects their *personal* GitHub account (a
+  // scope `user:read` — a minimal handle read, a no repo access) so the
+  // user's handle is available for audit + user-level integrations.
+  //
+  // GET /auth/github/start (session required): builds the authorize URL.
+  // A `state` token is created in `github_oauth_states` (a 10-min TTL,
+  // anti-CSRF per GitHub's OAuth docs); an unconfigured deploy (no
+  // GITHUB_CLIENT_ID) responds with a clear "not configured" error,
+  // not a broken redirect.
+  //
+  // GET /auth/github/callback (session required — a the OAuth callback
+  // rides the user's session cookie): exchanges `code` for a user token
+  // at GitHub's token endpoint, stores it on the user row, then
+  // redirects to `${WEB_BASE_URL}/settings/account?github=connected`
+  // (a `connected` flag the account client reads to refetch +
+  // announce).
+  //
+  // POST /auth/github/disconnect (session required): clears the user's
+  // provider token + handle (a the account page's "Disconnect" link).
+
+  app.get(
+    "/github/start",
+    {
+      schema: {
+        config: { capability: "auth" },
+        querystring: z.object({ redirect: z.string().url().optional() }),
+      },
+    },
+    async (req, reply) => {
+      const db = app.auth.db;
+      const userId = req.user.userId ?? "";
+      if (!userId) {
+        reply.code(401).send({ error: { code: "UNAUTHENTICATED", message: "No session." } });
+        return;
+      }
+      const clientId = process.env.GITHUB_CLIENT_ID;
+      if (!clientId) {
+        reply.code(503).send({
+          error: {
+            code: "GITHUB_OAUTH_NOT_CONFIGURED",
+            message:
+              "GitHub OAuth not configured — set GITHUB_CLIENT_ID (and GITHUB_CLIENT_SECRET for the callback).",
+          },
+        });
+        return;
+      }
+
+      const state = randomBytes(32).toString("hex");
+      await db.githubOAuthState.create({
+        data: {
+          token: state,
+          userId,
+          redirectTo: (req.query as { redirect?: string }).redirect ?? null,
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        },
+      });
+
+      const base = app.auth.config.core.WEB_BASE_URL.replace(/\/$/, "");
+      const params = new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: `${base}/auth/github/callback`,
+        scope: "user:read",
+        state,
+      });
+      reply.send({
+        url: `https://github.com/login/oauth/authorize?${params.toString()}`,
+        state,
+      });
+    },
+  );
+
+  app.get(
+    "/github/callback",
+    {
+      schema: {
+        config: { capability: "auth" },
+        querystring: GithubCallbackSchema,
+      },
+    },
+    async (req, reply) => {
+      const db = app.auth.db;
+      const userId = req.user.userId ?? "";
+      if (!userId) {
+        reply.code(401).send({ error: { code: "UNAUTHENTICATED", message: "No session." } });
+        return;
+      }
+      const { code, state, error: ghError } = req.query as GithubCallbackParams;
+      const base = app.auth.config.core.WEB_BASE_URL.replace(/\/$/, "");
+      const errorHref = `${base}/settings/account?github=error`;
+
+      // A GitHub-side denial / invalid-code (the standard `error` query
+      // param; a no `code` to exchange).
+      if (ghError || !code || !state) {
+        await db.auditEvent.create({
+          data: {
+            actorId: userId,
+            action: "auth.github_oauth_denied",
+            targetType: "user",
+            targetId: userId,
+            meta: { error: ghError ?? "missing code/state" },
+          },
+        });
+        reply.redirect(errorHref);
+        return;
+      }
+
+      const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+      if (!clientSecret) {
+        reply.redirect(`${errorHref}&reason=not_configured`);
+        return;
+      }
+
+      // The state check: a valid, unexpired, user-bound, unused token.
+      const stateRow = await db.githubOAuthState.findFirst({
+        where: { token: state, userId, usedAt: null, expiresAt: { gt: new Date() } },
+      });
+      if (!stateRow) {
+        reply.redirect(`${errorHref}&reason=state_mismatch`);
+        return;
+      }
+
+      const apiBase = app.auth.config.github.GITHUB_API_BASE;
+      const tokenUrl = `${apiBase}/login/oauth/access_token`;
+      const exchangeRes = await fetch(tokenUrl, {
+        method: "POST",
+        headers: {
+          "content-type": "application/x-www-form-urlencoded",
+          accept: "application/json",
+        },
+        body: new URLSearchParams({
+          client_id: process.env.GITHUB_CLIENT_ID ?? "",
+          client_secret: clientSecret,
+          code,
+          grant_type: "authorization_code",
+        }).toString(),
+      });
+      const exchange = (await exchangeRes.json()) as {
+        access_token?: string;
+        token_type?: string;
+        scope?: string;
+        error?: string;
+        error_description?: string;
+      };
+      if (!exchangeRes.ok || !exchange.access_token) {
+        // A GitHub-side exchange failure (a invalid code, an expired
+        // code, a revoked client): a honest error redirect, not a 5xx.
+        await db.auditEvent.create({
+          data: {
+            actorId: userId,
+            action: "auth.github_oauth_failed",
+            targetType: "user",
+            targetId: userId,
+            meta: { status: exchangeRes.status, error: exchange.error ?? "unknown" },
+          },
+        });
+        await db.githubOAuthState.update({
+          where: { id: stateRow.id },
+          data: { usedAt: new Date() },
+        });
+        reply.redirect(`${errorHref}&reason=exchange_failed`);
+        return;
+      }
+
+      // Fetch the user's handle (a the `user` endpoint) to store
+      // alongside the token — a the `Connected as <handle>` display. A
+      // 404 / 401 from the handle fetch does NOT fail the connection
+      // (a the token is valid, a the handle is just unknown).
+      let githubHandle: string | null = null;
+      const userRes = await fetch(`${apiBase}/user`, {
+        headers: {
+          authorization: `Bearer ${exchange.access_token}`,
+          accept: "application/vnd.github+json",
+          "user-agent": "vercode",
+        },
+      });
+      if (userRes.ok) {
+        const ghUser = (await userRes.json()) as { login?: string };
+        if (ghUser.login) githubHandle = ghUser.login;
+      }
+
+      // A the user row already exists (a session resolved it).
+      await db.user.update({
+        where: { id: userId },
+        data: {
+          githubProviderToken: exchange.access_token,
+          githubHandle,
+        },
+      });
+      // A the state consumed.
+      await db.githubOAuthState.update({
+        where: { id: stateRow.id },
+        data: { usedAt: new Date() },
+      });
+      await db.auditEvent.create({
+        data: {
+          actorId: userId,
+          action: "auth.github_oauth_connected",
+          targetType: "user",
+          targetId: userId,
+          meta: { handle: githubHandle },
+        },
+      });
+
+      reply.redirect(`${base}/settings/account?github=connected`);
+    },
+  );
+
+  app.post(
+    "/github/disconnect",
+    { schema: { config: { capability: "auth" } } },
+    async (req, reply) => {
+      const db = app.auth.db;
+      const userId = req.user.userId ?? "";
+      if (!userId) {
+        reply.code(401).send({ error: { code: "UNAUTHENTICATED", message: "No session." } });
+        return;
+      }
+      const user = await db.user.update({
+        where: { id: userId },
+        data: { githubProviderToken: null, githubHandle: null },
+      });
+      await db.auditEvent.create({
+        data: {
+          actorId: userId,
+          action: "auth.github_oauth_disconnected",
+          targetType: "user",
+          targetId: userId,
+          meta: { handle: user.githubHandle ?? null },
+        },
+      });
+      reply.send({ ok: true });
+    },
+  );
 }
 
 // A simplified in-memory lockout store (a prod: the Redis session store,

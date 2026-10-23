@@ -64,6 +64,7 @@ export function useOrgShell() {
     orgPlan: active?.plan,
     user: me.data ? { name: me.data.name, email: me.data.email } : null,
     loading: me.isLoading,
+    me,
     switchOrg: (id: string) => {
       if (id) sessionStorage.setItem("vercode_org", id);
       router.push("/overview");
@@ -88,6 +89,41 @@ function matchActive(p: string): string {
 
 export function OrgShell({ children }: { children: ReactNode }) {
   const s = useOrgShell();
+  const router = useRouter();
+  // Route guard: no session at all → back to sign-in (once — the sign-in
+  // page resolves /auth/me on load, so an existing session that has just
+  // expired is re-signed-in there, and a valid session never lands here).
+  if (s.me.isError) {
+    useEffect(() => {
+      router.replace("/signin");
+    }, [router]);
+  }
+  // No session yet (loading) or a session without an org (a fresh
+  // account mid-bootstrap, a 404 /me while the dashboard API is down):
+  // render the shell chrome with a designed empty state — no blank page,
+  // no redirect loop.
+  if (s.me.isLoading || (s.orgs.length === 0 && !s.me.isError)) {
+    return (
+      <Shell
+        orgName={s.orgName}
+        orgPlan={s.orgPlan}
+        onSwitchOrg={s.switchOrg}
+        orgOptions={s.orgs.map((o) => ({ id: o.id, name: o.name, plan: o.plan }))}
+        activeOrgId={s.active?.id}
+        items={s.items}
+        bottomItems={s.bottom}
+        active={s.activeKey}
+        user={s.user}
+      >
+        <LiveRegion />
+        <EmptyShellState
+          onSignIn={() => router.replace("/signin")}
+          creatingOrg={s.orgs.length === 0 && !s.me.isLoading}
+        />
+        {children}
+      </Shell>
+    );
+  }
   return (
     <Shell
       orgName={s.orgName}
@@ -103,6 +139,57 @@ export function OrgShell({ children }: { children: ReactNode }) {
       <LiveRegion />
       {children}
     </Shell>
+  );
+}
+
+function EmptyShellState({
+  onSignIn,
+  creatingOrg,
+}: {
+  onSignIn: () => void;
+  creatingOrg: boolean;
+}) {
+  return (
+    <div
+      style={{
+        padding: "48px 0",
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+        maxWidth: 420,
+      }}
+    >
+      <h1
+        className="h1"
+        style={{ margin: 0, fontSize: 22, color: "var(--text)" }}
+      >
+        {creatingOrg ? "Finish your setup" : "No organization"}
+      </h1>
+      <p className="finding-line" style={{ margin: 0 }}>
+        {creatingOrg
+          ? "Your account needs one organization to hold reviews."
+          : "Sign in to your account to reach the dashboard."}
+      </p>
+      <button
+        type="button"
+        className="pressable"
+        onClick={onSignIn}
+        style={{
+          alignSelf: "flex-start",
+          height: 38,
+          padding: "0 14px",
+          borderRadius: "var(--radius-control)",
+          border: "1px solid var(--control)",
+          background: "var(--primary)",
+          color: "var(--primary-ink)",
+          fontSize: 13,
+          fontWeight: 500,
+          cursor: "pointer",
+        }}
+      >
+        {creatingOrg ? "Create an organization" : "Sign in"}
+      </button>
+    </div>
   );
 }
 
