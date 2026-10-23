@@ -21,14 +21,14 @@ export function Cta() {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/signin"
-              className="pressable inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[hsl(hsl(var(--accent)))] px-6 text-[15px] font-semibold text-[hsl(var(--accent-foreground))] transition-opacity hover:opacity-90"
+              className="pressable inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[hsl(var(--accent))] px-6 text-[15px] font-semibold text-[hsl(var(--accent-foreground))] transition-opacity hover:opacity-90"
             >
               Launch VERCODE
               <IconArrow width={18} height={18} />
             </Link>
             <Link
               href="/changelog"
-              className="pressable inline-flex h-11 items-center justify-center rounded-[8px] border border-[hsl(hsl(var(--border)))] px-6 text-[15px] font-semibold text-[hsl(var(--text-1))] transition-colors hover:border-[hsl(hsl(var(--accent)))]"
+              className="pressable inline-flex h-11 items-center justify-center rounded-[8px] border border-[hsl(var(--border))] px-6 text-[15px] font-semibold text-[hsl(var(--text-1))] transition-colors hover:border-[hsl(var(--accent))]"
             >
               See what shipped
             </Link>

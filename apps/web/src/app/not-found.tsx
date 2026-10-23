@@ -91,7 +91,6 @@ export default function NotFound() {
 const linkStyle: React.CSSProperties = {
   color: "var(--muted-ink)",
   textDecoration: "underline",
-  textDecorationOffset: 4,
   textUnderlineOffset: 4,
   fontSize: 14,
 };
