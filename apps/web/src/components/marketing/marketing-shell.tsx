@@ -31,7 +31,7 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-[hsl(var(--line))] bg-[hsl(var(--background))]">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
         <a href="/" className="flex items-center gap-2.5" aria-label="VERCODE home">
-          <span className="flex h-8 w-8 items-center justify-center rounded-[6px] bg-[hsl(var(--accent))] font-mono text-[15px] font-bold text-[hsl(var(--accent-foreground))]">
+          <span className="flex h-8 w-8 items-center justify-center rounded-[6px] bg-[var(--accent-color)] font-mono text-[15px] font-bold text-[hsl(var(--accent-foreground))]">
             V
           </span>
           <span className="text-[15px] font-semibold tracking-[0.14em]">VERCODE</span>
@@ -48,13 +48,13 @@ export function Header() {
           ))}
           <Link
             href="/signin"
-            className="rounded-[6px] border border-[hsl(var(--line))] px-3.5 py-1.5 text-[13px] font-medium text-[hsl(var(--text-1))] transition-colors hover:border-[hsl(var(--accent))] hover:text-[hsl(var(--accent))]"
+            className="rounded-[6px] border border-[hsl(var(--line))] px-3.5 py-1.5 text-[13px] font-medium text-[hsl(var(--text-1))] transition-colors hover:border-[var(--accent-color)] hover:text-[var(--accent-color)]"
           >
             Sign in
           </Link>
           <Link
             href="/signin"
-            className="rounded-[6px] bg-[hsl(var(--accent))] px-3.5 py-1.5 text-[13px] font-semibold text-[hsl(var(--accent-foreground))] transition-opacity hover:opacity-90"
+            className="rounded-[6px] bg-[var(--accent-color)] px-3.5 py-1.5 text-[13px] font-semibold text-[hsl(var(--accent-foreground))] transition-opacity hover:opacity-90"
           >
             Get started
           </Link>
@@ -71,7 +71,7 @@ export function Footer() {
         <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
           <div className="col-span-2 sm:col-span-1">
             <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-[6px] bg-[hsl(var(--accent))] font-mono text-[13px] font-bold text-[hsl(var(--accent-foreground))]">
+              <span className="flex h-7 w-7 items-center justify-center rounded-[6px] bg-[var(--accent-color)] font-mono text-[13px] font-bold text-[hsl(var(--accent-foreground))]">
                 V
               </span>
               <span className="text-[14px] font-semibold tracking-[0.14em]">VERCODE</span>
