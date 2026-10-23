@@ -40,6 +40,14 @@ export interface Profile {
   name: string;
   email: string;
   createdAt?: string;
+  /** the per-user GitHub OAuth (the account page's "GitHub" block). */
+  githubConnected?: boolean;
+  githubHandle?: string | null;
+}
+
+export interface GitHubConnection {
+  connected: boolean;
+  handle: string | null;
 }
 
 export interface Session {

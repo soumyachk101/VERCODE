@@ -214,7 +214,31 @@ export function useAudit(orgId?: string) {
 export function useProfile() {
   return useQuery({
     queryKey: ["me"],
-    queryFn: () => api.get<Profile>(`/me`),
+    queryFn: async () => {
+      const r = await api.get<Record<string, unknown>>(`/me`);
+      return normalizeProfile(r);
+    },
+  });
+}
+
+/**
+ * The per-user GitHub OAuth (the account page's "GitHub" block).
+ *
+ * `useGithubStart` fetches the authorize URL from the API (the API owns
+ * the client id + the `state` token — the client never sees a secret);
+ * `useGithubDisconnect` clears the stored token server-side.
+ */
+export function useGithubStart() {
+  return useMutation({
+    mutationFn: async () => {
+      const r = await api.get<{ url?: string }>(`/auth/github/start`);
+      return r?.url ?? null;
+    },
+  });
+}
+export function useGithubDisconnect() {
+  return useMutation({
+    mutationFn: () => api.post<{ ok: boolean }>(`/auth/github/disconnect`),
   });
 }
 export function useSessions() {
@@ -324,6 +348,21 @@ import type {
   NormalizedOrg,
 } from "./normalized";
 import type { Severity } from "./types";
+
+export function normalizeProfile(r: unknown): Profile {
+  const o = (r ?? {}) as Record<string, unknown>;
+  // The API returns `{ user: {...}, orgs: [...] }`; a flat shape is also
+  // accepted (a the edge defaults, never a crash).
+  const u = (o.user ?? o) as Record<string, unknown>;
+  return {
+    id: String(u.id ?? ""),
+    name: String(u.name ?? u.email ?? ""),
+    email: String(u.email ?? ""),
+    createdAt: u.createdAt != null ? String(u.createdAt) : undefined,
+    githubConnected: u.githubConnected === true,
+    githubHandle: u.githubHandle != null ? String(u.githubHandle) : null,
+  };
+}
 
 export function normalizeAuthMe(r: unknown): AuthMe {
   const o = (r ?? {}) as Record<string, unknown>;

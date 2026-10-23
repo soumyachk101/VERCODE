@@ -60,8 +60,7 @@ export function SigninClient() {
     return () => {
       live = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [mode, next]);
 
   const submit = async () => {
     setErr(null);
