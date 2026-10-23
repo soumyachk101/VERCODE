@@ -174,7 +174,7 @@ export default function Features() {
                 href={pillar.docs}
                 className="mt-4 inline-block text-[14px] font-medium text-[var(--accent)] underline-offset-4 hover:underline"
               >
-                How it works →
+                How it works
               </a>
             </section>
           ))}
