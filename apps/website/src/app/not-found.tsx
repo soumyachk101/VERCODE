@@ -23,7 +23,7 @@
 // No structured data on a 404 (the `STRUCTURED_DATA.md §1` "/404 →
 // none" row).
 
-import { TOP_5_LINKS } from "../components/nav-links.js";
+import { TOP_5_LINKS } from "../components/nav-links";
 
 export default function NotFound() {
   return (

@@ -22,6 +22,13 @@ The full env-var inventory. `.env.example` (at the repo root) holds **placeholde
 | `GITHUB_WEBHOOK_SECRET` | the HMAC secret for `X-Hub-Signature-256` (a *test* value in dev, the *real* value in prod) | `test-webhook-secret-dev` |
 | `GITHUB_API_BASE` | the GitHub API base (default `https://api.github.com`; a GHE deployment overrides) | `https://api.github.com` |
 
+## 2b. GitHub OAuth (the account page's per-user "Connect GitHub")
+
+| Var | Description | Placeholder |
+| --- | --- | --- |
+| `GITHUB_CLIENT_ID` | the OAuth *client* id for the per-user GitHub connection (a GitHub OAuth App, distinct from the GitHub App above; a placeholder only, a real id in the secret store) | `<github-oauth-app-client-id>` |
+| `GITHUB_CLIENT_SECRET` | the OAuth *client* secret (a placeholder only, a real secret in the secret store) | `<github-oauth-app-client-secret>` |
+
 ## 3. AI provider (`ai-providers` + `config`)
 
 | Var | Description | Placeholder |
