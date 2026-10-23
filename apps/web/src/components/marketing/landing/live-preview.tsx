@@ -41,11 +41,16 @@ export function LivePreview() {
   const inst: NormalizedInstall | undefined = install.data;
   const rep: NormalizedRepos | undefined = repos.data;
 
+  const spend =
+    usg && usg.totals.reviews > 0
+      ? `${usg.totals.reviews} reviews · ${usg.totals.estUsd.toFixed(2)} USD`
+      : "No reviews yet";
+
   const data = {
     openFindings: sec?.total ?? 0,
     critical: sec?.open?.critical ?? 0,
     reviews7d: rev?.items?.length ?? 0,
-    avgReviewTime: usg?.totals.reviews > 0 ? `${usg.totals.reviews} reviews · ${usg.totals.estUsd.toFixed(2)} USD` : "No reviews yet",
+    avgReviewTime: spend,
     quotaUsed: usg ? Math.round((usg.quota?.percentUsed ?? 0) * 100) : 0,
     connectedRepos: rep?.repos?.length ?? 0,
     installState: (inst?.connected ? "connected" : "not-connected") as "connected" | "not-connected",
