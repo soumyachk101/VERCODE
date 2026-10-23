@@ -79,7 +79,7 @@
 .prose-vercode blockquote {
   border-left: 2px solid var(--hard-border);
   padding-left: 0.75rem;
-  color: hsl(var(--muted));
+  color: var(--muted);
   font-style: italic;
   margin: 1.25rem 0;
 }
@@ -138,5 +138,5 @@
 
 .prose-vercode dd {
   margin: 0.25rem 0 0;
-  color: hsl(var(--muted));
+  color: var(--muted);
 }

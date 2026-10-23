@@ -2,7 +2,7 @@
  * /changelog — the reverse-chronological feed (INFORMATION_ARCHITECTURE_AND_PAGES.md §3.6).
  *
  * H1 + a 1-sentence orientation + the feed, newest first. Each entry is an
- * <article>: a <time datetime> 13px hsl(var(--faint)) line, a semver mono chip,
+ * <article>: a <time datetime> 13px var(--faint) line, a semver mono chip,
  * a 17px/600 title, the 16px 1-sentence summary, and the sections as a 13px
  * group-label + <ul> of bullets.
  *
@@ -119,28 +119,28 @@ export default function ChangelogIndexPage() {
   return (
     <main className="reading-col" style={{ margin: "0 auto", padding: "4rem 1.5rem" }}>
       <style>{`
-        .cl-bc { font-size: 13px; color: hsl(var(--faint)); margin: 0 0 2rem; }
-        .cl-orient { font-size: 16px; color: hsl(var(--muted)); margin: 0 0 3rem; max-width: 40rem; }
+        .cl-bc { font-size: 13px; color: var(--faint); margin: 0 0 2rem; }
+        .cl-orient { font-size: 16px; color: var(--muted); margin: 0 0 3rem; max-width: 40rem; }
         .cl article { padding: 1.75rem 0; }
         .cl-meta { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
-        .cl-time { font-size: 13px; color: hsl(var(--faint)); }
-        .cl-chip { font-family: var(--font-mono); font-size: 12px; padding: 2px 8px; border: 1px solid var(--hard-border); border-radius: var(--radius-chip); color: hsl(var(--muted)); }
+        .cl-time { font-size: 13px; color: var(--faint); }
+        .cl-chip { font-family: var(--font-mono); font-size: 12px; padding: 2px 8px; border: 1px solid var(--hard-border); border-radius: var(--radius-chip); color: var(--muted); }
         .cl-title { font-size: 17px; font-weight: 600; margin: 0 0 0.375rem; }
         .cl-title a { color: var(--text); text-decoration: none; }
         .cl-title a:hover { color: var(--accent-ink); }
-        .cl-summary { font-size: 16px; color: hsl(var(--muted)); margin: 0 0 1rem; line-height: 1.5; }
-        .cl-sec { font-size: 13px; font-weight: 600; letter-spacing: 0.05em; color: hsl(var(--faint)); margin: 0 0 0.375rem; }
+        .cl-summary { font-size: 16px; color: var(--muted); margin: 0 0 1rem; line-height: 1.5; }
+        .cl-sec { font-size: 13px; font-weight: 600; letter-spacing: 0.05em; color: var(--faint); margin: 0 0 0.375rem; }
         .cl ul { margin: 0; padding-left: 1.25rem; font-size: 16px; color: var(--text); line-height: 1.5; }
         .cl li { margin-bottom: 0.375rem; }
         .cl li a { color: var(--accent-ink); }
         .cl li code { font-family: var(--font-mono); font-size: 0.85em; background: var(--raised); padding: 0.1em 0.35em; border-radius: var(--radius-chip); }
-        .cl-docs { margin-top: 3rem; padding-top: 1.5rem; font-size: 16px; color: hsl(var(--muted)); }
+        .cl-docs { margin-top: 3rem; padding-top: 1.5rem; font-size: 16px; color: var(--muted); }
         .cl-docs a { color: var(--accent-ink); }
       `}</style>
 
       <JsonLd blocks={blocks} />
 
-      {/* The visible breadcrumb — "Changelog" only (13px hsl(var(--faint))). */}
+      {/* The visible breadcrumb — "Changelog" only (13px var(--faint)). */}
       <p className="cl-bc">Changelog</p>
       <h1 style={{ fontSize: 32, fontWeight: 600, margin: "0 0 0.5rem" }}>
         Changelog

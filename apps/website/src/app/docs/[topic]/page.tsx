@@ -98,15 +98,15 @@ export default async function DocsTopicPage({
               (IA §3.5's breadcrumb + WFR-104's BreadcrumbList, which the
               JSON-LD above carries as well). */}
           <nav aria-label="Breadcrumb" className="mb-6">
-            <p className="text-[13px] text-[hsl(var(--faint))]">
+            <p className="text-[13px] text-[var(--faint)]">
               <a
                 href="/docs/"
-                className="text-[hsl(var(--faint))] underline underline-offset-2 hover:text-[var(--text)]"
+                className="text-[var(--faint)] underline underline-offset-2 hover:text-[var(--text)]"
               >
                 Docs
               </a>{" "}
               /{" "}
-              <span className="text-[hsl(var(--muted))]">{doc.front.title}</span>
+              <span className="text-[var(--muted)]">{doc.front.title}</span>
             </p>
           </nav>
 
@@ -132,7 +132,7 @@ export default async function DocsTopicPage({
             aria-label="Related docs"
             className="mt-14 pt-2"
           >
-            <h2 className="text-[13px] font-semibold text-[hsl(var(--faint))]">
+            <h2 className="text-[13px] font-semibold text-[var(--faint)]">
               Related
             </h2>
             <ul className="mt-3 space-y-2">

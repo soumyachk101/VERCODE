@@ -137,7 +137,7 @@ export default function Features() {
         <h1 className="text-[40px] font-bold tracking-tight text-[var(--text)]">
           Features
         </h1>
-        <p className="mt-4 text-[17px] leading-relaxed text-[hsl(var(--muted))]">
+        <p className="mt-4 text-[17px] leading-relaxed text-[var(--muted)]">
           The question this page answers: what does VERCODE do that a
           model-only AI reviewer does not? The short version — a pipeline that
           is deterministic first, evidence-backed, cost-disciplined, and a
@@ -162,7 +162,7 @@ export default function Features() {
               >
                 {pillar.title}
               </h2>
-              <p className="mt-2 text-[16px] leading-relaxed text-[hsl(var(--muted))]">
+              <p className="mt-2 text-[16px] leading-relaxed text-[var(--muted)]">
                 {pillar.body}
               </p>
               {/* A live finding, the exact shape the pipeline publishes
@@ -200,10 +200,10 @@ export default function Features() {
                 <h3 className="text-[17px] font-semibold text-[var(--text)]">
                   {story.title}
                 </h3>
-                <p className="mt-2 text-[16px] leading-relaxed text-[hsl(var(--muted))]">
+                <p className="mt-2 text-[16px] leading-relaxed text-[var(--muted)]">
                   {story.body}
                 </p>
-                <p className="mt-2 font-mono text-[13px] text-[hsl(var(--faint))]">
+                <p className="mt-2 font-mono text-[13px] text-[var(--faint)]">
                   {story.fr}
                 </p>
                 <a

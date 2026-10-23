@@ -49,7 +49,7 @@ export function VerdictDevice() {
       aria-label="A representative VERCODE review verdict (preview data)"
     >
       {/* A 14px grey meta line: the repo, the PR, the runtime. */}
-      <p className="text-[14px] leading-none text-[hsl(var(--faint))] tnum">
+      <p className="text-[14px] leading-none text-[var(--faint)] tnum">
         payments-service · PR #412 · 2m 41s
       </p>
 
@@ -65,7 +65,7 @@ export function VerdictDevice() {
           <SevMark level="high" size={8} />
           <SevMark level="medium" size={6} />
         </span>
-        <span className="text-[12px] leading-none text-[hsl(var(--muted))] tnum">
+        <span className="text-[12px] leading-none text-[var(--muted)] tnum">
           2 high · 1 medium
         </span>
       </div>
@@ -76,14 +76,14 @@ export function VerdictDevice() {
       <ul className="mt-4 space-y-1.5 border-t border-[var(--rule)] pt-4">
         <li className="flex items-start gap-2">
           <SevMark level="high" size={8} />
-          <code className="text-[13px] leading-snug text-[hsl(var(--muted))]">
+          <code className="text-[13px] leading-snug text-[var(--muted)]">
             payments.ts:84 · Unvalidated input concatenated into a SQL
             string (security, 0.91)
           </code>
         </li>
         <li className="flex items-start gap-2">
           <SevMark level="medium" size={6} />
-          <code className="text-[13px] leading-snug text-[hsl(var(--muted))]">
+          <code className="text-[13px] leading-snug text-[var(--muted)]">
             queue.ts:141 · Missing await on async handler (logic, 0.82)
           </code>
         </li>

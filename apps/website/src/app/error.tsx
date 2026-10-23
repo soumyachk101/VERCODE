@@ -23,7 +23,7 @@ export default function ErrorPage() {
         <h1 className="text-[32px] font-semibold leading-tight text-[var(--text)]">
           Something went wrong
         </h1>
-        <p className="mt-3 text-[16px] leading-[1.65] text-[hsl(var(--muted))]">
+        <p className="mt-3 text-[16px] leading-[1.65] text-[var(--muted)]">
           We are sorry — this page failed to render. Reload it, and if the
           problem persists, check the service status.
         </p>

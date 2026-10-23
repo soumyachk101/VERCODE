@@ -32,7 +32,7 @@ export default function NotFound() {
         <h1 className="text-[32px] font-semibold leading-tight text-[var(--text)]">
           Page not found
         </h1>
-        <p className="mt-3 text-[16px] leading-[1.65] text-[hsl(var(--muted))]">
+        <p className="mt-3 text-[16px] leading-[1.65] text-[var(--muted)]">
           The page you are looking for does not exist — it may have moved,
           or the link may be out of date.
         </p>
