@@ -654,7 +654,6 @@ describe("Dashboard REST API Complete Route Specification", () => {
         method: "GET",
         url: "/me",
       });
-      if (res.statusCode !== 200) { console.log("ME STATUS", res.statusCode, res.body); }
       expect(res.statusCode).toBe(200);
       const body = JSON.parse(res.body);
       expect(body.user.githubConnected).toBe(true);

@@ -16,8 +16,8 @@
  *    defined FROM the palette above. Where a semantic token would collide
  *    with a palette name (--border, --accent, --muted, --faint), the
  *    semantic side takes a distinct name:
- *      --hard-border   (the border colour = hsl(var(--border)))
- *      --accent-color  (the accent colour = hsl(var(--accent)))
+ *      --hard-border   (the border colour = var(--hard-border))
+ *      --accent-color  (the accent colour = var(--accent-color))
  *      --muted-ink     (the secondary ink  = hsl(var(--muted-foreground)))
  *      --faint         (decorative ink     = hsl(var(--text-3)))
  *
@@ -47,9 +47,9 @@
   --surface: hsl(var(--panel));
   --raised: hsl(var(--muted));
   --active: hsl(var(--highlight));
-  --hard-border: hsl(var(--border));
+  --hard-border: var(--hard-border);
   --rule: hsl(var(--line));
-  --control: hsl(var(--border));
+  --control: var(--hard-border);
   --grid: hsl(var(--line));
   /* ink */
   --text: hsl(var(--foreground));
@@ -58,21 +58,21 @@
   --primary: hsl(var(--text-1));
   --primary-ink: hsl(var(--background));
   /* the single data hue — the accent colour */
-  --accent-color: hsl(var(--accent));
+  --accent-color: var(--accent-color);
   /* severity ramp (critical→low): the accent, stepped, then the ink ramp */
-  --sev-critical: hsl(var(--accent));
+  --sev-critical: var(--accent-color);
   --sev-high: hsl(var(--accent) / 0.7);
   --sev-medium: hsl(var(--text-2));
   --sev-low: hsl(var(--text-3));
   --sev-positive: hsl(var(--success));
   /* the good/bad pair for deltas (colour says good-or-bad, not up-or-down) */
   --positive: hsl(var(--success));
-  --negative: hsl(var(--accent));
+  --negative: var(--accent-color);
   /* status pill pairs (a same-hue tint + the same hue as the ink) */
   --pill-positive-bg: hsl(var(--success) / 0.15);
   --pill-positive-ink: hsl(var(--success));
   --pill-negative-bg: hsl(var(--accent) / 0.15);
-  --pill-negative-ink: hsl(var(--accent));
+  --pill-negative-ink: var(--accent-color);
   --pill-warning-bg: hsl(var(--highlight));
   --pill-warning-ink: hsl(var(--text-2));
   --notice-border: hsl(var(--accent) / 0.5);

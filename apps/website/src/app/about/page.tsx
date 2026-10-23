@@ -83,7 +83,7 @@ export default function AboutPage() {
           <p className="mt-2">
             <a
               href={GITHUB_REPO}
-              className="text-[15px] font-medium text-[hsl(var(--accent))] underline underline-offset-2"
+              className="text-[16px] font-medium text-[hsl(var(--accent))] underline underline-offset-2"
             >
               {GITHUB_REPO}
             </a>
