@@ -8,7 +8,6 @@ const TRUST = [
 ];
 
 export function Hero() {
-
   return (
     <section className="relative overflow-hidden border-b border-[hsl(var(--line))]">
       <div
@@ -31,7 +30,13 @@ export function Hero() {
             evidence-backed findings back to the pull request in under two minutes.
           </p>
           <div className="mt-9 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
-            {cta}
+            <Link
+              href="/signin"
+              className="pressable inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[var(--accent-color)] px-6 text-[15px] font-semibold text-[hsl(var(--accent-foreground))] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-color)]"
+            >
+              Start free — connect GitHub
+              <IconArrow width={18} height={18} />
+            </Link>
             <Link
               href="/changelog"
               className="pressable inline-flex h-11 items-center justify-center gap-2 rounded-[8px] border border-[var(--hard-border)] px-6 text-[15px] font-semibold text-[hsl(var(--text-1))] transition-colors hover:border-[var(--accent-color)] hover:text-[var(--accent-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-color)]"
