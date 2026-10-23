@@ -47,7 +47,7 @@
   --surface: hsl(var(--panel));
   --raised: hsl(var(--muted));
   --active: hsl(var(--highlight));
-  --hard-border: var(--hard-border);
+  --hard-border: hsl(240 25% 18%);
   --rule: hsl(var(--line));
   --control: var(--hard-border);
   --grid: hsl(var(--line));
@@ -58,7 +58,7 @@
   --primary: hsl(var(--text-1));
   --primary-ink: hsl(var(--background));
   /* the single data hue — the accent colour */
-  --accent-color: var(--accent-color);
+  --accent-color: hsl(0 90% 55%);
   /* severity ramp (critical→low): the accent, stepped, then the ink ramp */
   --sev-critical: var(--accent-color);
   --sev-high: hsl(var(--accent) / 0.7);
