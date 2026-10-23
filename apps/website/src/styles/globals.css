@@ -50,10 +50,8 @@
 
   /* Ink — 3-step ramp. The body/muted ink is --muted-foreground;
      --text-3 stays reserved for decorative labels (low contrast on the
-     dark ground). --faint is aliased off a distinct token to keep the
-     triple name free. */
+     dark ground). */
   --text: hsl(var(--foreground));
-  --faint-color: hsl(var(--text-3));
   --muted-ink: hsl(var(--muted-foreground));
 
   /* The one data hue — the red accent. --accent (the triple) drives

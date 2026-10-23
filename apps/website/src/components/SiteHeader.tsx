@@ -181,7 +181,7 @@ export function SiteHeader() {
                     <a
                       href={link.href}
                       onClick={closeSheet}
-                      className="block border-b border-[var(--rule)] py-3 text-[15px] font-medium text-[var(--text)] last:border-b-0"
+                      className="block py-4 text-[16px] font-medium text-[var(--text)]"
                     >
                       {link.label}
                     </a>
