@@ -74,7 +74,7 @@ export function Footer() {
               <span className="flex h-7 w-7 items-center justify-center rounded-[6px] bg-[var(--accent-color)] font-mono text-[13px] font-bold text-[hsl(var(--accent-foreground))]">
                 V
               </span>
-              <span className="text-[14px] font-semibold tracking-[0.14em]">VERCODE</span>
+              <span className="text-[14px] font-semibold tracking-[0.14em] text-[hsl(var(--text-1))]">VERCODE</span>
             </div>
             <p className="mt-4 max-w-[240px] text-[13px] leading-relaxed text-[hsl(var(--text-3))]">
               The Git-native AI code review and enforcement platform. Your rules,
@@ -87,17 +87,17 @@ export function Footer() {
             </h3>
             <ul className="mt-3 space-y-2.5">
               <li>
-                <Link href="/" className="text-[13px] text-[hsl(var(--text-2))] hover:text-[hsl(var(--text-1))]">
+                <Link href="/" className="text-[13px] text-[hsl(var(--text-2))] transition-colors hover:text-[hsl(var(--text-1))]">
                   Home
                 </Link>
               </li>
               <li>
-                <Link href="/overview" className="text-[13px] text-[hsl(var(--text-2))] hover:text-[hsl(var(--text-1))]">
+                <Link href="/overview" className="text-[13px] text-[hsl(var(--text-2))] transition-colors hover:text-[hsl(var(--text-1))]">
                   Dashboard
                 </Link>
               </li>
               <li>
-                <Link href="/changelog" className="text-[13px] text-[hsl(var(--text-2))] hover:text-[hsl(var(--text-1))]">
+                <Link href="/changelog" className="text-[13px] text-[hsl(var(--text-2))] transition-colors hover:text-[hsl(var(--text-1))]">
                   Changelog
                 </Link>
               </li>
@@ -109,12 +109,12 @@ export function Footer() {
             </h3>
             <ul className="mt-3 space-y-2.5">
               <li>
-                <Link href="/blog" className="text-[13px] text-[hsl(var(--text-2))] hover:text-[hsl(var(--text-1))]">
+                <Link href="/blog" className="text-[13px] text-[hsl(var(--text-2))] transition-colors hover:text-[hsl(var(--text-1))]">
                   Blog
                 </Link>
               </li>
               <li>
-                <Link href="/signin" className="text-[13px] text-[hsl(var(--text-2))] hover:text-[hsl(var(--text-1))]">
+                <Link href="/signin" className="text-[13px] text-[hsl(var(--text-2))] transition-colors hover:text-[hsl(var(--text-1))]">
                   Sign in
                 </Link>
               </li>
