@@ -40,7 +40,10 @@ while true; do
     git checkout -b "$pr_branch" || git branch -M "$pr_branch"
     log "Pushing branch $pr_branch to origin..."
 
-    if git push -u origin "$pr_branch" --force; then
+    git push -u origin "$pr_branch" --force 2>&1 || true
+
+    # Verify if branch exists on remote
+    if git ls-remote --heads origin "$pr_branch" | grep -q "$pr_branch"; then
       log "Creating PR..."
       pr_url="$(gh pr create --base main --head "$pr_branch" --title "$pr_title" --body "$pr_body" 2>&1 || true)"
 
