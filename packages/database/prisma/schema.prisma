@@ -22,12 +22,36 @@ model User {
   name          String?
   createdAt     DateTime    @default(now()) @map("created_at")
 
+  // The per-user GitHub OAuth (the account page's "GitHub" block). The
+  // token is the user's OAuth token; the handle is the display name
+  // ("Connected as <handle>"). Null = not connected.
+  githubProviderToken String? @map("github_provider_token")
+  githubHandle        String? @map("github_handle")
+
   memberships   Membership[]
   sessions      Session[]
   auditEvents   AuditEvent[]
   byokKeys      BYOKKey[]
+  oauthStates   GithubOAuthState[]
 
   @@map("users")
+}
+
+// The pending GitHub OAuth `state` tokens (anti-CSRF, a 10-min TTL). The
+// token is random + unguessable; `usedAt` marks it consumed.
+model GithubOAuthState {
+  id         String    @id @default(cuid())
+  token      String    @unique
+  userId     String    @map("user_id")
+  redirectTo String?   @map("redirect_to")
+  expiresAt  DateTime  @map("expires_at")
+  usedAt     DateTime? @map("used_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("github_oauth_states")
 }
 
 model Session {

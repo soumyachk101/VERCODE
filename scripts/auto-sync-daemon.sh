@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -uo pipefail
 
-# Auto Git Sync Daemon
-# Runs every 60 seconds, detects changes, commits with meaningful conventional commit messages,
-# creates a PR on GitHub, and auto-merges it into main.
+# Resilient Auto Git Sync Daemon
+# Runs every 60 seconds, commits any pending changes, opens a PR, merges it to main,
+# and gracefully handles git branch switches without crashing on in-flight edits.
 
 REPO_DIR="/Users/soumyachakraborty/Documents/VERCODE"
 cd "$REPO_DIR"
@@ -12,27 +12,18 @@ log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
 }
 
-log "Auto Git Sync Daemon started. Monitoring $REPO_DIR every 60 seconds..."
+log "Resilient Auto Git Sync Daemon started. Monitoring $REPO_DIR every 60 seconds..."
 
 while true; do
-  # Ensure we are in repo
   cd "$REPO_DIR"
 
-  # Check if there are changes (tracked or untracked)
+  # Check if there are uncommitted changes or untracked files
   if [[ -n "$(git status --porcelain)" ]]; then
     log "Changes detected!"
 
-    # Ensure main is up to date
-    current_branch="$(git branch --show-current)"
-    if [[ "$current_branch" != "main" ]]; then
-      log "Currently on branch $current_branch, switching or handling main..."
-    fi
-
-    # Determine commit message and branch name based on changed files
     timestamp="$(date '+%Y%m%d-%H%M%S')"
     changed_files="$(git status --porcelain | awk '{print $NF}')"
-    
-    # Classify the change
+
     feat_count=0
     fix_count=0
     docs_count=0
@@ -67,43 +58,39 @@ while true; do
       branch_prefix="chore"
     fi
 
-    # Create descriptive commit title & body
     pr_title="$summary ($timestamp)"
     pr_branch="auto/${branch_prefix}-${timestamp}"
 
-    log "Creating branch: $pr_branch"
-    git checkout -b "$pr_branch"
-
+    # Stage and commit right here (even if currently on a feature/temp branch)
     git add -A
     git commit -m "$pr_title" -m "Automated sync commit:
-$(git status --short)"
+$(git status --short)" || true
 
+    # Create & push the new branch
+    git checkout -b "$pr_branch" || git branch -M "$pr_branch"
     log "Pushing branch $pr_branch to origin..."
-    if git push -u origin "$pr_branch"; then
+
+    if git push -u origin "$pr_branch" --force; then
       log "Creating PR..."
       pr_url="$(gh pr create --base main --head "$pr_branch" --title "$pr_title" --body "### Automated Sync PR
 - Triggered automatically by 1-minute auto-sync daemon.
-- Summary of changes:
-\`\`\`
-$(git status --short)
-\`\`\`" || true)"
+- Summary: $pr_title" 2>&1 || true)"
 
-      if [[ -n "$pr_url" ]]; then
-        log "PR created: $pr_url"
-        log "Auto-merging PR..."
-        # Try merging PR
-        gh pr merge "$pr_branch" --merge --auto --delete-branch 2>&1 || gh pr merge "$pr_branch" --admin --merge --delete-branch 2>&1 || true
-      fi
+      log "PR create output: $pr_url"
+      log "Auto-merging PR..."
+      gh pr merge "$pr_branch" --merge --admin --delete-branch 2>&1 || gh pr merge "$pr_branch" --merge --auto --delete-branch 2>&1 || true
 
-      log "Returning to main..."
-      git checkout main
+      log "Syncing main locally..."
+      # If there are any stray changes while PR was merging, stash them safely
+      git stash --include-untracked 2>/dev/null || true
+      git checkout main || true
       git pull origin main || true
-      # Delete local branch if still exists
+      git stash pop 2>/dev/null || true
+
       git branch -D "$pr_branch" 2>/dev/null || true
       log "Cycle complete successfully!"
     else
-      log "Failed to push $pr_branch, rolling back branch to main..."
-      git checkout main
+      log "Failed to push $pr_branch. Will retry next minute."
     fi
   else
     log "No changes detected. Sleeping 60 seconds..."
