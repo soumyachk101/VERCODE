@@ -109,10 +109,18 @@ function matchActive(p: string): string {
 export function OrgShell({ children }: { children: ReactNode }) {
   const s = useOrgShell();
   const router = useRouter();
+  // The route guard: a session that is rejected (no cookie / expired)
+  // sends the user to the sign-in surface. The sign-in page resolves
+  // /auth/me on load and returns to the dashboard when a session is
+  // valid, so this can never loop.
+  const needsSignIn = s.me.isError;
+  useEffect(() => {
+    if (needsSignIn) router.replace("/signin");
+  }, [needsSignIn, router]);
   // No session yet (loading), or a session that has no orgs (a fresh
-  // account mid-bootstrap, a 401 /me, a down dashboard API): render the
-  // shell chrome with a designed empty state — no blank page, no
-  // redirect loop. The empty state offers the one action that fits:
+  // account mid-bootstrap, a down dashboard API): render the shell
+  // chrome with a designed empty state — no blank page, no redirect
+  // loop. The empty state offers the one action that fits:
   // "create your organization" (a valid session without an org) or
   // "sign in" (no session / API problem).
   if (s.me.isLoading || s.orgs.length === 0) {

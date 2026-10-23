@@ -148,7 +148,14 @@ export async function authRoutes(app: FastifyInstance) {
       include: { memberships: { where: { userId }, select: { role: true, orgId: true } } },
     });
     reply.send({
-      user: { id: user.id, email: user.email, name: user.name, emailVerified: user.emailVerified },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        emailVerified: user.emailVerified,
+        githubConnected: user.githubProviderToken != null,
+        githubHandle: user.githubHandle,
+      },
       orgs: orgs.map((o) => ({ id: o.id, name: o.name, slug: o.slug, role: o.memberships[0]?.role })),
     });
   });
