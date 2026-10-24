@@ -30,7 +30,7 @@ The two prerequisites, and nothing else:
 - A GitHub account with admin rights on at least one repository. The App is installed at the organization or repository level; you need the permission that grants the install.
 - A VERCODE account. Sign up on the dashboard; you become the owner of a new org on first sign-in.
 
-That is the whole of the setup. No provider key is required for a first review on the Free plan: the platform's default provider is used until a BYOK key is set.
+That is the whole of the setup. No provider key is required for a first review on the platform's default provider is used until a BYOK key is set.
 
 ## Install the App
 
@@ -51,7 +51,7 @@ Open a pull request on a connected repository — a new branch is fine, an empty
 
 Open the pull request on GitHub and read the VERCODE comment. The summary states the verdict (approve, needs changes, or none of concern) and the top risks; each inline finding carries a category, a severity, a confidence, a reason, and a suggested fix.
 
-The same review is on the dashboard, under the org's reviews list, with its cost, its status, and the per-finding detail. That dashboard view — not the PR comment — is the exit criterion: from "connected GitHub" to "first review visible in the dashboard", without any configuration except the install and, on a paid plan, a provider key.
+The same review is on the dashboard, under the org's reviews list, with its cost, its status, and the per-finding detail. That dashboard view — not the PR comment — is the exit criterion: from "connected GitHub" to "first review visible in the dashboard", without any configuration except the install and, a provider key.
 
 Source: docs/PRODUCT/USER_JOURNEYS.md (J1); docs/PRODUCT/SUCCESS_METRICS.md (the activation KPI)
 

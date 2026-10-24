@@ -22,7 +22,6 @@ describe("loadConfig", () => {
     expect(cfg.core.DATABASE_URL).toBe("postgresql://u:p@localhost:5432/vercode");
     // defaults
     expect(cfg.ai.AI_DEFAULT_PROVIDER).toBe("mock");
-    expect(cfg.billing.BILLING_PROVIDER).toBe("stripe");
     expect(cfg.limits.DEFAULT_CONFIDENCE_FLOOR).toBe(0.6);
     expect(cfg.limits.REVIEW_WALL_CLOCK_BUDGET_MS).toBe(240_000);
     expect(cfg.devMock.USE_MOCK_GITHUB).toBe("true");

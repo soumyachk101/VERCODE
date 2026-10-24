@@ -40,7 +40,6 @@ const config: AppConfig = {
     GITHUB_API_BASE: "https://api.github.com",
   },
   ai: { AI_DEFAULT_PROVIDER: "mock" },
-  billing: { BILLING_PROVIDER: "stripe", BILLING_CURRENCY: "USD" },
   observability: { LOG_LEVEL: "info" },
   limits: {
     PLATFORM_TOKEN_SPEND_CAP_USD: 100000,
@@ -51,7 +50,7 @@ const config: AppConfig = {
     WORKER_CONCURRENCY: 4,
     QUEUE_MAX_ATTEMPTS: 3,
   },
-  devMock: { USE_MOCK_GITHUB: "true", USE_MOCK_AI: "true", USE_MOCK_BILLING: "true" },
+  devMock: { USE_MOCK_GITHUB: "true", USE_MOCK_AI: "true" },
 };
 
 // A the timestamp must be *within 5 min of the real clock* (a the

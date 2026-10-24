@@ -14,7 +14,7 @@ The website builds **in P2** and is a P2 *launch prerequisite* (`SAAS_LAUNCH_PLA
 | --- | --- | --- |
 | **P0: a dev-stack verified** | website not started (the dashboard dev-stack is verified; the website's build lane can be dry-run but is not a P0 gate) | `E2E_TEST_PLAN` dev-stack run + `RELEASE_CRITERIA` gates 1–12 |
 | **P1: a live integration** | website may *start* (WP1 foundations) — the dashboard's live App/provider/billing is verified (gate-13), which unblocks the website's CTA destination (`/signin`) | `RELEASE_CRITERIA gate-13` (a live external suite, a credentialed lane) |
-| **P2: a public launch** | website *finished* (WP1–WP4 all closed) — the P2 checklist's "domain + marketing site + pricing + docs + status" rows are measured green | the launch checklist (`SAAS_LAUNCH_PLAN §5 P2`), incl. the website's own lanes |
+| **P2: a public launch** | website *finished* (WP1–WP4 all closed) — the P2 checklist's "domain + marketing site + docs + status" rows are measured green | the launch checklist (`SAAS_LAUNCH_PLAN §5 P2`), incl. the website's own lanes |
 | **P3: a designated market** | website ships P3 additions (a live docs site, multi-lang, a CMS) | the market-launch gate (`§5 P3`) |
 
 ### A.1 The four website build phases (WP1–WP4)
@@ -30,45 +30,45 @@ Each phase: scope (the WFR groups), an **entry gate** (what must be *true* to st
 **Entry gate:**
 - P1 live integration verified (`SAAS_LAUNCH_PLAN §5 P1` gate-13, a credentialed lane green).
 - `apps/web` + `apps/api` M1–M8 built (the website's CTA lands on a *real* `/signin`; the `/api/answer` route has a host, `TECHNICAL_ARCHITECTURE.md §1`).
-- `DESIGN_SYSTEM.md` + `USAGE_QUOTAS.md` + `PRICING_STRATEGY.md` frozen (the website renders their numbers verbatim).
+- No pricing surface in the public website (the website ships connect + usage visibility; no plan/price/quota numbers to render).
 
 **Exit gate (measured):**
 - The `make check-website` target (`TECHNICAL_ARCHITECTURE.md §5`) green: a `pnpm --filter @vercode/website build` static-export + a `content/` schema gate + `sitemap.xml`/`robots.txt`/`llms.txt` generation + a **`sitemap.xml` count == `WFR-101` page-set count + published-content count** (a build-time assertion, not a hope).
 - The design-tokens bridge is *imported* from a `packages/design-tokens` (a new package, `ADR-0xx-4`), not hand-replicated in `apps/website/src/styles/`.
-- A Lighthouse CI dry-run on a placeholder `/` + `/pricing` reports a *measurable* mobile number (the ≥90 gate is enforced from WP2 onward; WP1 just proves the harness runs).
+- A Lighthouse CI dry-run on a placeholder `/` + `/docs/quickstart` reports a *measurable* mobile number (the ≥90 gate is enforced from WP2 onward; WP1 just proves the harness runs).
 
 **Tasks (`WT1.#`):**
 
 - **WT1.1 — Scaffold `apps/website`** (a `Next.js 15` + `output: "export"` + `App Router`, the `WFR-101` route set as empty SSG shells; a `Makefile` target `check-website`; a `next.config.ts` with a static image loader + the sitemap/robots/`llms.txt` generators, `TECHNICAL_ARCHITECTURE.md §1–§2`). *Verified:* `pnpm --filter @vercode/website build` emits a static `out/` with the `WFR-101` routes + `/robots.txt` + `/sitemap.xml`.
 - **WT1.2 — The `packages/design-tokens` bridge** (the shared palette + radii + spacing, `DESIGN_SYSTEM.md §4`; a single `tokens.ts` both `apps/web` + `apps/website` import, `ADR-0xx-4`; a *new* package, a deviation noted in `TECHNICAL_ARCHITECTURE.md §3`). *Verified:* a grep-level test that no color/radius literal is hand-written in either app (the tokens are the source).
-- **WT1.3 — The `content/` store + `CONTENT_SCHEMAS.md` contracts** (a `content/` repo dir: `blog/`, `docs/`, `changelog/`, `faq/`, `pricing/`; a `zod` `ProductFact`/`Article`/`ChangelogEntry`/`FAQ`/`FrontMatter` contract in `packages/contracts`; a build-time schema gate, `WFR-304/305`). *Verified:* a `content/` PR that's malformed fails the build (the `RELEASE_CRITERIA gate-12` docs-drift gate extended to `content/`).
-- **WT1.4 — The `schema-generator.ts` single source** (`generateSchemaFor(page: PageDef): JsonLd[]`; the *only* JSON-LD emitter, `TECHNICAL_ARCHITECTURE.md §4.1`; a `content/pricing/` source that feeds `Product`+`Offer`+`FAQPage`+`/api/answer`+`llms.txt` in one build, `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.3`'s consistency rule). *Verified:* a `UT`-style assertion that a pricing edit in `content/pricing/` flows to *all five* consumers (no hand-typed numbers).
+- **WT1.3 — The `content/` store + `CONTENT_SCHEMAS.md` contracts** (a `content/` repo dir: `blog/`, `docs/`, `changelog/`, `faq/`, `facts/`; a `zod` `ProductFact`/`Article`/`ChangelogEntry`/`FAQ`/`FrontMatter` contract in `packages/contracts`; a build-time schema gate, `WFR-304/305`). *Verified:* a `content/` PR that's malformed fails the build (the `RELEASE_CRITERIA gate-12` docs-drift gate extended to `content/`).
+- **WT1.4 — The `schema-generator.ts` single source** (`generateSchemaFor(page: PageDef): JsonLd[]`; the *only* JSON-LD emitter, `TECHNICAL_ARCHITECTURE.md §4.1`; a `content/facts/` source that feeds `FAQPage`+`/api/answer`+`llms.txt` in one build, `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.3`'s consistency rule). *Verified:* a `UT`-style assertion that a fact edit in `content/facts/` flows to *all three* consumers (no hand-typed numbers).
 - **WT1.5 — The sitemap + robots + `llms.txt` generators** (`WFR-103` + `WFR-401`'s fact-list half; a `sitemap.xml` count assertion; a `robots.txt` that allows-all + points at `/sitemap.xml` + disallows `/docs/source`). *Verified:* the build-time count == `WFR-101` + content count; a `ld-lint`/`schema-dts` check reports 0 errors on every emitted block.
 
 ---
 
-#### WP2 — core pages (`/`, `/features`, `/pricing`, `/faq`)
+#### WP2 — core pages (`/`, `/features`, `/faq`)
 
-**Scope:** `WFR-201` (the hero), `WFR-202` (section order), `WFR-203` (the pricing ladder), `WFR-204` (the `/faq`), `WFR-205` (the `/features` narrative), plus the P0 on-page/SEO slice of `WFR-101/102/104` for these four routes + `WFR-501/502` (the CTA wiring).
+**Scope:** `WFR-201` (the hero), `WFR-202` (section order), `WFR-204` (the `/faq`), `WFR-205` (the `/features` narrative), plus the P0 on-page/SEO slice of `WFR-101/102/104` for these three routes + `WFR-501/502` (the CTA wiring). `WFR-203` (the pricing ladder) is **removed** — there is no `/pricing` route and no plan/price surface in P2.
 
 **Entry gate:**
 - WP1 exit gate green (the build lane, the token bridge, the `content/` store, the generator).
-- `USAGE_QUOTAS.md` + `PRICING_STRATEGY.md` numbers frozen (the `/pricing` + `/faq` render them *verbatim*, a build-time check against the `content/pricing/` source, `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.3`).
-- The `apps/web` `/signin` route + the auth plan-override contract (`AUTHENTICATION.md`'s `/signin?plan=team`) live (the CTA destination is real, `WFR-502`).
+- No pricing surface in the public website (the product launched without paid tiers; the connect + usage-visibility story is the entire commercial message).
+- The `apps/web` `/signin` route live (the CTA destination is real, `WFR-502`).
 
 **Exit gate (measured):**
-- A **Lighthouse mobile ≥ 90 on `/`, `/pricing`, `/docs/quickstart`** (the PRD §5 + `PERFORMANCE_AND_ACCESSIBILITY.md` budget; a CI Chrome-headless run, a per-page CRFP budget).
-- A **0 critical axe violation** on all four core routes (a `@axe-core/playwright` run, WCAG 2.2 AA).
+- A **Lighthouse mobile ≥ 90 on `/`, `/docs/quickstart`** (the PRD §5 + `PERFORMANCE_AND_ACCESSIBILITY.md` budget; a CI Chrome-headless run, a per-page CRFP budget).
+- A **0 critical axe violation** on all three core routes (a `@axe-core/playwright` run, WCAG 2.2 AA).
 - A **byte-for-byte** FAQ visible-text == `FAQPage` JSON-LD check (`WFR-204`'s GEO rule, `SEO_AEO_GEO.md §3`).
 - The hero's banned tells (`DESIGN_SYSTEM.md §9`: no gradient, no icon-topped cards, no "10,000+ teams") absent — a `DESIGN_SYSTEM §11` anti-slop lint over the marketing surface.
 
 **Tasks (`WT2.#`):**
 
-- **WT2.1 — `/` + the section order** (`WFR-201/202`: the review-verdict hero, how-it-works `HowTo`, the 4 pillars, the pricing teaser, the social-proof-omit-not-fabricate rule, the FAQ teaser, the closing CTA; the `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.1` block order). *Verified:* a DOM-order assertion on the rendered `/` (the 7 blocks, in order) + the anti-slop lint green.
-- **WT2.2 — `/pricing` + the quota table** (`WFR-203`: the 4 plan cards from `PRICING_STRATEGY.md`, the `USAGE_QUOTAS.md`-verbatim table, the `Product`+`Offer` per plan + the pricing `FAQPage`). *Verified:* a pricing-drift test (the page number == the `content/pricing/` source, byte-equal) + a `schema-dts` check.
+- **WT2.1 — `/` + the section order** (`WFR-201/202`: the review-verdict hero, how-it-works `HowTo`, the 4 pillars, the social-proof-omit-not-fabricate rule, the FAQ teaser, the closing CTA; the `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.1` block order). *Verified:* a DOM-order assertion on the rendered `/` (the 7 blocks, in order) + the anti-slop lint green.
+- **WT2.2 — Acceptance: no pricing page, no plan selection in the onboarding flow** (the former `WFR-203`/`/pricing` scope is retired — the product launched without paid tiers; the sign-in / connect flow offers no plan picker). *Verified:* a grep-level assertion that no `/pricing` route, no `Product`+`Offer` JSON-LD block, and no `?plan=` query-param surface exists on the built site.
 - **WT2.3 — `/faq` + the byte-equivalence** (`WFR-204`: ≥15 `Question`+`acceptedAnswer` in `FAQPage` JSON-LD; the visible text == the JSON-LD text). *Verified:* a byte-equivalence test over all 16 canonical questions (`INFORMATION_ARCHITECTURE_AND_PAGES.md §3.4`).
 - **WT2.4 — `/features` + the FR traceability** (`WFR-205`: the 4 pillars + the 6-story grid; every feature carries an FR-ID link in its source, `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.2`'s traceability rule). *Verified:* a grep-level assertion that each story block names its FR ID.
-- **WT2.5 — The CTA wiring** (`WFR-501/502`: primary `/signin` "Start a free review"; secondary `/docs/quickstart`; the `?plan=team` override on the paid cards, the `AUTHENTICATION.md` contract). *Verified:* an E2E (a Playwright run) that each CTA resolves to the right destination + a `?src=web-{page}` param is present on the `?plan=` links.
+- **WT2.5 — The CTA wiring** (`WFR-501/502`: primary `/signin` "Start a free review"; secondary `/docs/quickstart`; the `AUTHENTICATION.md` contract — no plan-override query params, since there are no plans to pre-select). *Verified:* an E2E (a Playwright run) that each CTA resolves to the right destination + a `?src=web-{page}` param is present on the links.
 
 ---
 
@@ -78,7 +78,7 @@ Each phase: scope (the WFR groups), an **entry gate** (what must be *true* to st
 
 **Entry gate:**
 - WP2 exit gate green (the core pages + the Lighthouse/axe gates pass; the content pipeline from WP1 is live).
-- The 9 first-cut docs topics drafted in `content/docs/` (the `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.5` list: quickstart, github-app, api, rules, security, providers, pricing, quotas, privacy), each `Article`+`BreadcrumbList`-ready (`WFR-104`).
+- The 9 first-cut docs topics drafted in `content/docs/` (the `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.5` list: quickstart, github-app, api, rules, security, providers, quotas, privacy), each `Article`+`BreadcrumbList`-ready (`WFR-104`).
 - A status service (an external link, `U3` + `SAAS_LAUNCH_PLAN §5`'s launch prereq) is chosen — `/legal/status` has a target.
 
 **Exit gate (measured):**
@@ -107,7 +107,7 @@ Each phase: scope (the WFR groups), an **entry gate** (what must be *true* to st
 - `VERCODE_BEACON_SECRET` is provisioned in `.env.example` (a `SECURITY/SECRETS_MANAGEMENT.md` placeholder, `TECHNICAL_ARCHITECTURE.md §6`).
 
 **Exit gate (measured) — the P2 public-launch gate:**
-- A **Lighthouse mobile ≥ 90** on `/` + `/pricing` + `/docs/quickstart` (a CI run; a per-page CRFP budget, `PERFORMANCE_AND_ACCESSIBILITY.md`).
+- A **Lighthouse mobile ≥ 90** on `/` + `/docs/quickstart` (a CI run; a per-page CRFP budget, `PERFORMANCE_AND_ACCESSIBILITY.md`).
 - A **0 critical axe violation** on all `WFR-101` routes (a `@axe-core/playwright` run, WCAG 2.2 AA).
 - A **`/api/answer` vitest + OpenAPI-diff** green (a `RELEASE_CRITERIA gate-11` contract check; the `OpenAPI.yaml` updated first).
 - A **beacon cookieless-ness** check (a `POST /api/track` returns `204`, no `Set-Cookie`, a PII-redaction pass, `SECURITY_TEST_PLAN`'s public-surface check).
@@ -126,7 +126,7 @@ Each phase: scope (the WFR groups), an **entry gate** (what must be *true* to st
 
 - **WP1 → WP2 → WP3 → WP4** is the *build* order (each WP's entry gate is the prior WP's exit gate; a WP cannot start until the prior WP's CI lane is green).
 - The website is *not* on the M1–M8 app critical path (`IMPLEMENTATION_PLAN.md`); it starts after P1 (gate-13) and must finish before the P2 public-launch checklist closes (`SAAS_LAUNCH_PLAN §5 P2`). A website that's not finished by P2 blocks P2 (a launch prereq, `PRD.md`'s scope guardrail) — it is *marked blocked*, not claimed, `PHASE 10`'s rule.
-- The P3 website additions (a live docs site + search, multi-lang `U6`/`U7`, a CMS, a live "current plan pricing", the `llms-full.txt` scope) are *after* P2; they are tracked as `PRD.md §8` U-items, not WP-tasks.
+- The P3 website additions (a live docs site + search, multi-lang `U6`/`U7`, a CMS, the `llms-full.txt` scope) are *after* P2; they are tracked as `PRD.md §8` U-items, not WP-tasks.
 
 ## B. The acceptance criteria
 
@@ -137,20 +137,20 @@ Each phase: scope (the WFR groups), an **entry gate** (what must be *true* to st
 ### B.1 The WFR-1xx group (sitemap & pages, P0)
 
 **W-AC-01 (`WFR-101/102/103/104/105`)**
-- Given the `WFR-101` public route set (a `/`, `/features`, `/pricing`, `/faq`, `/docs` + topics, `/changelog` + entries, `/blog` + slugs, `/about`, `/legal/*`, `/404`, `/500`), When the site builds, Then every route is a static SSG page with a *unique* `<title>` ≤60 chars + a *unique* meta description 120–158 chars + a canonical URL + one JSON-LD block (`WFR-102`), and the `sitemap.xml` lists *every* `WFR-101` URL + every content entry with an *honest* `<changefreq>` (`WFR-103`).
+- Given the `WFR-101` public route set (a `/`, `/features`, `/faq`, `/docs` + topics, `/changelog` + entries, `/blog` + slugs, `/about`, `/legal/*`, `/404`, `/500`), When the site builds, Then every route is a static SSG page with a *unique* `<title>` ≤60 chars + a *unique* meta description 120–158 chars + a canonical URL + one JSON-LD block (`WFR-102`), and the `sitemap.xml` lists *every* `WFR-101` URL + every content entry with an *honest* `<changefreq>` (`WFR-103`).
 - Given a soft-deleted docs page, When it is requested, Then the site returns an HTTP `410 Gone` (a *410*, not a 200-with-404-body; a *404* on-domain for unknown routes, `WFR-105`).
 - Verification: the `make check-website` sitemap-count sub-gate (a `sitemap.xml` count == `WFR-101` + content count, `UT-web-sitemap-count`); a `ld-lint`/`schema-dts` 0-error on every JSON-LD block (`UT-web-jsonld`); a breadcrumb-on-every-`/docs|/changelog|/blog` check (`UT-web-breadcrumb`, `WFR-104`); a `410`-on-soft-delete test (`UT-web-410`, `WFR-105`).
 
-### B.2 The WFR-2xx group (marketing & pricing, P0)
+### B.2 The WFR-2xx group (marketing, P0)
 
 **W-AC-02 (`WFR-201/202`)**
-- Given `/`, When it renders, Then the hero is the *review-verdict device* (a type-set "Needs changes · 2 high" line, a *static* card, no live fetch, `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.1`) with **no gradient, no icon-topped cards, no eyebrow, no monospace-outside-code** (`DESIGN_SYSTEM §7/§9`), the sub-headline states the `SAAS_LAUNCH_PLAN §1` wedge *verbatim*, and the section order is hero→how-it-works→capability→pricing-teaser→social-proof→FAQ→footer (`WFR-202`).
+- Given `/`, When it renders, Then the hero is the *review-verdict device* (a type-set "Needs changes · 2 high" line, a *static* card, no live fetch, `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.1`) with **no gradient, no icon-topped cards, no eyebrow, no monospace-outside-code** (`DESIGN_SYSTEM §7/§9`), the sub-headline states the `SAAS_LAUNCH_PLAN §1` wedge *verbatim*, and the section order is hero→how-it-works→capability→social-proof→FAQ→footer (`WFR-202`).
 - Given an *empty* social-proof state, When `/` renders, Then the social-proof section is **omitted** (never a fabricated logo, `DESIGN_SYSTEM §9` + `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.1`'s block 5).
 - Verification: a DOM-order assertion on the 7 blocks (`E2E-web-hero-order`); a `DESIGN_SYSTEM §11` anti-slop lint (a `lint.mjs --marketing` over the hero, a 0-FAIL); an empty-state test that the social-proof block is absent when `content/` has no logos (`UT-web-socialproof-empty`).
 
-**W-AC-03 (`WFR-203`)**
-- Given `content/pricing/` (the machine-readable source, `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.3`), When `/pricing` renders, Then the 4 plan cards (Free/Developer/Team/Enterprise) show the *exact* `USAGE_QUOTAS.md` numbers verbatim + the `PRICING_STRATEGY.md` ladder, each plan a `Product`+`Offer` JSON-LD pair, the quota table a real `<table>` (machine-readable), and the pricing FAQ a `FAQPage` block.
-- Verification: a pricing-drift test (the page number == the `content/pricing/` source, byte-equal — a structural drift-impossibility, `UT-web-pricing-drift`); a `schema-dts` check on the `Product`+`Offer` pairs (`UT-web-offer-schema`); a `FAQPage` byte-equivalence re-check on the pricing FAQ (`UT-web-faq-pricing`, the `SEO_AEO_GEO.md §3` rule).
+**W-AC-03 (former `WFR-203` — pricing, retired)**
+- **Acceptance: no pricing page, no plan selection in the onboarding flow.** The product launched without paid tiers; `WFR-203` (the `/pricing` plan ladder) is removed. There is no `/pricing` route, no plan picker in the sign-in/connect flow, and no `?plan=` override surface on the public site.
+- Verification: a grep-level assertion that the built static export carries no `/pricing` route, no `Product`+`Offer` JSON-LD blocks, and no `?plan=` CTA links (`UT-web-no-pricing-surface`); a sign-in flow check that connect (not plan selection) is the only onboarding step (`UT-web-onboarding-connect-only`).
 
 **W-AC-04 (`WFR-204`)**
 - Given `/faq` with ≥15 questions, When it renders, Then each question has a `mainEntity` `Question` + `acceptedAnswer` in the `FAQPage` JSON-LD and the *visible* answer text **== the JSON-LD text byte-for-byte** (the GEO/answer-engine consistency, `SEO_AEO_GEO.md §3`).
@@ -163,7 +163,7 @@ Each phase: scope (the WFR groups), an **entry gate** (what must be *true* to st
 ### B.3 The WFR-3xx group (docs & content, P0)
 
 **W-AC-06 (`WFR-301/304/305`)**
-- Given `content/docs/` with the 9 first-cut topics (a quickstart, github-app, api, rules, security, providers, pricing, quotas, privacy — the `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.5` list), When the site builds, Then each `/docs/<topic>` is a static SSG page + `Article`+`BreadcrumbList` JSON-LD; content is authored as Markdown in `content/` (a `next-mdx`/plain-MD loader, *no CMS*, `WFR-304`) with the `CONTENT_SCHEMAS.md` front-matter shape (`WFR-305`), and a `draft` item is *neither rendered nor in `sitemap.xml`*.
+- Given `content/docs/` with the 9 first-cut topics (a quickstart, github-app, api, rules, security, providers, quotas, privacy — the `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.5` list), When the site builds, Then each `/docs/<topic>` is a static SSG page + `Article`+`BreadcrumbList` JSON-LD; content is authored as Markdown in `content/` (a `next-mdx`/plain-MD loader, *no CMS*, `WFR-304`) with the `CONTENT_SCHEMAS.md` front-matter shape (`WFR-305`), and a `draft` item is *neither rendered nor in `sitemap.xml`*.
 - Verification: a `content/` schema gate (a `RELEASE_CRITERIA gate-12` docs-drift extended to `content/`, `UT-web-content-schema`); a `sitemap.xml` + `ld-lint` green on 9 topics (`UT-web-docs-9`); a draft-never-rendered test (`UT-web-draft-excluded`).
 
 **W-AC-07 (`WFR-302`)**
@@ -177,11 +177,11 @@ Each phase: scope (the WFR groups), an **entry gate** (what must be *true* to st
 ### B.4 The WFR-4xx group (machine readability & SEO, P0)
 
 **W-AC-09 (`WFR-401/402`)**
-- Given the `content/pricing/` + the product-fact set, When the site builds, Then a top-level `/llms.txt` lists the key product facts (pricing, quotas, rate limits, the wedge, the 4 pillars, the "open-source?" + "self-hosted?" answers) **in hero→CTA order** (`WFR-401`), and **every `WFR-401` fact is also present in the visible text *and* the JSON-LD** (the "triple source" rule, `WFR-402`, `SEO_AEO_GEO.md §2`).
+- Given the product-fact set (`content/facts/`), When the site builds, Then a top-level `/llms.txt` lists the key product facts (the wedge, the 4 pillars, the "open-source?" + "self-hosted?" answers) **in hero→CTA order** (`WFR-401`), and **every `WFR-401` fact is also present in the visible text *and* the JSON-LD** (the "triple source" rule, `WFR-402`, `SEO_AEO_GEO.md §2`). No price or plan figures appear — there is no pricing surface to state.
 - Verification: a build-time `llms.txt` emission + a triple-source byte-consistency test (`UT-web-triple-source`); a `U6`-lean scope check (a minimal `/llms.txt` + a `/llms-full.txt` concatenation, `UT-web-llms-scope`).
 
 **W-AC-10 (`WFR-403`)**
-- Given the existing `apps/api` (a Fastify app, `TECHNICAL_ARCHITECTURE.md §1`), When a bounded query is sent to `GET /api/answer` (a "what's the team plan price", a "how many reviews does free include", an "is it open source"), Then the endpoint returns the product's structured answer from a `contracts`-validated fact lookup (*deterministic, no LLM at runtime*, `SEO_AEO_GEO.md §4`), and the `OpenAPI.yaml` is updated *first* (a contract change, `RELEASE_CRITERIA gate-11`).
+- Given the existing `apps/api` (a Fastify app, `TECHNICAL_ARCHITECTURE.md §1`), When a bounded query is sent to `GET /api/answer` (a "is it open source", a "how fast is a review", a "does it store source code"), Then the endpoint returns the product's structured answer from a `contracts`-validated fact lookup (*deterministic, no LLM at runtime*, `SEO_AEO_GEO.md §4`), and the `OpenAPI.yaml` is updated *first* (a contract change, `RELEASE_CRITERIA gate-11`).
 - Verification: a vitest unit over the bounded query language (`UT-web-answer`); a `Fastify` schema-validity check; the `RELEASE_CRITERIA gate-11` OpenAPI-diff gate (a contract drift check).
 
 **W-AC-11 (`WFR-405`)**
@@ -194,18 +194,18 @@ Each phase: scope (the WFR groups), an **entry gate** (what must be *true* to st
 
 ### B.5 The WFR-5xx group (CTA & conversion, P0)
 
-**W-AC-13 (`WFR-501/502`)**
-- Given `/` + `/pricing`, When the CTAs render, Then the *primary* CTA is `/signin` (a "Start a free review", the trade-word, `DESIGN_SYSTEM §7`) with a *secondary* `/docs/quickstart`; the paid-plan CTAs go to `/signin?plan=<plan>` (a plan-override the auth app reads to pre-select at org-create, an `AUTHENTICATION.md` contract, `WFR-502`).
-- Verification: an E2E (a Playwright run) that each CTA resolves to the correct destination + a `?src=web-{page}` param is present on the `?plan=` links (`E2E-web-cta-wiring`); a plan-override contract test (the `/signin?plan=team` param is *read* by the auth app, an `IT-web-plan-override` against `AUTHENTICATION.md`).
+**W-AC-13 (former `WFR-501/502` — plan-override CTA, retired)**
+- **Removed.** The `?plan=` override surface (`/signin?plan=<plan>`) did not survive the pricing/plan system's removal — there is no plan to pre-select. The `WFR-501/502` CTA wiring that remains is the primary `/signin` "Start a free review" CTA + the secondary `/docs/quickstart` link, with no `?plan=` query params anywhere on the public site.
+- Verification: covered by `W-AC-03`'s "no `?plan=` query-param surface" grep assertion (`UT-web-no-pricing-surface`) — no separate `W-AC-13` test is needed; this row is retained only so the `W-AC` numbering stays intact.
 
 **W-AC-14 (`WFR-503/504`)**
-- Given the P2 public-launch state, When the site is live, Then a **waitlist CTA is *not* present** (a *declared absence*, `WFR-503`; the Free tier is self-serve, `SAAS_LAUNCH_PLAN §4`), and there is **one** first-party cookieless beacon on `/signin` success (a "first review published" activation, a `SUCCESS_METRICS` activation KPI; a `?src=web-{page}` param; *no* third-party analytics, the DPDP posture, `SECURITY/PRIVACY.md`, `WFR-504`).
-- Verification: a no-waitlist test (no waitlist form element in any built page, `UT-web-no-waitlist`); the beacon cookieless-ness + PII-redaction test (`POST /api/track` → `204`, no `Set-Cookie`, no PII, `ST-web-beacon`, `TECHNICAL_ARCHITECTURE.md §5`'s beacon lane + `SECURITY_TEST_PLAN`'s public-surface check).
+- Given the P2 public-launch state, When the site is live, Then a **waitlist CTA is *not* present** (a *declared absence*, `WFR-503`; sign-in shows connect, not plan picker — the product launched without paid tiers), and there is **one** first-party cookieless beacon on `/signin` success (a "first review published" activation, a `SUCCESS_METRICS` activation KPI; a `?src=web-{page}` param; *no* third-party analytics, the DPDP posture, `SECURITY/PRIVACY.md`, `WFR-504`).
+- Verification: a no-waitlist test (no waitlist form element in any built page, `UT-web-no-waitlist`); a sign-in flow check (connect, not plan picker, is the only onboarding step, `UT-web-onboarding-connect-only`); the beacon cookieless-ness + PII-redaction test (`POST /api/track` → `204`, no `Set-Cookie`, no PII, `ST-web-beacon`, `TECHNICAL_ARCHITECTURE.md §5`'s beacon lane + `SECURITY_TEST_PLAN`'s public-surface check).
 
 ### B.6 The NFR + verification-lane AC (cross-cutting, P0)
 
 **W-AC-15 (`WNFR-*` + `TECHNICAL_ARCHITECTURE.md §5`'s new lanes)**
-- Given all `WFR-101` routes, When the website verification lanes run, Then: Lighthouse mobile ≥ 90 on `/`, `/pricing`, `/docs/quickstart` (a CRFP budget, `PERFORMANCE_AND_ACCESSIBILITY.md`); a `@axe-core/playwright` **0 critical violation** on all routes (WCAG 2.2 AA, `PERFORMANCE_AND_ACCESSIBILITY.md`); a `ld-lint`/`schema-dts` **0 errors** on every JSON-LD block; the `/api/answer` + the beacon routes pass their contract + PII checks.
+- Given all `WFR-101` routes, When the website verification lanes run, Then: Lighthouse mobile ≥ 90 on `/`, `/docs/quickstart`, `/docs/providers` (a CRFP budget, `PERFORMANCE_AND_ACCESSIBILITY.md`); a `@axe-core/playwright` **0 critical violation** on all routes (WCAG 2.2 AA, `PERFORMANCE_AND_ACCESSIBILITY.md`); a `ld-lint`/`schema-dts` **0 errors** on every JSON-LD block; the `/api/answer` + the beacon routes pass their contract + PII checks.
 - Verification: the `make check-website` target's *four* sub-gates (a website build, a Lighthouse, an axe, a JSON-LD validity, `TECHNICAL_ARCHITECTURE.md §5`), each reported as a *measured* number (a Lighthouse mobile score, a violation count, an error count), not a pass/fail checkbox.
 
 > **The "an AC with no test is incomplete" rule, applied.** Every `W-AC` above names a `UT-web-*` / `IT-web-*` / `ST-web-*` / `E2E-web-*` test *or* a `make check-website` sub-gate / a `RELEASE_CRITERIA` gate number. A `W-AC` whose "verification" is only a human eyeball is *incomplete* until that check is automated into one of those — that is the `docs/PRODUCT/ACCEPTANCE_CRITERIA.md` + `PRD.md §9` rule, mirrored.
@@ -230,7 +230,7 @@ The seven open decisions from `PRD.md §8`, carried into a formal table. The str
 
 **The state:** WP1, WP2, and WP3 are **built + verified** — `make check-website` is green (the `@vercode/website` build + typecheck + the 11 `UT-web-*` tests + the anti-slop lint, the `TECHNICAL_ARCHITECTURE.md §5` build-time sub-gates). That landed:
 - **WP1 (WT1.1–WT1.5):** the `apps/website` scaffold (a `Next.js 15` static export, `apps/website/next.config.mjs`'s `output: "export"`), the `content/` store + the `CONTENT_SCHEMAS.md` contracts, the `schema-generator.ts` single source (`apps/website/src/lib/schema-generator.ts`), and the `sitemap.xml`/`robots.txt`/`llms.txt`/`llms-full.txt` generators (`apps/website/src/lib/llms.ts`).
-- **WP2 (WT2.1–WT2.4):** the core pages — `/` + the section order, `/features` + the FR traceability, `/pricing` + the quota table from `content/pricing/pricing.json`, `/faq` + the 16-question byte-equivalence.
+- **WP2 (WT2.1–WT2.4):** the core pages — `/` + the section order, `/features` + the FR traceability, `/docs/providers` + the usage table from `content/facts/product-facts.json`, `/faq` + the 16-question byte-equivalence.
 - **WP3 (WT3.1–WT3.5):** the 9 `content/docs/` topics, the 2-entry changelog feed, the 2-post blog, the 5 `/legal` pages, and the draft-never-rendered rule.
 
 **The open state is WP4:** the *host-side* verification lanes + the two new `apps/api` routes. The Lighthouse ≥90 + the axe 0-critical + the `JSON-LD`-lint lanes are the `PERFORMANCE_AND_ACCESSIBILITY.md` host-side runs (the Chrome + tool binaries, not in the repo build); the `/api/answer` + the `/api/track` routes are a new-route-on-the-existing-Fastify (`TECHNICAL_ARCHITECTURE.md §1` + `DEPLOYMENT_AND_TESTING.md §1.1`'s "the routes deploy with the `api` unit" rule).
@@ -241,4 +241,4 @@ The seven open decisions from `PRD.md §8`, carried into a formal table. The str
 3. **WT4.3** — the `llms.txt` + `llms-full.txt` triple-source check wired as a host-side lane (the `WFR-402` byte-consistency, `SEO_AEO_GEO.md §2`).
 4. **WT4.4** — the Lighthouse + axe + JSON-LD verification lanes: a `@lhci/cli` mobile run ≥90 on the 5 `PERFORMANCE_AND_ACCESSIBILITY.md` budget pages; a `@axe-core/playwright` 0-critical on every `WFR-101` route; a `ld-lint`/`schema-dts` 0-error on every emitted block. The `make check-website` target gains these three as *measured* pass/fail numbers (a `DEPLOYMENT_AND_TESTING.md §3` lane, gate 14's host-side half).
 
-When all four are green, the P2 public-launch checklist closes (`SAAS_LAUNCH_PLAN §5 P2`'s "domain + marketing site + pricing + docs + status" rows measured green, `RELEASE_CRITERIA.md §2`'s "a gate is a measurement, not a checkbox").
+When all four are green, the P2 public-launch checklist closes (`SAAS_LAUNCH_PLAN §5 P2`'s "domain + marketing site + docs + status" rows measured green, `RELEASE_CRITERIA.md §2`'s "a gate is a measurement, not a checkbox").

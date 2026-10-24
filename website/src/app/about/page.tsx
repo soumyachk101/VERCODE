@@ -60,7 +60,7 @@ export default function AboutPage() {
             confidence finding is suppressed by the floor, not down-ranked
             into the noise. The model is where it earns its spend: the
             deep review and the security pass, task-routed to the right
-            tier.
+            model.
           </p>
           <p>
             The posture is open source. The pipeline, the static-analysis

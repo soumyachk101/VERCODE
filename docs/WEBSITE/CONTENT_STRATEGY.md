@@ -15,7 +15,7 @@ The wedge (`SAAS_LAUNCH_PLAN.md §1`): **"VERCODE is the AI code-review a team a
 ### 1.2 The voice
 
 - **Second person, present tense** ("VERCODE runs static analysis first", not "VERCODE will run…").
-- **The words of the trade** (`INFORMATION_ARCHITECTURE.md` §7 for the app, mirrored here): "review", "finding", "verdict", "severity", "confidence floor", "quota", "install" — never "insights", "leverage", "best-in-class", "seamless".
+- **The words of the trade** (`INFORMATION_ARCHITECTURE.md` §7 for the app, mirrored here): "review", "finding", "verdict", "severity", "confidence floor", "connect", "install" — never "insights", "leverage", "best-in-class", "seamless".
 - **Sentence case** throughout (no uppercase labels, `DESIGN_SYSTEM.md §2`'s ban).
 - **Short declarative sentences** in docs and FAQ (an answer-engine can quote one at a time); **prose** in blog (the editorial surface).
 - **No emoji in public content** (the `DESIGN_SYSTEM.md` "no emoji" house rule extends to copy).
@@ -30,11 +30,11 @@ A content piece that contains any of these fails review: the words "revolutionar
 ### 2.1 Docs (`/docs`)
 
 - **Purpose:** reduce evaluation time for a technical buyer; be the *most quotable* surface (an answer engine answering "how does VERCODE work" should be pulling from `/docs`, `SEO_AEO_GEO.md`'s target).
-- **First-cut set (P2):** the `INFORMATION_ARCHITECTURE.md §3.5` topic list — quickstart, github-app, api, rules, security, providers, pricing, quotas, privacy (the 9 P2 topics).
+- **First-cut set (P2):** the `INFORMATION_ARCHITECTURE.md §3.4` topic list — quickstart, github-app, api, rules, security, providers, usage, connect, privacy (the 9 P2 topics; `pricing` + `quotas` are removed with the pricing system — see `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.4`).
 - **Cadence:** a doc page lands **with** the feature (a `DEFINITION_OF_DONE` item — a feature is not "done" until its doc page exists, the "docs kept in sync with code" cross-cutting gate, `README.md`).
 - **Authoring:** an engineer who built the feature writes the first draft; a doc owner (the same person who owns the `FUNCTIONAL_REQUIREMENTS.md` FR block) reviews; every number is traceable to a doc in `docs/` (an `FR-*`, an `NFR-*`, an `ADR-*`).
 - **Review gate:** a docs PR must pass the `RELEASE_CRITERIA` docs-drift gate (a `content/` schema validation, the `TECHNICAL_ARCHITECTURE.md §5`'s lane 1) + a peer review + an AEO pass (§4 below).
-- **No versioning in P2.** A versioned docs site (a "v1 / v2" selector) is P3; P2 is a single current version, and breaking changes are called out *inline* ("In 2.0 the quota key changed to `reviews_monthly`").
+- **No versioning in P2.** A versioned docs site (a "v1 / v2" selector) is P3; P2 is a single current version, and breaking changes are called out *inline* ("In 2.0 the usage-report key changed from `reviews_total` to `reviews_by_range`").
 
 ### 2.2 Changelog (`/changelog`)
 
@@ -58,7 +58,7 @@ A content piece that contains any of these fails review: the words "revolutionar
 ## 3. The shared content rules (all surfaces)
 
 1. **One claim per page** (docs/changelog are exceptions — a doc page teaches one *procedure*, a changelog entry records one *release*; still, no topic salad).
-2. **The numbers are always literal** — "5,000 reviews/month" not "a generous monthly quota"; every literal is traceable (`USAGE_QUOTAS.md` for quotas, `NFR-02` for latency, `PRICING_STRATEGY.md` for prices).
+2. **The numbers are always literal** — "p95 under 300 seconds" not "sub-5-minute"; every literal is traceable (`NFR-02` for latency, `SUCCESS_METRICS.md` for the activation/retention figures). No price, plan, or quota numbers appear anywhere in the content — the pricing system is removed (`SAAS_LAUNCH_PLAN`'s direction note).
 3. **Machine-readable is the default** — every page has its JSON-LD (a `CONTENT_SCHEMAS.md` per-type contract) + its `llms.txt` representation (the `SEO_AEO_GEO.md §4` fact list for the top-level claims).
 4. **No orphan pages** — `INFORMATION_ARCHITECTURE_AND_PAGES.md §5`'s link rules; the weekly crawl check enforces it.
 5. **`lastmod` is honest** — the `sitemap.xml` `lastmod` reflects the last *material* change to the page (a typo fix is not a `lastmod` bump, `SEMAN` — a crawler is told the truth, `SEO_AEO_GEO.md §5`).
@@ -74,7 +74,7 @@ Every **published** doc / FAQ / blog post passes a 5-point AEO check before merg
 | **Q1 quotability** | Can the top of the article answer a question in ≤ 2 sentences *at the top of the page*? (An answer engine / LLM extracts the first 100–300 tokens; the answer lives there, not at the bottom.) |
 | **Q2 declarative** | Are the key statements **declarative, subject–verb–object** sentences? ("VERCODE runs ESLint and Semgrep on changed files before the LLM" — not "VERCODE's pipeline leverages static analysis…"). |
 | **Q3 literal numbers** | Are every number a literal with a unit? ("p95 under 300 seconds" — not "sub-5-minute"). |
-| **Q4 table / list where a table / list is the answer** | A "which plan do I need" is a **table**, not a paragraph; a "what are the permissions" is a **list**, not prose. |
+| **Q4 table / list where a table / list is the answer** | A "which GitHub permissions does the App need" is a **list**, not a paragraph; a "what are the repo-selection settings" is a **table**, not prose. |
 | **Q5 schema match** | The JSON-LD's text == the visible text (byte-equivalent for FAQ; near-equivalent for Article, `SEO_AEO_GEO.md §3`). |
 
 A post that fails Q1–Q5 is rewritten, not published.

@@ -8,15 +8,13 @@ export interface AuthMe {
   id: string;
   name: string;
   email: string;
-  orgs: { id: string; name: string; plan: string; role: string }[];
+  orgs: { id: string; name: string; role: string }[];
 }
 
 export interface NormalizedOrg {
   id: string;
   name: string;
-  plan: string;
   status: string;
-  renewalAt: string | null;
 }
 
 export interface NormalizedMembers {
@@ -32,6 +30,12 @@ export interface NormalizedMembers {
 export interface NormalizedInstall {
   connected: boolean;
   account: string | null;
+  /** The github_install row id (shown as "install: <id>" in the settings card). */
+  installId?: string;
+  /** ISO date of when the ACTIVE install was created. */
+  connectedAt?: string;
+  /** The count of connected repo rows on the ACTIVE install. */
+  reposCount?: number;
 }
 
 export interface NormalizedRepos {
@@ -119,22 +123,8 @@ export interface NormalizedUsage {
     outputTokens: number;
   }[];
   totals: { reviews: number; estUsd: number };
-  quota: {
-    used: number;
-    limit: number;
-    percentUsed: number;
-    committed?: number;
-  };
   perReviewUsd?: number;
   byProvider?: { provider: string; reviews: number; estUsd: number }[];
-}
-
-export interface NormalizedBilling {
-  plan: string;
-  status: string;
-  renewalAt: string | null;
-  invoices: { id: string; date: string; amountUsd: number; status: string }[];
-  quota: { used: number; limit: number; percentUsed: number };
 }
 
 export interface NormalizedSettings {
@@ -143,6 +133,7 @@ export interface NormalizedSettings {
   maxLines?: number;
   provider?: string;
   tokenSpendCapMonthlyUsd?: number;
+  activeReposForReview?: string[];
   suppressedCategories?: string[];
 }
 
@@ -155,7 +146,6 @@ export interface NormalizedProviders {
     provider: string;
     model: string;
     maxTokens?: number;
-    tierGate?: string;
     available?: boolean;
   }[];
 }

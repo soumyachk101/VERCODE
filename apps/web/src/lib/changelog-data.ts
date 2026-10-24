@@ -53,7 +53,7 @@ export const changelog: ChangelogEntry[] = [
     title: "KMS wrapping for BYOK, audit export",
     items: [
       "Bring-your-own-key provider keys are now KMS-wrapped at rest and decrypted only at the edge of the provider call; the raw key is never written to disk or logs.",
-      "Audit log export: 180-day retention on every plan, exported as a signed JSON feed from Settings > Members > Audit — DPA-ready out of the box.",
+      "Audit log export: 180-day retention, exported as a signed JSON feed from Settings > Members > Audit — DPA-ready out of the box.",
       "Installation revocation now triggers hard delete of stored findings within 24 hours, verified by a reconciliation job and reported to the installing admin.",
       "Webhook verification hardened: replay windows cut to 5 minutes and the signature check now runs before any body parsing.",
     ],
@@ -67,7 +67,6 @@ export const changelog: ChangelogEntry[] = [
       "Stack detection on install: VERCODE reads your manifests and directory shape to pre-fill lint targets, review tasks, and file budgets — every detection shown as an editable rule on the Rules page.",
       "Custom rules engine: org-level and repo-level rules in plain statements or pointed at your lint configs, with deterministic precedence (repo overrides org; stricter wins on collision).",
       "The confidence floor: AI findings below the floor (default 0.6, per-org) are not posted; the floor is visible in the review header and tunable per team taste.",
-      "Quota hardening: skip-with-notice on the review cap and the token-spend cap — a skipped review burns zero model tokens and posts the notice on the PR, never a silent stop.",
     ],
   },
 ];

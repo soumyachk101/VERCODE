@@ -27,8 +27,8 @@
      scales are lifted — a near-black flat #050508 ground, softer
      neutrals, and one warm off-white ink ramp so type has a real
      3-step ramp instead of white-on-black. The accent is the single
-     high-saturation hue: crimson, reserved for the primary CTA, the
-     severity marks, and one pricing card. Green marks positive
+     high-saturation hue: crimson, reserved for the primary CTA and the
+     severity marks. Green marks positive
      verdicts only. */
   --background: 240 20% 3%;
   --foreground: 30 14% 95%;
@@ -176,8 +176,8 @@ html {
   background: var(--active);
 }
 
-/* The link CTA (the pricing cards' "See all plans", the FAQ's "All
-   questions"): accent text, an underline that appears on hover with a
+/* The link CTA (the FAQ's "All questions", the related-links block):
+   accent text, an underline that appears on hover with a
    4px offset — the affordance is the underline, not a colour swap. */
 .link-cta {
   font-size: 15px;

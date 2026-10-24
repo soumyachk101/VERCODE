@@ -4,7 +4,7 @@
  *
  * The facts come from content/facts/product-facts.json (the single fact
  * source); the routes come from lib/site.ts's PAGES list. Nothing here is
- * hand-written prose, so a pricing or quota edit flows into every file.
+ * hand-written prose, so a doc edit flows into every file.
  *
  * This module is build-time only (it reads the content store for the
  * sitemap's published-content entries) — it is imported from route

@@ -16,8 +16,8 @@ export const GITHUB_REPO = "https://github.com/vercode/vercode";
  * route; a relative path keeps the static export working on any host —
  * the dashboard and the marketing site are served side by side.
  */
-export function signinUrl(plan?: string): string {
-  return plan ? `/signin?plan=${plan}` : "/signin";
+export function signinUrl(): string {
+  return "/signin";
 }
 
 /** Back-compat alias — some pages still reference the constant form. */
@@ -32,7 +32,7 @@ export function srcParam(page: string): string {
 }
 
 export interface PageDef {
-  /** Absolute route, e.g. "/pricing". The root is "/". */
+  /** Absolute route, e.g. "/docs/quickstart". The root is "/". */
   route: string;
   /** ≤ 60 chars. */
   title: string;
@@ -49,7 +49,7 @@ export const PAGES: readonly PageDef[] = [
     route: "/",
     title: "Home",
     description:
-      "Set up VERCODE on a pull request: install the GitHub App, pick a plan, and get a review verdict with inline findings in under 120 seconds at p50.",
+      "Set up VERCODE on a pull request: install the GitHub App and get a review verdict with inline findings in under 120 seconds at p50.",
   },
   {
     route: "/features",
@@ -58,28 +58,22 @@ export const PAGES: readonly PageDef[] = [
       "Static analysis runs first; a task-routed model then reviews the bounded diff. The verdict plus inline findings return to the pull request.",
   },
   {
-    route: "/pricing",
-    title: "Pricing — free tier, Developer, Team, Enterprise",
-    description:
-      "A permanent Free tier with 50 reviews a month, a 24 USD Developer plan, a 199 USD Team plan, and negotiated Enterprise with BYOK and Ollama cost-shifting.",
-  },
-  {
     route: "/faq",
     title: "FAQ — answers with the actual numbers",
     description:
-      "Sixteen questions with literal answers: latency bounds, quota limits, what is stored and purged, scope lists, and how the Free tier is a plan, not a trial.",
+      "Sixteen questions with literal answers: latency bounds, what is stored and purged, scope lists, and how usage limits work.",
   },
   {
     route: "/docs",
     title: "Documentation — install, GitHub App, API, rules",
     description:
-      "Install steps, the GitHub App permission set, the review API, webhooks, custom rules, provider routing, plan quotas, and the retention clauses.",
+      "Install steps, the GitHub App permission set, the review API, webhooks, custom rules, provider routing, and the retention clauses.",
   },
   {
     route: "/docs/quickstart",
     title: "Quickstart — first review in five minutes",
     description:
-      "Install the GitHub App on one repo, pick a plan, open a pull request. A summary comment plus inline findings lands in under 120 seconds at p50.",
+      "Install the GitHub App on one repo, open a pull request. A summary comment plus inline findings lands in under 120 seconds at p50.",
   },
   {
     route: "/docs/github-app",
@@ -109,25 +103,19 @@ export const PAGES: readonly PageDef[] = [
     route: "/docs/providers",
     title: "Providers — model routing, BYOK, Ollama",
     description:
-      "OpenAI is the first provider; Anthropic and local Ollama adapters route per task. Enterprise may select any model tier and send model spend to its own keys.",
-  },
-  {
-    route: "/docs/pricing",
-    title: "Pricing — plans, quotas, and what each number means",
-    description:
-      "The four tiers with literal numbers: 50, 500, and 5,000 monthly reviews; 20, 60, and 100 files per review; and the skip-with-notice rule at every cap.",
+      "OpenAI is the first provider; Anthropic and local Ollama adapters route per task. An organization may select any model and send model spend to its own keys.",
   },
   {
     route: "/docs/quotas",
-    title: "Quotas — per-plan limits and the skip-with-notice rule",
+    title: "Quotas — review limits and the skip-with-notice rule",
     description:
-      "The full quota table per plan, what a degrade means versus a skip, how concurrent jobs queue, and the cost-cap backstop that guards every billing month.",
+      "The full usage table: files per review, concurrency caps, what a degrade means versus a skip, and the cost-cap backstop that guards every month.",
   },
   {
     route: "/docs/privacy",
     title: "Privacy — what is stored and what is purged",
     description:
-      "What VERCODE reads, stores, and purges. Raw diffs live only for the review lifetime; findings retain per plan window, then hard-delete on access revocation.",
+      "What VERCODE reads, stores, and purges. Raw diffs live only for the review lifetime; findings are retained for the retention window, then hard-deleted on access revocation.",
   },
   {
     route: "/changelog",
@@ -151,13 +139,13 @@ export const PAGES: readonly PageDef[] = [
     route: "/legal/terms",
     title: "Terms of Service",
     description:
-      "The contract between VERCODE and customers: plan semantics, behavior at the quota cap, support windows, and the clauses to read before an upgrade.",
+      "What a review is, the usage cap with a posted skip notice, data ownership, the measured latency targets, and the clauses to read before you rely on the service.",
   },
   {
     route: "/legal/privacy",
     title: "Privacy Policy",
     description:
-      "What VERCODE collects, the retention window per plan, and the hard-delete rule on access revocation. Audit logs keep their 180-day minimum under every tier.",
+      "What VERCODE collects, the retention window, and the hard-delete rule on access revocation. Audit logs keep their 180-day minimum.",
   },
   {
     route: "/legal/security",

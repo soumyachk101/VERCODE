@@ -4,10 +4,11 @@ import { personHue, initials } from "@/lib/format";
 
 /**
  * The shell (INFORMATION_ARCHITECTURE §2): a labelled 230px sidebar on the
- * page ground (never dark on a light screen), an org switcher at top, the
- * seven destinations, settings utilities at the bottom, and a user row at
- * the very bottom. The active item is a neutral grey pill (radius 8,
- * inset 8–14px) — NOT a coloured left bar. Attention counts only on
+ * page ground, an org switcher at top, two nav groups — Work (the action
+ * queues: overview, repositories, reviews, security, usage, failed) and
+ * Settings (rules & AI, team & audit, account) — and a user row at the
+ * very bottom. The active item is a neutral grey pill (radius 8, inset
+ * 8–14px) — NOT a coloured left bar. Attention counts only on
  * action-queues, noun-clear ("Security 4", "Failed 2").
  */
 
@@ -28,16 +29,15 @@ export interface ShellUser {
 export interface OrgOption {
   id: string;
   name: string;
-  plan?: string;
 }
 
 export function Shell({
   orgName,
-  orgPlan,
   onSwitchOrg,
   orgOptions = [],
   activeOrgId,
   items,
+  configItems = [],
   active,
   bottomItems = [],
   user,
@@ -47,12 +47,14 @@ export function Shell({
   className,
 }: {
   orgName: string;
-  orgPlan?: string;
   onSwitchOrg?: (orgId: string) => void;
   /** the user's other orgs — a switcher shows "switch" only when >1 (IA §2) */
   orgOptions?: OrgOption[];
   activeOrgId?: string;
+  /** the work group: queues and dashboards the user acts on */
   items: NavItem[];
+  /** the configuration group: rules, team — rendered under "Settings" */
+  configItems?: NavItem[];
   active: string;
   bottomItems?: NavItem[];
   user?: ShellUser | null;
@@ -64,7 +66,7 @@ export function Shell({
 }) {
   return (
     <div
-      className={cn("flex min-h-screen", className)}
+      className={cn("flex min-h-[100dvh]", className)}
       style={{
         display: "flex",
         minHeight: "100vh",
@@ -98,7 +100,6 @@ export function Shell({
       >
         <SidebarHeader
           orgName={orgName}
-          orgPlan={orgPlan}
           onSwitchOrg={onSwitchOrg}
           orgOptions={orgOptions}
           activeOrgId={activeOrgId}
@@ -110,9 +111,12 @@ export function Shell({
           ))}
         </div>
         <div style={{ marginTop: 20, flex: 1 }}>
-          {bottomItems.length > 0 && (
+          {(configItems.length > 0 || bottomItems.length > 0) && (
             <>
               <GroupLabel>Settings</GroupLabel>
+              {configItems.map((it) => (
+                <NavRow key={it.key} item={it} active={active === it.key} />
+              ))}
               {bottomItems.map((it) => (
                 <NavRow key={it.key} item={it} active={active === it.key} />
               ))}
@@ -164,8 +168,8 @@ export function Shell({
       {/* the mobile fold (RESPONSIVE_BEHAVIOR §2): a 48px top bar + a sheet */}
       <MobileShell
         orgName={orgName}
-        orgPlan={orgPlan}
         items={items}
+        configItems={configItems}
         bottomItems={bottomItems}
         active={active}
         user={user}
@@ -202,13 +206,11 @@ function GroupLabel({ children }: { children: ReactNode }) {
 
 function SidebarHeader({
   orgName,
-  orgPlan,
   onSwitchOrg,
   orgOptions,
   activeOrgId,
 }: {
   orgName: string;
-  orgPlan?: string;
   onSwitchOrg?: (orgId: string) => void;
   orgOptions?: OrgOption[];
   activeOrgId?: string;
@@ -245,9 +247,9 @@ function SidebarHeader({
         </span>
         <span>VERCODE</span>
       </div>
-      {/* the org switcher: shows the org name + the plan badge ("Team");
-          a "switch to another org" only when the user has >1 (IA §2).
-          Switching re-scopes every screen. */}
+      {/* the org switcher: shows the org name; a "switch to another org"
+          only when the user has >1 (IA §2). Switching re-scopes every
+          screen. */}
       <div style={{ position: "relative" }}>
         <button
           type="button"
@@ -274,22 +276,6 @@ function SidebarHeader({
           <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {orgName}
           </span>
-          {orgPlan && (
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 500,
-                color: "var(--muted-ink)",
-                background: "var(--raised)",
-                border: "1px solid var(--rule)",
-                borderRadius: "var(--radius-chip)",
-                padding: "1px 6px",
-                textTransform: "capitalize",
-              }}
-            >
-              {orgPlan}
-            </span>
-          )}
         </button>
         {open && others.length > 0 && (
           <div
@@ -334,17 +320,6 @@ function SidebarHeader({
                 <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {o.name}
                 </span>
-                {o.plan && (
-                  <span
-                    style={{
-                      fontSize: 10,
-                      color: "var(--muted-ink)",
-                      textTransform: "capitalize",
-                    }}
-                  >
-                    {o.plan}
-                  </span>
-                )}
               </button>
             ))}
           </div>
@@ -427,7 +402,7 @@ function Avatar({ name }: { name: string }) {
 
 function Header() {
   // (the shell's live region is mounted by the OrgShell wrapper — a
-  // role="status" region that announces new findings + quota changes,
+  // role="status" region that announces new findings + usage changes,
   // ACCESSIBILITY §3; pages push messages via useAnnounce())
   return null;
 }
@@ -436,16 +411,16 @@ function Header() {
     ⌘K-style open is never animated — Emil). */
 function MobileShell({
   orgName,
-  orgPlan,
   items,
+  configItems,
   bottomItems,
   active,
   user,
   onSignOut,
 }: {
   orgName: string;
-  orgPlan?: string;
   items: NavItem[];
+  configItems: NavItem[];
   bottomItems: NavItem[];
   active: string;
   user?: ShellUser | null;
@@ -486,11 +461,6 @@ function MobileShell({
       >
         <div style={{ fontSize: 14, fontWeight: 600 }}>
           {orgName}
-          {orgPlan ? (
-            <span className="meta" style={{ fontWeight: 400, marginLeft: 6, textTransform: "capitalize" }}>
-              ({orgPlan})
-            </span>
-          ) : null}
         </div>
         <button
           type="button"
@@ -530,9 +500,12 @@ function MobileShell({
         {items.map((it) => (
           <NavRow key={it.key} item={it} active={active === it.key} />
         ))}
-        {bottomItems.length > 0 && (
+        {(configItems.length > 0 || bottomItems.length > 0) && (
           <>
             <GroupLabel>Settings</GroupLabel>
+            {configItems.map((it) => (
+              <NavRow key={it.key} item={it} active={active === it.key} />
+            ))}
             {bottomItems.map((it) => (
               <NavRow key={it.key} item={it} active={active === it.key} />
             ))}

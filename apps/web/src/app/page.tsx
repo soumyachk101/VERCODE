@@ -9,8 +9,10 @@ import { BlogPreview } from "@/components/marketing/landing/blog-preview";
 import { Cta } from "@/components/marketing/cta";
 
 // / — two branches:
-//   no session  → the marketing landing page (hero, features, live preview,
-//                 how-it-works, blog preview, CTA band).
+//   no session  → the marketing landing page. The section order is the
+//                 narrative: hero (what it is) → how it works (the three
+//                 steps) → capabilities → live preview (the product, in
+//                 your org's own numbers) → blog → the closing CTA band.
 //   session + a resolved org → /overview (INFORMATION_ARCHITECTURE §3: the
 //                 dashboard first, not a KPI wall, for a signed-in user).
 //
@@ -54,9 +56,9 @@ export default async function Home() {
   return (
     <MarketingShell>
       <Hero />
+      <HowItWorks />
       <Features />
       <LivePreview />
-      <HowItWorks />
       <BlogPreview />
       <Cta />
     </MarketingShell>

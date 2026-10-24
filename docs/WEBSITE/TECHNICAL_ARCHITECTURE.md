@@ -27,7 +27,6 @@ apps/
       docs/
       changelog/
       faq/
-      pricing/            ← the machine-readable pricing source (a .json + a .md, the WFR-203 source)
     src/
       app/                ← App Router routes (WFR-101's set, 1:1)
       components/         ← the marketing components (NOT the dashboard's shadcn set; the site's own small library)
@@ -72,17 +71,17 @@ content/*.md  →  next-mdx-remote  →  React tree  →  SSG pages (WFR-101)
                                                            _next/static/ assets (hashed)
 ```
 
-**The `schema-generator.ts` is the single source of truth** (`STRUCTURED_DATA.md §5`'s rule): one function, `generateSchemaFor(page: PageDef): JsonLd[]`, that emits every `WFR-102` block for every route. **No hand-written JSON-LD** in a page file; it's *generated* from the page's data, so a pricing change in `content/pricing/` flows to `Product`+`Offer`+`FAQPage`+`/api/answer`+`llms.txt` in one build.
+**The `schema-generator.ts` is the single source of truth** (`STRUCTURED_DATA.md §5`'s rule): one function, `generateSchemaFor(page: PageDef): JsonLd[]`, that emits every `WFR-102` block for every route. **No hand-written JSON-LD** in a page file; it's *generated* from the page's data, so a fact-set change in `content/facts/` flows to `SoftwareApplication`+`FAQPage`+`/api/answer`+`llms.txt` in one build. (The site has no `content/pricing/` — the pricing system is removed; `PRD.md`'s direction note. The one `Product`-class block that remains is the `SoftwareApplication` on `/` + `/features`, with **no `offers` array**.)
 
 ### 4.2 Runtime flow (the live bits)
 
-- `/api/answer?q=...` → the **existing** Fastify app's new route → a `contracts`-validated query language (a small Zod enum + a bounded keyword match) → a JSON answer (the `PRODUCT` facts, `CONTENT_SCHEMAS.md`'s `ProductFact` contract). **No LLM at runtime** (the GEO backing is a *deterministic* fact lookup, the `SEO_AEO_GEO.md §4` "the fact is not generated, it's looked up" rule).
+- `/api/answer?q=...` → the **existing** Fastify app's new route → a `contracts`-validated query language (a small Zod enum + a bounded keyword match) → a JSON answer (the `PRODUCT` facts, `CONTENT_SCHEMAS.md`'s `ProductFact` contract — the fact set is product facts, **no pricing intents**: a pricing query is a 404 body, `PRD.md WFR-403`). **No LLM at runtime** (the GEO backing is a *deterministic* fact lookup, the `SEO_AEO_GEO.md §4` "the fact is not generated, it's looked up" rule).
 - `?src=web-{page}` beacon → a first-party cookieless `POST /api/track` (a **new** route on `apps/api`; the `SUCCESS_METRICS` activation KPI, `PRD.md §7`). A 204 response, no cookie, no PII (`SECURITY/PRIVACY.md`).
 - **No client-side data fetching** in P2 (a static export + a small runtime fetch for `/api/answer` only if a "ask VERCODE" widget is added, which is P3).
 
 ### 4.3 The *single* DB coupling
 
-The website **does not read the app's Postgres** in P2 (the pricing/quota facts live in `content/pricing/` — the `CONTENT_SCHEMAS.md`'s `ProductFact` is the *contract*, and the `apps/api`'s `/api/answer` reads the *same* file at build time; no runtime DB read on the static site). **A decision**: a live "current plan pricing" on `/pricing` (if pricing ever changes without a deploy) is P3, `PRD.md §8 U1/U2`.
+The website **does not read the app's Postgres** in P2 (the product facts live in `content/facts/` — the `CONTENT_SCHEMAS.md`'s `ProductFact` is the *contract*, and the `apps/api`'s `/api/answer` reads the *same* file at build time; no runtime DB read on the static site). **A decision**: a live "current product facts" feed (if the fact-set changes without a deploy) is P3, `PRD.md §8 U1/U2`.
 
 ## 5. Deployables & CI (extension of `OPERATIONS/CI_CD.md` + `RELEASE_CRITERIA.md`)
 
@@ -91,7 +90,7 @@ The *existing* 12 gates (`RELEASE_CRITERIA.md`) + one **new** website-specific l
 | New lane | What it checks | New? |
 | --- | --- | --- |
 | **Website build** | `pnpm --filter @vercode/website build` (a `next build` export); the `content/` schema gate; a `sitemap.xml` + `robots.txt` + `llms.txt` generation; **a `sitemap.xml` count == `WFR-101` + content count** | yes |
-| **Website Lighthouse** | a Lighthouse CI (a Chrome headless run on `/`, `/pricing`, `/docs/quickstart`); mobile ≥ 90, a per-page CRFP budget (`PERFORMANCE_AND_ACCESSIBILITY.md`) | yes |
+| **Website Lighthouse** | a Lighthouse CI (a Chrome headless run on `/`, `/docs/quickstart`); mobile ≥ 90, a per-page CRFP budget (`PERFORMANCE_AND_ACCESSIBILITY.md`) | yes |
 | **Website axe** | a `@axe-core/playwright` on every `WFR-101` route; 0 critical violations (WCAG 2.2 AA, `PERFORMANCE_AND_ACCESSIBILITY.md`) | yes |
 | **Website JSON-LD validity** | a `ld-lint` (or a `schema-dts` type check) on every page's `<script type="application/ld+json">`; 0 errors | yes |
 | **The `/api/answer` route** | a vitest unit + a Fastify schema-validity check; the `OpenAPI.yaml` diff (a contract, `RELEASE_CRITERIA gate 11`) | a new route in the existing lane |
@@ -127,4 +126,16 @@ The **`.env.example`** gets 3 new placeholder rows (the docs-drift check, `CI_CD
 - The **exact** hosting vendor (Vercel vs. Cloudflare vs. a self-hosted static bucket) — an infra decision, `U5` + `OPERATIONS/DEPLOYMENT.md` (a P2 build-time choice, the `TECHNICAL_ARCHITECTURE` here *assumes* Vercel for prod + a CF bucket for dev; a one-line change in `next.config` + a Dockerfile, `DEPLOYMENT.md §2`).
 - The **CMS** (P3, `WFR-304`'s out-of-scope line, the `PRD.md §6`).
 - The **multi-language** surface (P3, `U6`, the `PRD.md §6` "declared absent").
-- The **live "current plan pricing"** (P3, §4.3's "a decision").
+- The **live "current product facts"** (P3, §4.3's "a decision").
+
+## 9. The GitHub connection surface (design-level; the heads own the implementation)
+
+The product's value loop — *connect your repo → get reviews → findings → a plain usage report* — means the connection lifecycle is first-class product, not a billing feature. This doc records its *shape* so the website package (the `/docs/github-app` page, the `HowTo` JSON-LD, the FAQ group-4 answers, `PRD.md WFR-602`) and the app package stay consistent; the routes themselves live in `apps/api` (an existing file the other heads own), not in this doc's `apps/website` scope.
+
+- **The API surface** (`/api/v1/github/*`, additive on the existing Fastify app):
+  - **connect** — returns the GitHub App install URL (pre-scoped to the least-privilege list, `FR-210`) + records the pending install; the `installation.created` webhook confirms it (the existing `installation.created` handling in `apps/api/src/routes/github.ts`, which the heads extend, not replace).
+  - **list** — the org's connected repositories (the repositories page's table data: `full_name`, reviews-30d, open high/critical, last reviewed, status), feeding the dashboard's `/repositories` connected-repos table.
+  - **settings** — repository selection (which discovered repos are enabled for review; per-org, stored in the settings area — `docs/DESIGN/PAGE_SPECIFICATIONS.md`'s settings/providers page); this is a *selection* feature, not a plan tier.
+  - **disconnect** — revoke the App (or a single repo): VERCODE records the revocation, stops enqueuing reviews for it, and retains prior findings + the audit trail (`DATA_RETENTION.md`).
+- **The acceptance criteria (design level, app-side):** after connect → the repositories list reflects the install within one webhook round; selecting a repo makes its next PR reviewable without a second step; disconnecting a repo makes its next PR *not* reviewed (a `skipped`-adjacent state is *not* a quota state — there is no quota); disconnecting the whole install empties the table but the usage report's history persists.
+- **The website's coupling:** the `HowTo` schema's step 1 is the connect URL; `/docs/github-app` documents connect/pick/disconnect in public terms; the FAQ "Which GitHub permissions does the App need?" answer is byte-equal to the `llms.txt` GitHub-connection bullet (`SEO_AEO_GEO.md §4.5`). A *new* docs topic (`github-app`/`connect` is P2 topic set #2) already exists in the route set; no *new* marketing route is added for this — the connect flow is a *dashboard* surface, reached after `/signin`.

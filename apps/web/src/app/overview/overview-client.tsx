@@ -1,7 +1,6 @@
 "use client";
 
 // The Overview page blocks (PAGE §1) inside the org shell.
-import { useEffect } from "react";
 import { OrgPage } from "@/components/page";
 import { useOrgShell } from "@/components/OrgShell";
 import {
@@ -13,11 +12,9 @@ import {
 import { PageHead } from "@/components/Settings";
 import { DataBlock, EmptyBlock } from "@/components/DataBlock";
 import { Panel, PanelTitle, Figure } from "@/components/cards";
-import { PlanTrack } from "@/components/PlanTrack";
 import { MiniLine } from "@/components/charts";
 import { SeverityMark } from "@/components/SeverityMark";
 import { Pill } from "@/components/Pill";
-import { useAnnounce } from "@/components/announcer";
 import { openFindingsLead } from "@/lib/format";
 import { jobStatusLabel, SKIP_REASON_LABEL } from "@/lib/types";
 
@@ -37,7 +34,6 @@ function OverviewBody() {
   const install = useInstall(orgId || undefined);
   const skipped = useReviews(orgId || undefined, { status: "skipped" });
   const failed = useReviews(orgId || undefined, { status: "failed" });
-  const announce = useAnnounce();
 
   // the one line under the title — the screen's *finding* (the thing that
   // most needs attention), not the interface (PAGE §1)
@@ -47,16 +43,6 @@ function OverviewBody() {
         (skipped.data?.items.length ?? 0) + (failed.data?.items.length ?? 0)
       } reviews need a look.`
     : null;
-
-  // announce a quota change (ACCESSIBILITY §3: a polite live region)
-  const quotaPct = usage.data?.quota.percentUsed ?? 0;
-  const lastQuota = useRefNum();
-  useEffect(() => {
-    if (quotaPct >= 0.8 && lastQuota.current < 0.8) {
-      announce(`Usage is now ${Math.round(quotaPct * 100)}% of this month's quota`);
-    }
-    lastQuota.current = quotaPct;
-  }, [quotaPct, announce]);
 
   // the first-run state (INFORMATION_ARCHITECTURE §5): the whole screen
   // empty → keep the frame + title, put the first action where the data
@@ -81,7 +67,6 @@ function OverviewBody() {
             <SecurityQueue sec={sec} />
             <FailedQueue skipped={skipped} failed={failed} />
           </div>
-          <QuotaBlock usage={usage} />
           <UsageMini usage={usage} />
         </div>
       )}
@@ -92,13 +77,6 @@ function OverviewBody() {
       `}</style>
     </div>
   );
-}
-
-// a local ref helper (a plain ref without importing react at this scope —
-// kept small; the file is a client component so a hook would be fine too)
-import { useRef } from "react";
-function useRefNum() {
-  return useRef(0);
 }
 
 function LeadBlock({ sec }: { sec: ReturnType<typeof useSecurity> }) {
@@ -225,27 +203,6 @@ function FailedQueue({
                 </li>
               ))}
             </ul>
-          );
-        }}
-      </DataBlock>
-    </Panel>
-  );
-}
-
-function QuotaBlock({ usage }: { usage: ReturnType<typeof useUsage> }) {
-  return (
-    <Panel>
-      <PanelTitle>Plan quota</PanelTitle>
-      <DataBlock result={usage} block="usage">
-        {(d) => {
-          const u = d as NonNullable<typeof usage.data>;
-          return (
-            <PlanTrack
-              used={u.quota.used}
-              limit={u.quota.limit}
-              committed={u.quota.committed}
-              unit="reviews"
-            />
           );
         }}
       </DataBlock>

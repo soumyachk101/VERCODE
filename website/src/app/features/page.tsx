@@ -61,7 +61,7 @@ const PILLARS = [
   {
     id: "cost-discipline",
     title: "Cost discipline",
-    body: "Per-org quotas and per-review cost accounting bound the spend. The static pass costs almost nothing; the task-routed AI stage sends the bounded diff, not the whole repo, and picks the model tier per task. An over-cap org's review is skipped with a notice, never silently billed beyond the cap.",
+    body: "Per-review cost accounting keeps the spend bounded. The static pass costs almost nothing; the task-routed AI stage sends the bounded diff, not the whole repo, and picks the right model per task. Usage numbers are always visible on the usage page.",
     fragment: `// the ReviewResult.cost block (contracts/src/findings.ts)
 cost: {
   inputTokens: 18402,
@@ -70,12 +70,12 @@ cost: {
   model: "gpt-4.1",
   promptVersion: "v19"
 }`,
-    docs: "/docs/pricing/",
+    docs: "/docs/providers/",
   },
   {
     id: "the-workspace",
     title: "A workspace, not just a bot",
-    body: "The dashboard answers the org's risk and cost question, not just the pull request's: a security rollup, an audit trail, a usage-vs-quota view. The review history is keyed by commit SHA, so both versions of a PR are legible. The PR comment is the output; the workspace is the product.",
+    body: "The dashboard answers the org's risk and cost question, not just the pull request's: a security rollup, an audit trail, and a live usage view. The review history is keyed by commit SHA, so both versions of a PR are legible. The PR comment is the output; the workspace is the product.",
     fragment: `// the ReviewSummary shape the PR headline is built from
 summary: {
   verdict: "Needs changes",
@@ -106,25 +106,25 @@ const STORIES = [
   {
     fr: "FR-506",
     title: "Usage analytics",
-    body: "Real data, not a vanity dashboard: reviews per week, findings density, cost per review, quota headroom. The numbers that answer “when does this pay for itself?”",
-    docs: "/docs/pricing/",
+    body: "Real data, not a vanity dashboard: reviews per week, findings density, cost per review. The numbers that answer “when does this pay for itself?”",
+    docs: "/docs/providers/",
   },
   {
     fr: "FR-507",
     title: "Org management",
-    body: "Members, roles, and invitations, with the quota and plan settings that follow the org, not the individual. Adding a new hire to a repository is a two-click action, not a re-scope.",
+    body: "Members, roles, and invitations, with the usage settings that follow the org, not the individual. Adding a new hire to a repository is a two-click action, not a re-scope.",
     docs: "/docs/quickstart/",
   },
   {
     fr: "FR-509",
-    title: "Billing",
-    body: "Plan, invoices, and usage on one screen; upgrade, downgrade, or cancel without a sales call. The quota that an over-cap org trips is the same number the billing page shows.",
-    docs: "/docs/pricing/",
+    title: "Usage & cost",
+    body: "Usage and cost on one screen; the same numbers the usage page shows, no caps.",
+    docs: "/docs/providers/",
   },
   {
     fr: "FR-510",
     title: "Audit log",
-    body: "Every config change, install, and plan change is an audit event, retained on the org's retention floor (180 days minimum). The “who changed the rules and when” answer, in the compliance window.",
+    body: "Every config change, install, and permission change is an audit event, retained on the org's retention floor (180 days minimum). The “who changed the rules and when” answer, in the compliance window.",
     docs: "/docs/quickstart/",
   },
 ];

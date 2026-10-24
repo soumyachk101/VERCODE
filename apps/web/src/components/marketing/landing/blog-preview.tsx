@@ -18,11 +18,8 @@ export function BlogPreview() {
     <section className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="max-w-2xl">
-          <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-color)]">
-            From the blog
-          </span>
-          <h2 className="mt-3 text-[28px] font-bold tracking-[-0.01em] text-[hsl(var(--text-1))] sm:text-[34px]">
-            Engineering notes on building a reviewer teams trust
+          <h2 className="text-[28px] font-bold tracking-[-0.01em] text-[hsl(var(--text-1))] sm:text-[34px]">
+            Engineering notes from the team
           </h2>
         </div>
         <Link

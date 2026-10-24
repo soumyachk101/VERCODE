@@ -3,11 +3,8 @@
 // ERROR_HANDLING.md §6).
 //
 // Flow (the ordered stages):
-//   dequeue → load durable state (org + quota, Postgres; the payload is a
+//   dequeue → load durable state (org, Postgres; the payload is a
 //   pointer, SERVICE_BOUNDARIES.md "never trust the payload for authz")
-//   → [0] pre-flight quota gate (NFR-18 "never silent": a skip posts a notice;
-//         ZERO AI tokens consumed, AC-402; the rule lives in
-//         @vercode/policy-engine, the worker supplies the durable aggregate)
 //   → [1] same-SHA idempotency gate (ADR-007: a redelivered completed key
 //         no-ops; NFR-13 the stored published_github_review_id is the
 //         authority — a re-publish never re-runs the pipeline)
@@ -54,9 +51,7 @@ import {
 } from "@vercode/diff-engine";
 import type { PRDiff } from "@vercode/github";
 import { runStaticAnalysis } from "@vercode/static-analysis";
-import { checkQuota as checkQuotaRules } from "@vercode/policy-engine";
 import {
-  type Plan,
   type ReviewSummary,
 } from "@vercode/contracts";
 import {
@@ -165,7 +160,7 @@ export interface CanonicalFinding {
 export interface ReviewJobOutcome {
   /** The terminal job status. */
   status: JobStatus;
-  skipReason?: "quota_exceeded" | "same_sha" | "install_removed" | "pr_closed";
+  skipReason?: "same_sha" | "install_removed" | "pr_closed";
   findings: CanonicalFinding[];
   summary: ReviewSummary;
   /** The usage event recorded in the persist transaction. */
@@ -295,24 +290,8 @@ export async function runReviewJob(
     repoRules,
   });
 
-  // [0] Pre-flight quota gate (NFR-18, AC-402): if the org is over its
-  // plan's quota (plans.ts quota + the usage_events monthly aggregate) →
-  // skipped quota_exceeded, ZERO AI tokens consumed, a notice posted.
-  const month = new Date().toISOString().slice(0, 7); // YYYY-MM
-  const quota = await checkQuotaPlan(db, payload.orgId, org.plan, month);
-  if (quota.over) {
-    // A skip is a log record, not a an absence (a the NFR-18 "never
-    // silent" rule, OBSERVABILITY.md §1 "a skip is a log record, not a an
-    // absence"): a the structured record with a the skip_reason.
-    log.warn("quota.gate", "The quota gate skipped the review", {
-      skip_reason: "quota_exceeded",
-      detail: quota.detail,
-    });
-    traceCtx.end("SKIPPED");
-    return finishSkipped(deps, payload, "quota_exceeded", month, {
-      summaryBody: `Review skipped — org quota reached for ${month} (${quota.detail}). Upgrade or reduce review volume.`,
-    });
-  }
+  // [0] Usage events are recorded here (the skip gates that preceded
+  // the AI stage were retired with the pricing pass).
 
   // [1] Same-SHA idempotency gate (ADR-007 / NFR-13): a redelivered job for
   // a completed key → no-op. The stored published_github_review_id is the
@@ -347,7 +326,7 @@ export async function runReviewJob(
   }
 
   // [fetch the diff + parse it] — a the diff.fetch stage (a the worker's
-  // first stage after a the durable-state load + a the quota gate; a the
+  // first stage after the durable-state load; a the
   // api's webhook.ingest span is the trace's first, a this is the sibling,
   // OBSERVABILITY.md §2 "the webhook→worker hand-off is one trace, not two
   // disconnected ones").
@@ -470,17 +449,17 @@ export async function runReviewJob(
       });
     }
     // A the usage event — a single row per job, attributed to the org
-    // (REVIEW_ENGINE_SPEC §6 "a the dashboard and a the quota gate both read
-    // this single source"). A the usage.record stage (a the accounting is a
+    // (the dashboard reads this single source). A the usage.record stage (a the accounting is a
     // the same transaction as a the job's terminal state, ERROR_HANDLING
     // §6 "a a review that completed but 'forgot' to account is
     // impossible").
     const u = aiUsage(ai, deps.promptVersion);
+    const monthKey = new Date().toISOString().slice(0, 7); // YYYY-MM
     await t.usageEvent.create({
       data: {
         orgId: payload.orgId,
         jobId: job.id,
-        month,
+        month: monthKey,
         reviewCount: 1,
         inputTokens: u.inputTokens,
         outputTokens: u.outputTokens,
@@ -567,37 +546,6 @@ export async function runReviewJob(
     summaryBody,
     inlineComments,
   };
-}
-
-// ---------------------------------------------------------------------------
-// The quota pre-flight (the single enforcement point — plans.ts +
-// usage_events, USAGE_QUOTAS §4 / AC-401/402; the rule lives in
-// @vercode/policy-engine, the worker supplies the durable aggregate)
-// ---------------------------------------------------------------------------
-
-export interface QuotaState {
-  over: boolean;
-  detail: string;
-}
-
-export async function checkQuotaPlan(
-  db: DbClient,
-  orgId: string,
-  plan: string,
-  month: string
-): Promise<QuotaState> {
-  const totals = await db.usageEvent.aggregate({
-    where: { orgId, month },
-    _sum: { reviewCount: true, estUsdCost: true },
-  });
-  const reviews = Number(totals._sum?.reviewCount ?? 0);
-  const spend = Number(totals._sum?.estUsdCost ?? 0);
-
-  const state = checkQuotaRules(plan.toLowerCase() as Plan, {
-    reviewsUsed: reviews,
-    tokenSpendUsedUsd: spend,
-  });
-  return { over: state.over, detail: state.detail };
 }
 
 // ---------------------------------------------------------------------------
@@ -1020,60 +968,6 @@ async function upsertJob(
       ...data,
     },
   });
-}
-
-// The skip path (the quota-gate + the install/pr-closed; the same-SHA no-op
-// is inline above). The "never silent" rule (NFR-18): the skip is a
-// terminal, recorded state + a notice is posted on the PR. The skip also
-// records a zero-usage event (no token spend is attributed to the org —
-// the abuse path is closed, AC-402).
-async function finishSkipped(
-  deps: WorkerDeps,
-  payload: ReviewJobPayload,
-  skipReason: NonNullable<ReviewJobOutcome["skipReason"]>,
-  month: string,
-  body: { summaryBody: string }
-): Promise<ReviewJobOutcome> {
-  const { db } = deps;
-  await db.$transaction(async (tx) => {
-    const t = tx as unknown as DbClient;
-    const job = await upsertJob(t, payload, "SKIPPED", {
-      skipReason,
-      usage: emptyUsage(deps.promptVersion),
-    });
-    // The skipped job records a zero-usage event (the quota gate counts it
-    // toward the monthly total; the spend is 0 — no AI ran).
-    await t.usageEvent.create({
-      data: {
-        orgId: payload.orgId,
-        jobId: job.id,
-        month,
-        reviewCount: 1,
-        inputTokens: 0,
-        outputTokens: 0,
-        estUsdCost: "0",
-        model: null,
-      },
-    });
-  });
-  try {
-    await publishGithub(deps, payload, {
-      summary: body.summaryBody,
-      inlineComments: [],
-    });
-  } catch {
-    // The notice post can fail (GitHub down) — the skip is still persisted;
-    // the DB record is authoritative (ERROR_HANDLING §10).
-  }
-  return {
-    status: "SKIPPED",
-    skipReason,
-    findings: [],
-    summary: emptySummary(),
-    usage: emptyUsage(deps.promptVersion),
-    summaryBody: body.summaryBody,
-    inlineComments: [],
-  };
 }
 
 // ---------------------------------------------------------------------------

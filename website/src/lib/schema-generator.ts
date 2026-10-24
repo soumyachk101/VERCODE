@@ -4,13 +4,11 @@
  * The single source of truth for every JSON-LD block on the site: no page
  * file writes JSON-LD by hand, it imports this module and inlines the
  * emitted array as <script type="application/ld+json">. The facts come
- * from site.ts (SITE_NAME, BASE_URL), pricing.ts (PRICING), and faq.ts
- * (FAQ_ITEMS, PRICING_FAQ, HOME_FAQ_IDS), so a pricing or FAQ edit flows
- * into every block in one build.
+ * from site.ts (SITE_NAME, BASE_URL), and faq.ts (FAQ_ITEMS,
+ * HOME_FAQ_IDS), so a FAQ edit flows into every block in one build.
  */
 import { SITE_NAME, BASE_URL, PAGES } from "./site.js";
-import { PRICING } from "./pricing.js";
-import { FAQ_ITEMS, PRICING_FAQ, HOME_FAQ_IDS } from "./faq.js";
+import { FAQ_ITEMS, HOME_FAQ_IDS } from "./faq.js";
 
 /** A { name, url } breadcrumb entry (the visible trail the page renders). */
 export interface BreadcrumbEntry {
@@ -38,7 +36,7 @@ export interface GenerateSchemaExtras {
 
 /** One page's structured-data input. */
 export interface PageDef {
-  /** The absolute route, e.g. "/pricing". */
+  /** The absolute route, e.g. "/docs/quickstart". */
   route: string;
   isRoot?: boolean;
   /** The H1 / page heading. */
@@ -97,16 +95,8 @@ function orgAndWebSite(): JsonLdBlock[] {
   ];
 }
 
-/** SoftwareApplication node (root and /features), with offers from PRICING. */
+/** SoftwareApplication node (root and /features). */
 function softwareApp(route: string): JsonLdBlock {
-  const offers = PRICING.offers.map((o) => ({
-    "@type": "Offer",
-    price: o.price === "custom" ? "Custom" : Number(o.price),
-    priceCurrency: o.priceCurrency,
-    description: o.positioning,
-    name: `${SITE_NAME} ${o.plan}`,
-    url: absUrl("/pricing"),
-  }));
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -115,7 +105,6 @@ function softwareApp(route: string): JsonLdBlock {
     url: absUrl(route),
     applicationCategory: "DeveloperApplication",
     operatingSystem: "Web",
-    offers,
   };
 }
 
@@ -165,32 +154,6 @@ function faqPage(
       acceptedAnswer: { "@type": "Answer", text: f.a },
     })),
   };
-}
-
-/**
- * Product + Offer pairs for /pricing: one pair per plan in PRICING.offers
- * (STRUCTURED_DATA.md §2's row: "Each of the 4 plans is a separate
- * Product+Offer pair, generated from content/pricing/pricing.json").
- */
-function pricingProducts(route: string): JsonLdBlock[] {
-  return PRICING.offers.map((o) => ({
-    "@context": "https://schema.org",
-    "@type": "Product",
-    "@id": `${BASE_URL}${route}#product-${o.plan}`,
-    name: `${SITE_NAME} ${o.plan}`,
-    description: o.positioning,
-    url: absUrl(route),
-    offers: {
-      "@type": "Offer",
-      price: o.price === "custom" ? "Custom" : Number(o.price),
-      priceCurrency: o.priceCurrency,
-      availability:
-        o.price === "custom"
-          ? "https://schema.org/LimitedAvailability"
-          : "https://schema.org/InStock",
-      url: absUrl("/pricing"),
-    },
-  }));
 }
 
 /** BreadcrumbList from the visible trail (WFR-104). */
@@ -292,9 +255,8 @@ function titleForRoute(route: string): string {
  *  - "/"             → Organization + WebSite + SoftwareApplication + HowTo +
  *                      FAQPage (top-5 teaser, HOME_FAQ_IDS)
  *  - "/features"     → WebSite + SoftwareApplication
- *  - "/pricing"      → WebSite + Product+Offer × 4 + FAQPage (the 6 pricing Qs)
  *  - "/faq"          → WebSite + FAQPage (the full 16)
- *  - "/docs"         → WebSite + ItemList (9 topics, from page.itemList)
+ *  - "/docs"         → WebSite + ItemList (8 topics, from page.itemList)
  *  - "/docs/<t>"     → WebSite + Article + BreadcrumbList
  *  - "/changelog"    → WebSite + ItemList (latest 10, from page.itemList)
  *  - "/changelog/<d>"→ WebSite + CreativeWork + BreadcrumbList
@@ -333,7 +295,7 @@ export function generateSchemaFor(
   // 3. HowTo (root only).
   if (r === "/" && page.isRoot === true) nodes.push(howTo());
 
-  // 4. FAQPage — top-5 teaser on "/", the full 16 on "/faq", the 6 on "/pricing".
+  // 4. FAQPage — top-5 teaser on "/", the full 16 on "/faq".
   if (r === "/") {
     const slice = HOME_FAQ_IDS.map((i) => FAQ_ITEMS[i]).filter(
       (x): x is (typeof FAQ_ITEMS)[number] => x !== undefined,
@@ -341,10 +303,6 @@ export function generateSchemaFor(
     nodes.push(faqPage(r, slice));
   } else if (r === "/faq") {
     nodes.push(faqPage(r, FAQ_ITEMS));
-  } else if (r === "/pricing") {
-    nodes.push(faqPage(r, PRICING_FAQ));
-    // 5. Product + Offer pairs (/pricing only).
-    nodes.push(...pricingProducts(r));
   }
 
   // 6. ItemList (docs, changelog, blog) — supplied by the caller's content,

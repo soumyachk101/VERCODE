@@ -161,9 +161,7 @@ export class UsageEventRepo {
   constructor(private readonly db: DbClient) {}
 
   /**
-   * The monthly aggregate for the pre-flight quota gate
-   * (REVIEW_ENGINE_SPEC §2 stage [0], USAGE_QUOTAS §4 "a checkQuota reads
-   * planQuota + the usage_events monthly aggregate").
+   * The monthly usage aggregate (REVIEW_ENGINE_SPEC §2 stage [0]).
    */
   monthlyTotals(orgId: string, month: string) {
     return this.db.usageEvent.aggregate({

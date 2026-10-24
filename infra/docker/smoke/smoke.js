@@ -15,7 +15,7 @@
 //        - poll the worker's recorded publish (a the pipeline's terminal
 //          step is "a the GitHub review was posted", not just "the job
 //          succeeded").
-//        - read the mock-ai's call log + the mock-billing's signature
+//        - read the mock-ai's call log
 //          source.
 //   3. the exit code: 0 when all three steps pass, 1 otherwise.
 //
@@ -32,7 +32,6 @@ const API_BASE = process.env.API_BASE ?? "http://api:4000";
 const WEB_BASE = process.env.WEB_BASE ?? "http://web:3000";
 const MOCK_GITHUB_BASE = process.env.MOCK_GITHUB_BASE ?? "http://mock-github:8091";
 const MOCK_AI_BASE = process.env.MOCK_AI_BASE ?? "http://mock-ai:8092";
-const MOCK_BILLING_BASE = process.env.MOCK_BILLING_BASE ?? "http://mock-billing:8093";
 const GITHUB_WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET ?? "test-webhook-secret-dev";
 
 // The fixture delivery id + timestamp (a the replay-dedup key + the
@@ -86,7 +85,6 @@ async function main() {
     ["api /healthz", `${API_BASE}/healthz`],
     ["mock-github", `${MOCK_GITHUB_BASE}/healthz`],
     ["mock-ai", `${MOCK_AI_BASE}/healthz`],
-    ["mock-billing", `${MOCK_BILLING_BASE}/healthz`],
   ];
   for (const [name, url] of healths) {
     try {
@@ -182,8 +180,6 @@ async function main() {
   const calls = await getJson(`${MOCK_AI_BASE}/calls`);
   log(`mock-ai call log: count=${calls.count ?? 0}`);
 
-  const billingEvent = await getJson(`${MOCK_BILLING_BASE}/event`);
-  log(`mock-billing event signature present: ${billingEvent.signature ? "yes" : "no"}`);
 
   log("SMOKE PASSED (a the health + a mock PR through the pipeline)");
 }

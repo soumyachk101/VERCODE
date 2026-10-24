@@ -9,7 +9,7 @@
 // Job payload shape (TRD.md §7): `{ jobId, orgId, repoId, prNumber,
 // commitSha }` — a POINTER ONLY (SERVICE_BOUNDARIES.md "the job payload never
 // carries authorization; it's a pointer"). The worker re-reads the
-// org/repo/quota state from Postgres; a payload field authorizes nothing.
+// org/repo/settings state from Postgres; a payload field authorizes nothing.
 
 import type { AppConfig } from "@vercode/config";
 import type {
@@ -29,7 +29,6 @@ export type { OrgContext };
 export const QUEUES = {
   review: "review-queue",
   retention: "retention-queue",
-  billing: "billing-queue",
   deadLetter: "review-dead-letter",
 } as const;
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
@@ -52,11 +51,6 @@ export interface RetentionJobPayload {
   orgId: string;
   kind: string;
   target: string;
-}
-
-export interface BillingJobPayload {
-  orgId: string;
-  rollupDay: string;
 }
 
 // ---------------------------------------------------------------------------

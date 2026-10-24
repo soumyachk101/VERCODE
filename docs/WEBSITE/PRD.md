@@ -1,40 +1,42 @@
 # VERCODE Website — Product Requirements Document (PRD)
 
-This PRD governs the VERCODE public website: the marketing/landing surface that the `SAAS_LAUNCH_PLAN.md §5 P2` gate calls a *launch prerequisite* ("a marketing site + a pricing page + a docs site"). It defines **what** the website must do and **why**. The technical *how* (stack, hosting, structured-data format, test lanes) lives in `docs/TECHNICAL` + `docs/OPERATIONS` + `docs/WEBSITE/` sibling docs; those are the design-system/SEO/structured-data/perf-and-a11y/content/deployment/testing/roadmap siblings of this package.
+This PRD governs the VERCODE public website: the marketing/landing surface that the `SAAS_LAUNCH_PLAN.md §5 P2` gate calls a *launch prerequisite* ("a marketing site + a docs site"). It defines **what** the website must do and **why**. The technical *how* (stack, hosting, structured-data format, test lanes) lives in `docs/TECHNICAL` + `docs/OPERATIONS` + `docs/WEBSITE/` sibling docs; those are the design-system/SEO/structured-data/perf-and-a11y/content/deployment/testing/roadmap siblings of this package.
 
 > **Scope guardrail (matches `MVP_SCOPE.md` + `SAAS_LAUNCH_PLAN`):** the *dashboard* is the P0 product (`PRD.md`); this website is a P2 *launch* prerequisite, not part of the M1–M8 app build. Until the public launch phase, it ships *before* P2 and *after* the dev-stack is verified (gate-P0/P1, `SAAS_LAUNCH_PLAN §5`). The two surfaces share one typeface + palette (`DESIGN_SYSTEM.md §7` "a product site that shows its app").
 
+> **Direction (stated here, mirrored across the package):** the product launches **without paid tiers** — no plans, no tiers, no billing, no quota-based gating. The marketing surface therefore carries **no pricing page and no pricing CTA**; its conversion path is the GitHub connection: *connect your repo → get reviews*. The value loop, restated without monetization: **connect your repository (a GitHub App install, a repository selection, a plain usage report) → VERCODE reviews the pull requests → findings + a verdict publish to the PR → the usage report shows what ran.** Usage is *reported*, not metered against a cap.
+
 ## 1. Product Summary
 
-The VERCODE website is the public, indexable, machine-readable surface that turns search/answer-engine/LLM traffic into **sign-ups** and **installations**. It is:
+The VERCODE website is the public, indexable, machine-readable surface that turns search/answer-engine/LLM traffic into **sign-ups** and **GitHub connections**. It is:
 
-- **A marketing site** (one domain, `/`): hero, capability narrative, social proof, and the CTA that starts J1 (`USER_JOURNEYS`).
-- **A pricing surface** (`/pricing`): the plan ladder from `PRICING_STRATEGY.md` rendered as a legible, structured, machine-readable comparison.
+- **A marketing site** (one domain, `/`): hero, capability narrative, social proof, and the CTA that starts J1 (`USER_JOURNEYS`) — a "Connect your repo" CTA, *not* a pricing CTA.
 - **A docs & changelog hub** (`/docs/*`, `/changelog/*`, `/blog/*`): the content surfaces `SAAS_LAUNCH_PLAN P2` requires to be *live* at public launch.
 - **An AI-answerable surface** (AEO/GEO, `SEO_AEO_GEO.md`): every factual claim about the product is expressed so that search snippets, answer engines, and LLMs can cite VERCODE without paraphrasing it into fiction.
 
-Target: the same audience as the `PRD.md §3` personas, *pre-signup*: a GitHub-native engineering team leader evaluating AI code-review tools. The one-line wedge (`SAAS_LAUNCH_PLAN §1`): **"VERCODE is the AI code-review a team actually reads — deterministic-first, evidence-backed, cost-disciplined, a workspace not just a bot."**
+Target: the same audience as the `PRD.md §3` personas, *pre-signup*: a GitHub-native engineering team leader evaluating AI code-review tools. The one-line wedge (`SAAS_LAUNCH_PLAN §1`): **"VERCODE is the AI code-review a team actually reads — deterministic-first, evidence-backed, a workspace not just a bot."**
 
 ## 2. Core Problems Solved (Website-Specific)
 
 | # | Problem | How the website solves it |
 | - | --- | --- |
-| W1 | No discoverable public entry to the product | `/` + `/pricing` + `/docs` indexable on `vercode.com` (domain a launch prereq, `SAAS_LAUNCH_PLAN §3`); no JS-gated content (SEO, `SEO_AEO_GEO.md`) |
+| W1 | No discoverable public entry to the product | `/` + `/docs` indexable on `vercode.com` (domain a launch prereq, `SAAS_LAUNCH_PLAN §3`); no JS-gated content (SEO, `SEO_AEO_GEO.md`) |
 | W2 | Generic AI-landing slop erodes trust | One typeface + palette shared with the app (`DESIGN_SYSTEM.md §7`), the **review-verdict hero** (`DESIGN_SYSTEM §7`'s "a dealt direction"), no gradient blobs, no "10,000+ teams" vanity totals (`DESIGN_SYSTEM §9` tell-ban) |
-| W3 | Answer engines can't verify VERCODE's claims (GEO risk) | Every pricing/quota/rate-limit claim is a **verbatim-quotable statement + JSON-LD** (`STRUCTURED_DATA.md`), so an LLM citing VERCODE cites the *true* number |
+| W3 | Answer engines can't verify VERCODE's claims (GEO risk) | Every product-fact claim (the value loop, latency, the open-source posture) is a **verbatim-quotable statement + JSON-LD** (`STRUCTURED_DATA.md`), so an LLM citing VERCODE cites the *true* statement |
 | W4 | FAQ content exists only in the dashboard (not crawlable) | A `/faq` with `FAQPage` schema answers the top ~15 "will it post a comment / what models / is it open-source" questions AEO targets (`SEO_AEO_GEO.md`) |
-| W5 | No machine-readable product facts | Organization/WebSite/SoftwareApplication/Product/Offer/ProductReview/FAQPage/HowTo/BreadcrumbList/Article/Person schemas (`STRUCTURED_DATA.md`) |
+| W5 | No machine-readable product facts | Organization/WebSite/SoftwareApplication/Product/FAQPage/HowTo/BreadcrumbList/Article/Person schemas (`STRUCTURED_DATA.md`) |
 | W6 | Blog/changelog/docs content has no schema | Article + Breadcrumb + Person/author + changelog `ItemList` on `/changelog` (`CONTENT_SCHEMAS.md` + `STRUCTURED_DATA.md`) |
 | W7 | No performance budget on the public surface | Lighthouse/CRFP budgets (`PERFORMANCE_AND_ACCESSIBILITY.md`) on marketing + docs pages, separate from the dashboard NFRs |
 | W8 | No a11y gate on the public surface | WCAG 2.2 AA on all public pages (`ACCESSIBILITY.md` reference, `docs/DESIGN/ACCESSIBILITY.md`), axe-core in CI |
+| W9 | No public explanation of how a team connects its repos | A `/docs/github-app` guide + the "connect your repo" CTA path: the hero's primary CTA lands on `/signin` → the dashboard's repositories connect flow (`docs/DESIGN/INFORMATION_ARCHITECTURE.md`'s `/repositories` page, `/api/v1/github/*` API surface) |
 
 ## 3. Target Users & Personas (Website Audience)
 
 The website audience = the 5 dashboard personas **before** they sign up + **after** they're evaluating. One website-specific persona is added:
 
-- **Wendy (the pre-signup evaluator):** a tech lead who has tried CodeRabbit/GitHub Copilot review and is skeptical of *noise*. Her journey: `/` → `/pricing` → `/docs/compare` → `/signin`. The website's job is to reduce her evaluation time and make the wedge (`SAAS_LAUNCH_PLAN §1`) *believable* (deterministic-first + evidence-backed are her trust levers, `PRODUCT_VISION.md §4`).
+- **Wendy (the pre-signup evaluator):** a tech lead who has tried CodeRabbit/GitHub Copilot review and is skeptical of *noise*. Her journey: `/` → `/docs/compare` → `/signin` → the repositories connect flow. The website's job is to reduce her evaluation time and make the wedge (`SAAS_LAUNCH_PLAN §1`) *believable* (deterministic-first + evidence-backed are her trust levers, `PRODUCT_VISION.md §4`).
 
-Existing dashboard personas (`USER_PERSONAS.md`) drive the *post-signup* CTA copy; the website's hero + pricing map to them directly (e.g., "For a small team" → Free/Developer plan; "For a mid-market team" → Team; "For enterprise" → Enterprise + BYOK, `PRICING_STRATEGY §2`'s ICP framing).
+Existing dashboard personas (`USER_PERSONAS.md`) drive the *post-signup* CTA copy; the website's hero + capability narrative map to them directly (e.g., "For a small team" → the connect-your-repo path; "For a mid-market team" → the security rollup + audit trail; "For enterprise" → BYOK, compliance, residency, `PRODUCT_VISION`'s ICP framing).
 
 ## 4. Functional Requirements
 
@@ -42,23 +44,23 @@ IDs follow `WFR-<n>`. All P0 items ship at **P2 public launch** (`SAAS_LAUNCH_PL
 
 ### 4.1 Sitemap & Pages (Information Architecture)
 
-- `WFR-101` The site's public routes are: `/`, `/features` (capability narrative), `/pricing`, `/faq`, `/docs` (docs hub index), `/docs/<topic>` (per topic), `/changelog`, `/changelog/<date>`, `/blog`, `/blog/<slug>`, `/about`, `/legal` (terms, privacy, security, DPA, status), `/404`, `/500`. **No other public routes.** *(P0)*
+- `WFR-101` The site's public routes are: `/`, `/features` (capability narrative), `/faq`, `/docs` (docs hub index), `/docs/<topic>` (per topic), `/changelog`, `/changelog/<date>`, `/blog`, `/blog/<slug>`, `/about`, `/legal` (terms, privacy, security, DPA, status), `/404`, `/500`. **No `/pricing` route** (the pricing system is removed; `SAAS_LAUNCH_PLAN`'s direction: launched without paid tiers) and **no other public routes.** *(P0)*
 - `WFR-102` Every page has: a unique `<title>` ≤ 60 chars, a unique meta description 120–158 chars, a canonical URL, and one JSON-LD block per `STRUCTURED_DATA.md §1`. *(P0)*
 - `WFR-103` Sitemap XML at `/sitemap.xml` lists every `WFR-101` URL + every `/blog` + `/docs` + `/changelog` entry, grouped by lastmod, `<changefreq>` honest (marketing `weekly`, docs `daily`, blog `monthly`). `robots.txt` at `/robots.txt` allows all + points at `/sitemap.xml` + disallows `/docs/source` (raw source, if any). *(P0)*
 - `WFR-104` Breadcrumb JSON-LD on every page `/docs/*`, `/changelog/*`, `/blog/*` (root → section → page); `BreadcrumbList` schema (`STRUCTURED_DATA.md §5`). *(P0)*
 - `WFR-105` 404 page is on-domain, 410 (not 404) for soft-deleted docs, and *not* an SEO trap (returns `410 Gone` in the HTTP status, not a 200 with a 404 body). *(P0)*
 
-### 4.2 Marketing & Pricing Pages
+### 4.2 Marketing Pages
 
-- `WFR-201` `/` hero: **the review-verdict device** (`DESIGN_SYSTEM §7`) — a live, type-set "Needs changes · 2 high" line as the one large thing; **no gradient, no icon-topped feature cards, no eyebrow labels, no monospace outside code** (the banned tells, `DESIGN_SYSTEM §7 + §9`). Sub-headline states the wedge (`SAAS_LAUNCH_PLAN §1`) verbatim. Primary CTA: "Start free review" → `/signin` (the J1 entry, `USER_JOURNEYS J1`). Secondary CTA: "Read the docs" → `/docs`. *(P0)*
-- `WFR-202` `/` section order: hero → **how it works** (3 steps, `HowTo` schema, "the pipeline in 30 seconds") → **capability** (deterministic-first, evidence-backed, cost discipline, the 4 pillars from `README.md`) → **pricing teaser** (3 cards, links to `/pricing`) → **social proof** (real logos/names only, no `DESIGN_SYSTEM §9` banned "Acme/John Doe" placeholders; an empty social-proof section is *omitted*, not fabricated) → **FAQ** (top 5, `FAQPage` schema) → footer. *(P0)*
-- `WFR-203` `/pricing` renders the plan ladder from `PRICING_STRATEGY.md` (Free / Developer / Team / Enterprise) with **exact quota numbers from `USAGE_QUOTAS.md`** verbatim; each plan is a `Product` + `Offer` JSON-LD pair (`STRUCTURED_DATA.md §3`); the page's FAQ (top "which plan do I need" / "can I BYOK" / "what happens at quota") carries `FAQPage` schema. *(P0)*
-- `WFR-204` `/faq` lists ≥ 15 questions, each with `mainEntity` `Question` + `acceptedAnswer` in the `FAQPage` JSON-LD; the visible answer text **matches the JSON-LD text byte-for-byte** (GEO/answer-engine consistency, `SEO_AEO_GEO.md §3`). *(P0)*
-- `WFR-205` `/features` is the capability narrative: deterministic-first pipeline, the 4 pillars, the **security-findings rollup** story (the `FR-504` user-facing value), the **audit trail** story (`FR-510`), and **BYOK** for enterprise. Every feature is linked to the dashboard FR it satisfies (a traceability link, `PRODUCT/ACCEPTANCE_CRITERIA.md`). *(P0)*
+- `WFR-201` `/` hero: **the review-verdict device** (`DESIGN_SYSTEM §7`) — a live, type-set "Needs changes · 2 high" line as the one large thing; **no gradient, no icon-topped feature cards, no eyebrow labels, no monospace outside code** (the banned tells, `DESIGN_SYSTEM §7 + §9`). Sub-headline states the wedge (`SAAS_LAUNCH_PLAN §1`) verbatim. Primary CTA: **"Connect your repo"** → `/signin` (the J1 entry, `USER_JOURNEYS J1` — the conversion is a GitHub connection, *not* a pricing CTA; no pricing card, no "Start free review" plan framing on `/`). Secondary CTA: "Read the docs" → `/docs`. *(P0)*
+- `WFR-202` `/` section order: hero → **how it works** (3 steps, `HowTo` schema, "the pipeline in 30 seconds") → **capability** (deterministic-first, evidence-backed, the 4 pillars from `README.md`) → **connect** (the GitHub-connection story: install the App, pick your repositories, reviews land on your PRs; links to `/docs/github-app`) → **social proof** (real logos/names only, no `DESIGN_SYSTEM §9` banned "Acme/John Doe" placeholders; an empty social-proof section is *omitted*, not fabricated) → **FAQ** (top 5, `FAQPage` schema) → footer. *(P0)*
+- `WFR-203` **No `/pricing` page, no `Offer`/`Product`-per-plan JSON-LD, and no pricing numbers on any public page** (the pricing/plan/quota/billing system is removed from the product; the direction is recorded in `SAAS_LAUNCH_PLAN §4`). The single `Product`-class schema fact the site carries is the `SoftwareApplication` block on `/` + `/features` (`STRUCTURED_DATA.md §3`), with **no `offers` array** — an `Offer` on a site with no pricing is a fabrication. *(P0; the absence is the requirement.)*
+- `WFR-204` `/faq` lists ≥ 15 questions, each with `mainEntity` `Question` + `acceptedAnswer` in the `FAQPage` JSON-LD; the visible answer text **matches the JSON-LD text byte-for-byte** (GEO/answer-engine consistency, `SEO_AEO_GEO.md §3`). Question groups: *Getting started* (4), *Reviews & findings* (4), *Security & privacy* (4), *GitHub connection* (3: "how do I connect my repositories", "which GitHub permissions does the App need", "how do I disconnect or pick specific repos"). No billing/quota group. *(P0)*
+- `WFR-205` `/features` is the capability narrative: deterministic-first pipeline, the 4 pillars, the **security-findings rollup** story (the `FR-504` user-facing value), the **audit trail** story (`FR-510`), the **GitHub connection** story (connect/pick repos/disconnect, the `/repositories` page + `/api/v1/github/*` routes, `TECHNICAL_ARCHITECTURE.md §5`), and **BYOK** for enterprise. Every feature is linked to the dashboard FR it satisfies (a traceability link, `PRODUCT/ACCEPTANCE_CRITERIA.md`). *(P0)*
 
 ### 4.3 Docs & Content Surfaces
 
-- `WFR-301` `/docs` is the public developer docs hub. The *first-cut* content set (P2) is: **quickstart** (install + first review, mirroring `USER_JOURNEYS J1`'s sign-up→install→first-review), **API reference** (the dashboard REST + webhook contract, sourced from `docs/API/OPENAPI.yaml`), **GitHub App install guide**, **rules & configuration** (`FR-505`), **security findings** (`FR-504`), **pricing & quotas** (`PRICING_STRATEGY` + `USAGE_QUOTAS`), **changelog link**. Each `/docs/<topic>` is a static page (SST, Next.js App Router), `Article` JSON-LD + `BreadcrumbList`. *(P0 at P2; the *living* docs site ships P2+)*
+- `WFR-301` `/docs` is the public developer docs hub. The *first-cut* content set (P2) is: **quickstart** (connect + first review, mirroring `USER_JOURNEYS J1`'s sign-up → connect → first-review), **API reference** (the dashboard REST + webhook contract, sourced from `docs/API/OPENAPI.yaml`), **GitHub App install & connect guide** (the connect flow: install URL, repository selection, disconnect; the `/api/v1/github/*` routes, `TECHNICAL_ARCHITECTURE.md §5`), **rules & configuration** (`FR-505`), **security findings** (`FR-504`), **usage report** (the plain usage report, no quotas), **changelog link**. Each `/docs/<topic>` is a static page (SST, Next.js App Router), `Article` JSON-LD + `BreadcrumbList`. *(P0 at P2; the *living* docs site ships P2+)*
 - `WFR-302` `/changelog` is a time-ordered feed of releases; each entry is a `CreativeWork` (or `Release` on a dedicated page) with date + author + a human-readable summary. The feed uses an `ItemList` JSON-LD listing the latest 10. *(P0)*
 - `WFR-303` `/blog` is an article index; each `/blog/<slug>` is an `Article` with `author` (`Person`), `datePublished`, `dateModified`, `headline` (≤ 110 chars), `image` (an OG 1200×630). *(P0)*
 - `WFR-304` Content (blog/changelog/docs) is authored as **Markdown in `content/`** (a new repo root dir, `docs/WEBSITE/CONTENT_SCHEMAS.md`), validated against a `Contract` schema (`packages/contracts` sibling), and rendered by `next-mdx` / a plain MD loader. **No CMS** in MVP. *(P0)*
@@ -66,25 +68,34 @@ IDs follow `WFR-<n>`. All P0 items ship at **P2 public launch** (`SAAS_LAUNCH_PL
 
 ### 4.4 Machine Readability & SEO (AEO/GEO)
 
-- `WFR-401` A top-level `llms.txt` at `/llms.txt` lists, in plain markdown, the key product facts (pricing, quotas, rate limits, the wedge, the 4 pillars, the "open-source?" answer, "self-hosted?" answer) **in the same order as the hero → CTA**. `llms.txt` is a *machine-readable index* for LLMs; it is **not** a schema replacement (JSON-LD is), it's the natural-language summary layer (`SEO_AEO_GEO.md §4`). *(P0)*
+- `WFR-401` A top-level `llms.txt` at `/llms.txt` lists, in plain markdown, the key product facts (the wedge, the 4 pillars, the "open-source?" answer, the "self-hosted?" answer, the GitHub-connection facts: install, repository selection, disconnect, the review-latency numbers) **in the same order as the hero → CTA**. `llms.txt` is a *machine-readable index* for LLMs; it is **not** a schema replacement (JSON-LD is), it's the natural-language summary layer (`SEO_AEO_GEO.md §4`). No pricing or quota facts are listed — there are no plans to state. *(P0)*
 - `WFR-402` Every `WFR-401` fact is also present in the visible page text + JSON-LD (a "triple source" rule — see `SEO_AEO_GEO.md §2`). *(P0)*
-- `WFR-403` A `/api/answer` JSON endpoint (Fastify) returns the product's structured answers to a bounded query language ("what's the team plan price", "how many reviews does free include", "is it open source"). This endpoint is the GEO *backing* for any answer engine that can make HTTP calls; it is also the **single source of truth** that `STRUCTURED_DATA.md`'s JSON-LD generator reads from, so the on-page schema and the API answer can't drift. *(P0)*
+- `WFR-403` A `/api/answer` JSON endpoint (Fastify) returns the product's structured answers to a bounded query language ("how do I connect my repositories", "how fast is a review", "is it open source"). This endpoint is the GEO *backing* for any answer engine that can make HTTP calls; it is also the **single source of truth** that `STRUCTURED_DATA.md`'s JSON-LD generator reads from, so the on-page schema and the API answer can't drift. No pricing intents exist — a pricing query is a 404 answer. *(P0)*
 - `WFR-404` Open Graph + Twitter Card meta on every page (`WFR-102`), with a VERCODE-default OG image (1200×630, the product mark + a short one-line). Per-page OG image for `/blog/<slug>` is the `image` field of `WFR-303`. *(P0)*
 - `WFR-405` `hreflang` is **not** used in MVP (EN only; a multi-lang is a P1 decision, `UNRESOLVED` below). *(P0: the *absence* of hreflang is declared)*
 - `WFR-406` A `/legal/` cluster: `terms`, `privacy`, `security` (a public trust page that *links* to `docs/SECURITY/SECURITY_ARCHITECTURE.md` in a simplified public form), `dpa` (the DPDP/SOC2 evidence page, `SAAS_LAUNCH_PLAN P3`), `status` (a link to the status page, a launch prereq, `SAAS_LAUNCH_PLAN §5`). *(P0 at P2)*
 
 ### 4.5 CTA & Conversion
 
-- `WFR-501` The primary CTA on `/` and `/pricing` is **"/signin"** (the J1 start, `USER_JOURNEYS`); the *secondary* is `/docs/quickstart`. CTA copy uses the *word of the trade* ("Start a free review", not "Get started" — `DESIGN_SYSTEM §7`). *(P0)*
-- `WFR-502` The pricing card's "Free" CTA goes to `/signin`; "Developer/Team/Enterprise" CTAs go to `/signin` with a plan-override query (`/signin?plan=team`), which the auth app reads to pre-select the plan at org-create (a dashboard app contract, `AUTHENTICATION.md`). *(P0)*
-- `WFR-503` A **waitlist** CTA is *not* part of P2 (the public launch is the Free-tier self-serve, `SAAS_LAUNCH_PLAN §4`); a waitlist form is a P1 deferred feature if the Free tier is rate-limited. *(P0: the *absence* is declared)*
+- `WFR-501` The primary CTA on `/` is **"Connect your repo" → "/signin"** (the J1 start, `USER_JOURNEYS`); the *secondary* is `/docs/quickstart`. CTA copy uses the *word of the trade* ("Connect your repo", not "Get started" — `DESIGN_SYSTEM §7`). The CTA is a *connection* CTA, never a pricing CTA. *(P0)*
+- `WFR-502` Both CTAs resolve to `/signin` (the auth app); post-signup, J1 lands on the dashboard's repositories connect flow (`/repositories`, the connect/pick/disconnect steps, `/api/v1/github/*`, `TECHNICAL_ARCHITECTURE.md §5`). No plan-override query exists (there are no plans to pre-select). *(P0)*
+- `WFR-503` A **waitlist** CTA is *not* part of P2 (the public launch is the self-serve connect-and-review path, `SAAS_LAUNCH_PLAN §4`); a waitlist form is a P1 deferred feature. *(P0: the *absence* is declared)*
 - `WFR-504` Conversion instrumentation: **one** first-party, cookieless beacon on `/signin` success (the "first review published" activation, `SUCCESS_METRICS` activation KPI). The beacon URL carries a `?src=web-{page}` param; no third-party analytics in P2 (the DPDP posture, `SECURITY/PRIVACY.md`). *(P0)*
+
+### 4.6 GitHub Connection (the product value loop, restated without monetization)
+
+The website's whole job is to explain **one loop**: *connect your repo → get reviews → read the findings → see what you used.* The loop has no paid step — no plan to pick, no quota to run out of, no billing to configure. This section is design-level only (the heads own the implementation); it is the *product* story the marketing pages must tell.
+
+- `WFR-601` **The user story the pages carry.** A team leader (the `Wendy` persona, §3) lands on `/`, understands the wedge, clicks "Connect your repo", signs in, and reaches the dashboard's **repositories** page (`/repositories`, `docs/DESIGN/INFORMATION_ARCHITECTURE.md`). There: the **connect flow** (install the GitHub App via a pre-scoped install URL, wait for the install webhook, VERCODE discovers the org's repositories), **repository selection** (which of the discovered repos VERCODE reviews — per-org settings, a repository selection list, not a plan feature), the **connected-repositories table** (repo, reviews in the last 30 days, open high/critical counts, last reviewed, a `connected`/`disconnected` status pill), and **disconnect** (remove VERCODE's App from the org or revoke a repo; VERCODE records it, stops reviewing it, keeps the audit trail). The landing page's `HowTo` (`WFR-202`) is the public mirror of exactly these three verbs: connect, pick, review. *(P0 at P2)*
+- `WFR-602` **The API surface, described in public terms.** The connection lifecycle lives under `/api/v1/github/*`: a **connect** route (returns the GitHub App install URL + records the pending install), a **list** route (the org's connected repositories, as the repositories page's table data), a **settings** route (repository selection: which repos are enabled for review, stored per-org in the settings area, `docs/DESIGN/PAGE_SPECIFICATIONS.md`'s settings page), and a **disconnect** route (revoke access; the org's GitHub installation state is cleared, prior findings + audit rows are retained). The website's `/docs/github-app` topic is the human-readable version of this same surface; the numbers/permissions on that page are byte-equal to the `FAQPage` answer for "Which GitHub permissions does the App need?" (`WFR-204`, group 4). *(P0 at P2)*
+- `WFR-603` **The usage-report replacement.** No quota strip, no "80% banner", no upgrade CTA. The dashboard's `/usage` surface is a **plain usage report**: reviews run per day/week/month, per-repo and per-PR breakdowns, and the token/prompt-version attribution for each review (`README.md`'s publish step). The website's `/docs` first-cut set includes a **usage** topic (`WFR-301`) — a fact-sheet page, the answer to "how much did VERCODE review for me" — and *no* quotas topic. An LLM asked "does VERCODE have usage limits" gets the honest answer: **there are no per-org review caps; the usage report is informational** (`SEO_AEO_GEO.md §4.5`'s "negative claims are stated as honestly as positive ones" rule). *(P0 at P2)*
+- `WFR-604` **The acceptance bar for the story.** (1) `/` states the loop in ≤ 2 sentences in its subhead (connect → reviews → findings → usage report); (2) the `HowTo` JSON-LD's 3 steps are connect/pick/read-review, not "pick a plan"; (3) the FAQ group 4 (GitHub connection, `WFR-204`) answers connect/permissions/disconnect with answers byte-equal to the JSON-LD; (4) no public page, JSON-LD block, `llms.txt` bullet, or `/api/answer` intent mentions a plan, tier, price, or quota. A pricing artifact that resurfaces on any public surface is a *structural* failure of the direction recorded in this PRD's header note. *(P0)*
 
 ## 5. Non-Functional Requirements
 
 The website NFRs live in `PERFORMANCE_AND_ACCESSIBILITY.md` (IDs `WNFR-##`). Summary targets:
 
-- **Performance:** Lighthouse mobile ≥ 90 on `/` + `/pricing` + `/docs/quickstart` (a CRFP budget, `PERFORMANCE_AND_ACCESSIBILITY.md`).
+- **Performance:** Lighthouse mobile ≥ 90 on `/` + `/docs/quickstart` + `/docs/api` (a CRFP budget, `PERFORMANCE_AND_ACCESSIBILITY.md`).
 - **Accessibility:** WCAG 2.2 AA on every public page (`docs/DESIGN/ACCESSIBILITY.md` reference; axe-core 0-violations in CI).
 - **SEO:** 100% of `WFR-101` pages pass the on-page check (`SEO_AEO_GEO.md §5` "the on-page gate").
 - **Trust:** no vanity totals, no fabricated logos (`DESIGN_SYSTEM §9` tell-bans).
@@ -104,9 +115,9 @@ Keyed to `SUCCESS_METRICS.md` (the dashboard KPIs) + new website KPIs:
 
 | Metric | Target | Source |
 | --- | --- | --- |
-| Organic sign-ups to Free plan (30 d post-launch) | ≥ 500 | the `?src=web-*` beacon (a first-party, cookieless, `WFR-504`) |
+| Organic sign-ups that reach the repositories connect flow (30 d post-launch) | ≥ 500 | the `?src=web-*` beacon (a first-party, cookieless, `WFR-504`) |
 | Organic share of total sign-ups | ≥ 40% at 90 d | same beacon, segmented on `utm_source` |
-| Answer-engine citation rate | ≥ 1 in 5 top LLM answers to "best AI code review" cite VERCODE verbatim on pricing/quota | manual sampling, monthly, `SEO_AEO_GEO.md §5` |
+| Answer-engine citation rate | ≥ 1 in 5 top LLM answers to "best AI code review" cite VERCODE verbatim on the product facts (the value loop, latency, open-source posture) | manual sampling, monthly, `SEO_AEO_GEO.md §5` |
 | Lighthouse mobile `/` | ≥ 90 | CI Lighthouse, `PERFORMANCE_AND_ACCESSIBILITY.md` |
 | 404 rate | < 1% of pageviews | server access logs |
 | Crawl coverage | 100% of `WFR-101` URLs in `index.html` via GSC (or a self-hosted crawler check) | a weekly CI job, `PERFORMANCE_AND_ACCESSIBILITY.md` |

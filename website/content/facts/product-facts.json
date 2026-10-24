@@ -57,92 +57,24 @@
       ]
     },
     {
-      "heading": "Pricing",
-      "facts": [
-        {
-          "id": "pricing.free.price",
-          "label": "Free plan price",
-          "value": "0",
-          "unit": "USD per month",
-          "sentence": "The Free plan costs 0 USD per month and is a permanent tier, not a trial.",
-          "source": "/pricing",
-          "asOf": "2026-10-23"
-        },
-        {
-          "id": "pricing.developer.price",
-          "label": "Developer plan price",
-          "value": "24",
-          "unit": "USD per month",
-          "sentence": "The Developer plan costs 24 USD per month.",
-          "source": "/pricing",
-          "asOf": "2026-10-23"
-        },
-        {
-          "id": "pricing.team.price",
-          "label": "Team plan price",
-          "value": "199",
-          "unit": "USD per month",
-          "sentence": "The Team plan costs 199 USD per month and includes strong-model access and 5,000 reviews per month.",
-          "source": "/pricing",
-          "asOf": "2026-10-23"
-        },
-        {
-          "id": "pricing.enterprise.price",
-          "label": "Enterprise plan price",
-          "value": "custom",
-          "unit": "negotiated",
-          "sentence": "Enterprise pricing is negotiated per account; BYOK and Ollama customers fund their own model spend.",
-          "source": "/pricing",
-          "asOf": "2026-10-23"
-        }
-      ]
-    },
-    {
       "heading": "Quotas and limits",
       "facts": [
         {
-          "id": "quota.free.reviewsPerMonth",
-          "label": "Free reviews per month",
+          "id": "quota.default.reviewsPerMonth",
+          "label": "Default reviews per month",
           "value": "50",
           "unit": "reviews per month",
-          "sentence": "The Free plan includes 50 reviews per month.",
-          "source": "/pricing",
-          "asOf": "2026-10-23"
-        },
-        {
-          "id": "quota.developer.reviewsPerMonth",
-          "label": "Developer reviews per month",
-          "value": "500",
-          "unit": "reviews per month",
-          "sentence": "The Developer plan includes 500 reviews per month.",
-          "source": "/pricing",
-          "asOf": "2026-10-23"
-        },
-        {
-          "id": "quota.team.reviewsPerMonth",
-          "label": "Team reviews per month",
-          "value": "5000",
-          "unit": "reviews per month",
-          "sentence": "The Team plan includes 5,000 reviews per month.",
-          "source": "/pricing",
+          "sentence": "A standard organization quota includes 50 reviews per month; the cap is configurable per account.",
+          "source": "/docs/quotas",
           "asOf": "2026-10-23"
         },
         {
           "id": "quota.team.filesPerReview",
-          "label": "Team files per review",
+          "label": "Files per review",
           "value": "100",
           "unit": "changed files per review",
-          "sentence": "A Team review processes up to 100 changed files; larger diffs degrade to the highest-risk files with a note.",
-          "source": "/pricing",
-          "asOf": "2026-10-23"
-        },
-        {
-          "id": "quota.team.concurrentReviews",
-          "label": "Team concurrent reviews",
-          "value": "10",
-          "unit": "in-flight review jobs",
-          "sentence": "A Team organization can have 10 review jobs in flight; jobs beyond the cap are queued, not skipped.",
-          "source": "/pricing",
+          "sentence": "A review processes up to 100 changed files on a heavy-usage quota; larger diffs degrade to the highest-risk files with a note.",
+          "source": "/docs/quotas",
           "asOf": "2026-10-23"
         },
         {
@@ -164,7 +96,7 @@
           "label": "Where source code is stored",
           "value": "analyzed, not persisted",
           "unit": "",
-          "sentence": "VERCODE reads the pull request diff and bounded context; it does not store your source repository in its database. Findings are retained per the plan's retention window, then purged.",
+          "sentence": "VERCODE reads the pull request diff and bounded context; it does not store your source repository in its database. Findings are retained for the retention window, then purged.",
           "source": "/legal/privacy",
           "asOf": "2026-10-23"
         },

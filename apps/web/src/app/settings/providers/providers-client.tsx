@@ -1,10 +1,9 @@
 "use client";
 
 // /settings/providers (PAGE §6.2). The routing table (task | provider |
-// model | max-tokens, with tier-gated rows legibly disabled + a "Upgrade
-// to use" note); the BYOK masked field (sk-…abcd, raw key NEVER shown,
-// Rotate + Revoke with a confirmation that names the object); and the
-// configured fallback provider state.
+// model | max-tokens); the BYOK masked field (sk-…abcd, raw key NEVER
+// shown, Rotate + Revoke with a confirmation that names the object); and
+// the configured fallback provider state.
 import { useState } from "react";
 import { OrgPage } from "@/components/page";
 import { useOrgShell } from "@/components/OrgShell";
@@ -17,7 +16,7 @@ import { PageHead, SettingsSection } from "@/components/Settings";
 import { DataBlock, EmptyBlock } from "@/components/DataBlock";
 import { Table, TRow, TCell } from "@/components/Table";
 import { ByokField } from "@/components/ByokField";
-import { Button, TextButton } from "@/components/Button";
+import { Button } from "@/components/Button";
 import { ConfirmDialog } from "@/components/BlockError";
 import { Input } from "@/components/controls";
 
@@ -49,7 +48,7 @@ function ProvidersBody() {
       <div style={{ background: "var(--surface)", border: "1px solid var(--hard-border)", borderRadius: 8, padding: "0 20px" }}>
         <SettingsSection
           label="Task routing"
-          description="Admin-set within the plan tier. A team-plan org can't pin a task to an Enterprise-only model — the gate is surfaced as a disabled row + a reason, never a 30% opacity wash."
+          description="Admin-set per task: which provider and model run each review stage. Rows show the in-force state."
         >
           <DataBlock result={q} block="task routing">
             {() => {
@@ -59,7 +58,7 @@ function ProvidersBody() {
               }
               return (
                 <Table
-                  caption="Task routing: the task, the provider, the model, the max tokens, and tier-gate state"
+                  caption="Task routing: the task, the provider, the model, the max tokens, and state"
                   head={[
                     { label: "Task", width: "26%" },
                     { label: "Provider" },
@@ -68,33 +67,25 @@ function ProvidersBody() {
                     { label: "State" },
                   ]}
                 >
-                  {rows.map((r, i) => {
-                    const gated = r.tierGate != null && r.available === false;
-                    return (
-                      <TRow key={i}>
-                        <TCell>
-                          <span aria-disabled={gated} style={{ opacity: gated ? 0.7 : 1, fontWeight: 500 }}>
-                            {r.task}
+                  {rows.map((r, i) => (
+                    <TRow key={i}>
+                      <TCell>
+                        <span style={{ fontWeight: 500 }}>{r.task}</span>
+                      </TCell>
+                      <TCell>{r.provider}</TCell>
+                      <TCell>{r.model}</TCell>
+                      <TCell right>{r.maxTokens != null ? r.maxTokens : "—"}</TCell>
+                      <TCell>
+                        {r.available === false ? (
+                          <span className="meta" aria-disabled="true" style={{ color: "var(--muted-ink)" }}>
+                            unavailable — check provider config
                           </span>
-                        </TCell>
-                        <TCell>{r.provider}</TCell>
-                        <TCell>{r.model}</TCell>
-                        <TCell right>{r.maxTokens != null ? r.maxTokens : "—"}</TCell>
-                        <TCell>
-                          {gated ? (
-                            <span className="meta" aria-disabled="true" style={{ color: "var(--muted-ink)" }}>
-                              <span style={{ color: "var(--text)" }}>Tier-gated</span> —{" "}
-                              <TextButton onClick={() => {}} style={{ fontSize: 12, textDecoration: "underline" }}>
-                                Upgrade to use
-                              </TextButton>
-                            </span>
-                          ) : (
-                            <span className="meta">in force</span>
-                          )}
-                        </TCell>
-                      </TRow>
-                    );
-                  })}
+                        ) : (
+                          <span className="meta">in force</span>
+                        )}
+                      </TCell>
+                    </TRow>
+                  ))}
                 </Table>
               );
             }}

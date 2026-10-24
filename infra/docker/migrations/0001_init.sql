@@ -287,33 +287,6 @@ CREATE TABLE "usage_daily" (
 );
 
 -- CreateTable
-CREATE TABLE "org_billing" (
-    "org_id" TEXT NOT NULL,
-    "provider" TEXT NOT NULL,
-    "provider_customer_id" TEXT,
-    "provider_subscription_id" TEXT,
-    "plan" "Plan" NOT NULL,
-    "status" "BillingStatus" NOT NULL,
-    "current_period_end" TIMESTAMP(3),
-    "cancelled_at" TIMESTAMP(3),
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "org_billing_pkey" PRIMARY KEY ("org_id")
-);
-
--- CreateTable
-CREATE TABLE "billing_events" (
-    "id" TEXT NOT NULL,
-    "provider" TEXT NOT NULL,
-    "provider_event_id" TEXT NOT NULL,
-    "type" TEXT NOT NULL,
-    "processed_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "raw" JSONB,
-
-    CONSTRAINT "billing_events_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "audit_events" (
     "id" TEXT NOT NULL,
     "org_id" TEXT,
@@ -411,8 +384,6 @@ CREATE INDEX "usage_events_org_id_month_created_at_idx" ON "usage_events"("org_i
 CREATE UNIQUE INDEX "usage_daily_org_id_day_key" ON "usage_daily"("org_id", "day");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "billing_events_provider_provider_event_id_key" ON "billing_events"("provider", "provider_event_id");
-
 -- CreateIndex
 CREATE INDEX "audit_events_org_id_created_at_idx" ON "audit_events"("org_id", "created_at");
 
@@ -474,8 +445,6 @@ ALTER TABLE "usage_events" ADD CONSTRAINT "usage_events_org_id_fkey" FOREIGN KEY
 ALTER TABLE "usage_events" ADD CONSTRAINT "usage_events_job_id_fkey" FOREIGN KEY ("job_id") REFERENCES "review_jobs"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "org_billing" ADD CONSTRAINT "org_billing_org_id_fkey" FOREIGN KEY ("org_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
 -- AddForeignKey
 ALTER TABLE "audit_events" ADD CONSTRAINT "audit_events_org_id_fkey" FOREIGN KEY ("org_id") REFERENCES "organizations"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 

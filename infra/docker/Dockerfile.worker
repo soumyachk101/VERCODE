@@ -28,7 +28,6 @@ COPY packages/diff-engine/package.json packages/diff-engine/
 COPY packages/static-analysis/package.json packages/static-analysis/
 COPY packages/review-engine/package.json packages/review-engine/
 COPY packages/ai-providers/package.json packages/ai-providers/
-COPY packages/billing/package.json packages/billing/
 RUN pnpm install --frozen-lockfile
 
 # --- build -----------------------------------------------------------------
@@ -54,7 +53,6 @@ COPY packages/diff-engine/package.json packages/diff-engine/
 COPY packages/static-analysis/package.json packages/static-analysis/
 COPY packages/review-engine/package.json packages/review-engine/
 COPY packages/ai-providers/package.json packages/ai-providers/
-COPY packages/billing/package.json packages/billing/
 COPY apps/worker apps/worker
 COPY packages/contracts packages/contracts
 COPY packages/config packages/config
@@ -64,7 +62,6 @@ COPY packages/diff-engine packages/diff-engine
 COPY packages/static-analysis packages/static-analysis
 COPY packages/review-engine packages/review-engine
 COPY packages/ai-providers packages/ai-providers
-COPY packages/billing packages/billing
 # A the diff fixtures the mock GitHub client reads (USE_MOCK_GITHUB=true,
 # the Compose dev-stack path, TRD §18) — a fixture, not a secret.
 COPY apps/worker/tests apps/worker/tests

@@ -3,7 +3,7 @@
 // /usage (PAGE §5.1). The lead figure is the blended cost/PR; the dual
 // view is a single-series line chart with a control to switch between
 // reviews/day and cost/day (switching, not overlaying); the by-provider
-// breakdown is a thin bar list; the quota track repeats the Overview's.
+// breakdown is a thin bar list.
 import { useMemo, useState } from "react";
 import { OrgPage } from "@/components/page";
 import { useOrgShell } from "@/components/OrgShell";
@@ -11,7 +11,6 @@ import { useUsage } from "@/lib/hooks";
 import { PageHead } from "@/components/Settings";
 import { DataBlock, EmptyBlock } from "@/components/DataBlock";
 import { Panel, PanelTitle, Figure } from "@/components/cards";
-import { PlanTrack } from "@/components/PlanTrack";
 import { BarList, LineChartBlock } from "@/components/charts";
 import { VcTabs } from "@/components/controls";
 
@@ -81,7 +80,7 @@ function UsageBody() {
         finding={
           u
             ? `${u.totals.reviews} reviews · $${u.totals.estUsd.toFixed(2)} in the last 30 days`
-            : "Am I getting value, and will I hit my cap?"
+            : "How much value are you getting?"
         }
       />
       <div style={{ display: "grid", gap: 16 }}>
@@ -149,21 +148,6 @@ function UsageBody() {
             />
           </Panel>
         )}
-
-        {/* 4. the quota track (the cap, both ends labelled) */}
-        <Panel>
-          <PanelTitle>Plan quota</PanelTitle>
-          <DataBlock result={q} block="usage">
-            {() => u ? (
-              <PlanTrack
-                used={u.quota.used}
-                limit={u.quota.limit}
-                committed={u.quota.committed}
-                unit="reviews"
-              />
-            ) : null}
-          </DataBlock>
-        </Panel>
       </div>
     </div>
   );

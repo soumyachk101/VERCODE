@@ -17,7 +17,7 @@ import { SITE_NAME } from "@/lib/site.js";
 
 // 120–158 chars (WFR-102's meta description band; the on-page gate).
 const FAQ_META_DESCRIPTION =
-  "Sixteen questions, literal answers: review latency, the 0.6 confidence floor, what is stored and purged, the 5 App scopes, the quota rules, and the license.";
+  "Sixteen questions, literal answers: review latency, the 0.6 confidence floor, what is stored and purged, the 5 App scopes, the usage rules, and the license.";
 
 export const metadata: Metadata = {
   title: `FAQ — ${SITE_NAME}`,
