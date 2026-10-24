@@ -20,10 +20,9 @@ import type { RedisOptions } from "ioredis";
 import { Queue } from "bullmq";
 
 // The queue names (the worker consumes these, T5.1: `review-queue` +
-// `retention-queue` + a `billing-queue`).
+// `retention-queue`).
 export const REVIEW_QUEUE = "review-queue";
 export const RETENTION_QUEUE = "retention-queue";
-export const BILLING_QUEUE = "billing-queue";
 
 // The review-job payload (a ONLY the pointer + a correlation — no diff, no
 // findings, no authz material, a NFR-04 "no LLM on the webhook path").

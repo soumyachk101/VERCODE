@@ -35,7 +35,6 @@ COPY packages/diff-engine/package.json packages/diff-engine/
 COPY packages/static-analysis/package.json packages/static-analysis/
 COPY packages/review-engine/package.json packages/review-engine/
 COPY packages/ai-providers/package.json packages/ai-providers/
-COPY packages/billing/package.json packages/billing/
 RUN pnpm install --frozen-lockfile
 
 # --- build -----------------------------------------------------------------
@@ -63,7 +62,6 @@ COPY packages/diff-engine/package.json packages/diff-engine/
 COPY packages/static-analysis/package.json packages/static-analysis/
 COPY packages/review-engine/package.json packages/review-engine/
 COPY packages/ai-providers/package.json packages/ai-providers/
-COPY packages/billing/package.json packages/billing/
 COPY apps/api apps/api
 COPY packages/contracts packages/contracts
 COPY packages/config packages/config
@@ -73,7 +71,6 @@ COPY packages/diff-engine packages/diff-engine
 COPY packages/static-analysis packages/static-analysis
 COPY packages/review-engine packages/review-engine
 COPY packages/ai-providers packages/ai-providers
-COPY packages/billing packages/billing
 # A non-root user (the container never needs to be root to serve).
 RUN useradd -m -u 10001 vercode
 USER vercode

@@ -132,11 +132,6 @@ function ReviewBody({ repo, prNumber, commitId }: { repo: string; prNumber: numb
                     <span className="meta">
                       Status: {jobStatusLabel(j.status, j.skipReason)}
                     </span>
-                    {j.skipReason === "quota_exceeded" && (
-                      <a href="/usage" className="pressable" style={{ color: "var(--accent-color)", fontSize: 13 }}>
-                        View usage
-                      </a>
-                    )}
                     {j.status === "partial" && (
                       <span className="meta" style={{ color: "var(--pill-warning-ink)" }}>
                         AI stage degraded — static findings still published

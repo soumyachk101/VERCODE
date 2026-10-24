@@ -39,11 +39,11 @@ The two scopes answer different questions. An org-level rule is a policy: "we do
 
 Suppression and the confidence floor drop findings; a quota stoppage is a different control, the NFR-18 skip-with-notice. A rule never silences a quota skip: when an org is over its cap, the review is skipped with a notice on the pull request and a dashboard row, not quietly stopped. The rule surface and the quota surface are separate, and the skip is the only quota behavior a customer ever sees.
 
-Rules are bounded by the plan: the number of custom rules an org can define is a plan quota (3 on Free, 10 on Developer, 50 on Team). A rule create over the cap is a 409 on the API and a dashboard notice.
+Rules are bounded by the quota: the number of custom rules an org can define is a quota (3 on a 50-review quota, 10 on a 500-review quota, 50 on a 5,000-review quota). A rule create over the cap is a 409 on the API and a dashboard notice.
 
 Source: docs/PRODUCT/FUNCTIONAL_REQUIREMENTS.md (FR-308, FR-505); docs/PRODUCT/PRD.md (the rule types, FR-505's line)
 
 ## Related
 
 - [Security findings](/docs/security/) — the rollup a category suppression shapes
-- [Quotas](/docs/quotas/) — the custom-rules count cap, per plan
+- [Quotas](/docs/quotas/) — the custom-rules count cap

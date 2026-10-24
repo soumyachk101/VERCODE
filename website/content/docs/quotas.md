@@ -1,6 +1,6 @@
 ---
 title: "Quotas & limits"
-description: "The per-plan quota table: 50, 500, and 5,000 reviews a month, the file and concurrency caps, retention windows, and the skip-with-notice rule at each cap."
+description: "The quota table: reviews a month, the file and concurrency caps, retention windows, and the skip-with-notice rule at each cap."
 date: 2026-10-23
 status: published
 tags: [quotas, limits, usage]
@@ -20,13 +20,13 @@ group: reference
   are the plans.ts values, not a second source.
 -->
 
-A plan's quota is a set of commercial limits, each a number, a unit, and a ceiling. The source of truth is `packages/contracts/src/plans.ts`; the API quota check, the worker pre-flight check, and the dashboard display all read from it. The table below is those values.
+An organization's quota is a set of usage limits, each a number, a unit, and a ceiling. The source of truth is `packages/contracts/src/plans.ts`; the API quota check, the worker pre-flight check, and the dashboard display all read from it. The table below is those values.
 
-The caps are the plan's shape; the skip behavior at the cap is the NFR-18 rule: a stoppage is never silent.
+The caps are the org's shape; the skip behavior at the cap is the NFR-18 rule: a stoppage is never silent.
 
 ## The quota table
 
-| Dimension | Free | Developer | Team | Enterprise |
+| Dimension | Standard | Large | Heavy usage | Enterprise |
 | --- | --- | --- | --- | --- |
 | Reviews / month | 50 | 500 | 5,000 | Configured |
 | Files / review | 20 | 60 | 100 | 500 |
@@ -36,16 +36,16 @@ The caps are the plan's shape; the skip behavior at the cap is the NFR-18 rule: 
 | Model tier | standard | standard | standard + strong | any |
 | Audit retention | 180 d | 180 d | 180 d | Custom |
 
-Enterprise caps are configurable: the values shown are the floor, and a per-account negotiation raises them. A hardcoded "unlimited" is deliberately not a value: it would be a cost-abuse vector (a platform cap is the backstop).
+Enterprise caps are configurable: the values shown are the floor, and a per-account agreement raises them. A hardcoded "unlimited" is deliberately not a value: it would be a cost-abuse vector (a platform cap is the backstop).
 
 ## The ceiling semantics
 
 Each dimension behaves differently at its cap:
 
-- **Reviews per month** is a hard cap: the N+1th review in a month skips with a notice (NFR-18). The 50th review on a 50-cap plan runs; the 51st skips. The skip is before the AI stage, so it consumes zero tokens.
+- **Reviews per month** is a hard cap: the N+1th review in a month skips with a notice (NFR-18). The 50th review on a 50-cap quota runs; the 51st skips. The skip is before the AI stage, so it consumes zero tokens.
 - **Files and lines per review** is a degrade, not a skip: a diff over the cap is reviewed on its highest-risk files, and the rest is listed in a summary appendix (NFR-19). An over-budget review does not error.
 - **Concurrent reviews** is a queue: a job over the in-flight cap waits, it is not skipped. A throughput cap delays; a volume cap skips.
-- **Finding retention** is a hard delete on schedule: findings expire on the plan's window (30 / 90 / 365 / custom days) and are purged on a retention job, not soft-flagged.
+- **Finding retention** is a hard delete on schedule: findings expire on the quota's window (30 / 90 / 365 / custom days) and are purged on a retention job, not soft-flagged.
 - **Custom rules** is a count cap: a create over the cap is a 409 and a dashboard notice.
 
 ## The 80% warning
@@ -56,5 +56,4 @@ Source: packages/contracts/src/plans.ts (the values, the AC-401 source of truth)
 
 ## Related
 
-- [Pricing](/docs/pricing/) — the plan these quotas belong to
-- [Custom rules](/docs/rules/) — the custom-rules count cap, per plan
+- [Custom rules](/docs/rules/) — the custom-rules count cap

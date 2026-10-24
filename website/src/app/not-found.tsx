@@ -38,7 +38,7 @@ export default function NotFound() {
         </p>
 
         {/* The 5 top links (IA §3.1's "the 5 top links"; the exact set
-            is the brief's `/`, `/pricing`, `/docs/quickstart`,
+            is the brief's `/`, `/docs/quickstart`,
             `/features`, `/faq`). */}
         <nav aria-label="Top links" className="mt-8">
           <p className="footer-col-title mb-3">Where to go next</p>

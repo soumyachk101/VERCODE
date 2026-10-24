@@ -1,9 +1,8 @@
 // The BullMQ queue definitions + worker (M5 T5.1, TRD.md §7, NFR-13/14/15/17).
 //
 // Queues: review-queue (the per-review work), retention-queue (purge jobs),
-// billing-queue (usage rollups), review-dead-letter (the DLQ — terminal
-// failures land here with a reason, ERROR_HANDLING.md §3 "observable, not
-// lost").
+// review-dead-letter (the DLQ — terminal failures land here with a reason,
+// ERROR_HANDLING.md §3 "observable, not lost").
 //
 // Retry: maxAttempts 3 (queue-level), exponential backoff 2^attempt seconds +
 // jitter (TRD.md §7 "exponential backoff 2^attempt * 1s + jitter"); a job
@@ -69,13 +68,6 @@ export function makeRetentionQueue(redis: Redis): Queue {
   });
 }
 
-export function makeBillingQueue(redis: Redis): Queue {
-  return new Queue(QUEUES.billing, {
-    connection: redis as unknown as RedisOptions,
-    defaultJobOptions: sharedJobOptions(3),
-  });
-}
-
 export function makeDeadLetterQueue(redis: Redis): Queue {
   // A the DLQ never retries — a terminal failure is recorded, observable.
   return new Queue(QUEUES.deadLetter, {
@@ -115,14 +107,13 @@ export async function releaseInFlightLock(redis: Redis, key: string, token: stri
 
 // ---------------------------------------------------------------------------
 // A the worker factory — a builds the four queues + a BullMQ Worker on the
-// review-queue (retention/billing are consumed by the same process later; for
+// review-queue (retention is consumed by the same process later; for
 // M5 the review pipeline is the only handler wired).
 // ---------------------------------------------------------------------------
 
 export interface StartedWorker {
   reviewQueue: Queue;
   retentionQueue: Queue;
-  billingQueue: Queue;
   deadLetterQueue: Queue;
   worker: BullWorker;
   /** A SIGTERM-safe shutdown: stop dequeueing, drain in-flight, close. */
@@ -134,7 +125,6 @@ export function startWorker(deps: WorkerDeps, opts: WorkerOptions): StartedWorke
 
   const reviewQueue = makeReviewQueue(redis);
   const retentionQueue = makeRetentionQueue(redis);
-  const billingQueue = makeBillingQueue(redis);
   const deadLetterQueue = makeDeadLetterQueue(redis);
 
   const dlqEntry = (jobId: string, reason: string, payload: unknown, error: string): DeadLetterEntry => ({
@@ -218,14 +208,12 @@ export function startWorker(deps: WorkerDeps, opts: WorkerOptions): StartedWorke
     await worker.close();
     await reviewQueue.close();
     await retentionQueue.close();
-    await billingQueue.close();
     await deadLetterQueue.close();
   };
 
   return {
     reviewQueue,
     retentionQueue,
-    billingQueue,
     deadLetterQueue,
     worker,
     shutdown,

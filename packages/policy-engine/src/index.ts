@@ -1,25 +1,18 @@
 // policy-engine — the pure policy surface: the confidence floor, the
-// per-repo/per-org suppression, the severity gating, the quota check, and
-// the file-budget check (TASK_BREAKDOWN T4.5; REVIEW_ENGINE_SPEC §2 stages
-// [0]/[2]/[11]).
+// per-repo/per-org suppression, the severity gating, and the file-budget
+// check (TASK_BREAKDOWN T4.5; REVIEW_ENGINE_SPEC §2 stages [0]/[2]/[11]).
 //
-// Pure: no I/O, no AI, no DB (SERVICE_BOUNDARIES "policy-engine: applyPolicy,
-// checkQuota — forbidden: AI/DB calls"). The worker re-reads the durable
-// rows (org_settings + repo_rules + usage_events) and hands the *resolved
+// Pure: no I/O, no AI, no DB (SERVICE_BOUNDARIES "policy-engine: applyPolicy
+// — forbidden: AI/DB calls"). The worker re-reads the durable rows
+// (org_settings + repo_rules + usage_events) and hands the *resolved
 // values* to these functions.
 //
 // Invariants (the ones the docs pin):
 //   - a static (deterministic) finding is EXEMPT from the confidence floor
 //     (ADR-005: a provider outage still yields a useful, if partial, review);
-//   - a suppressed category never publishes, at any confidence;
-//   - the quota check reads the plan's caps (contracts/plans.ts) + the
-//     org's monthly usage aggregate — one enforcement point (AC-401/402).
+//   - a suppressed category never publishes, at any confidence.
 
-import {
-  type FindingCategory,
-  type Plan,
-  planQuota,
-} from "@vercode/contracts";
+import { type FindingCategory } from "@vercode/contracts";
 
 // ---------------------------------------------------------------------------
 // The resolved policy (what the org's durable rows reduce to)
@@ -196,68 +189,6 @@ export function applyPolicy<T extends PolicyFinding>(
     published.push(f);
   }
   return { published, belowFloor, suppressed: suppressedCount, belowSeverity };
-}
-
-// ---------------------------------------------------------------------------
-// checkQuota — the single enforcement point (USAGE_QUOTAS §4, AC-401/402)
-// ---------------------------------------------------------------------------
-
-export interface QuotaUsage {
-  /** The reviews recorded in the current month. */
-  reviewsUsed: number;
-  /** The provider spend recorded in the current month (USD). */
-  tokenSpendUsedUsd: number;
-}
-
-export interface QuotaState {
-  over: boolean;
-  /** A human-readable "used/cap" detail (a the skip notice carries it). */
-  detail: string;
-  reviewsUsed: number;
-  reviewsCap: number;
-  tokenSpendUsedUsd: number;
-  tokenSpendCapUsd: number;
-}
-
-/**
- * The quota check: the org is over its plan's cap when the monthly review
- * count or the monthly token-spend has reached the cap.
- *
- * The N+1th review skips (NFR-18): the check is `used >= cap`.
- */
-export function checkQuota(plan: Plan, usage: QuotaUsage): QuotaState {
-  const quota = planQuota(plan);
-  const reviewsUsed = usage.reviewsUsed;
-  const spend = usage.tokenSpendUsedUsd;
-
-  if (quota.reviewsPerMonth > 0 && reviewsUsed >= quota.reviewsPerMonth) {
-    return {
-      over: true,
-      detail: `${reviewsUsed}/${quota.reviewsPerMonth} reviews`,
-      reviewsUsed,
-      reviewsCap: quota.reviewsPerMonth,
-      tokenSpendUsedUsd: spend,
-      tokenSpendCapUsd: quota.tokenSpendCapMonthlyUsd,
-    };
-  }
-  if (quota.tokenSpendCapMonthlyUsd > 0 && spend >= quota.tokenSpendCapMonthlyUsd) {
-    return {
-      over: true,
-      detail: `spend $${spend.toFixed(2)} / $${quota.tokenSpendCapMonthlyUsd}`,
-      reviewsUsed,
-      reviewsCap: quota.reviewsPerMonth,
-      tokenSpendUsedUsd: spend,
-      tokenSpendCapUsd: quota.tokenSpendCapMonthlyUsd,
-    };
-  }
-  return {
-    over: false,
-    detail: `${reviewsUsed}/${quota.reviewsPerMonth} reviews`,
-    reviewsUsed,
-    reviewsCap: quota.reviewsPerMonth,
-    tokenSpendUsedUsd: spend,
-    tokenSpendCapUsd: quota.tokenSpendCapMonthlyUsd,
-  };
 }
 
 // ---------------------------------------------------------------------------

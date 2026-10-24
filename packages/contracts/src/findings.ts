@@ -3,8 +3,7 @@ import { z } from "zod";
 // The findings + jobs + summary schemas, split out of index.ts so each contract
 // module has one responsibility (REPOSITORY_STRUCTURE.md "the contracts package
 // is the single source of truth"). index.ts re-exports these for the
-// single-import-surface (contracts/src/index.ts "re-export plan helpers (single
-// import surface)").
+// single-import-surface.
 
 // ---------------------------------------------------------------------------
 // Severity & categories

@@ -17,7 +17,7 @@ import { Table, TRow, TCell } from "@/components/Table";
 import { VcToggle } from "@/components/controls";
 import { IdChip } from "@/components/IdChip";
 
-const ACTIONS = ["review.published", "role.changed", "byok.rotated", "org.invitation_sent", "billing.subscribed"];
+const ACTIONS = ["review.published", "role.changed", "byok.rotated", "org.invitation_sent"];
 
 export function AuditClient() {
   return (

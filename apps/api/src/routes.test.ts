@@ -9,7 +9,6 @@ import fastifyCookie from "@fastify/cookie";
 import fastifyCors from "@fastify/cors";
 import { reviewRoutes } from "./routes/reviews.js";
 import { usageRoutes } from "./routes/usage.js";
-import { billingRoutes } from "./routes/billing.js";
 import { settingsRoutes } from "./routes/settings.js";
 import { auditRoutes } from "./routes/audit.js";
 import { githubRoutes } from "./routes/github.js";
@@ -42,7 +41,7 @@ function setupTestApp() {
   // In-memory data store for testing
   const store = {
     orgs: [
-      { id: "org-1", slug: "test-org", name: "Test Org", plan: "FREE", status: "ACTIVE", memberships: [{ role: "OWNER", userId: "user-1" }] },
+      { id: "org-1", slug: "test-org", name: "Test Org", status: "ACTIVE", memberships: [{ role: "OWNER", userId: "user-1" }] },
     ],
     users: [
       { id: "user-1", email: "dev@vercode.test", name: "Test Dev", passwordHash: "argon2id$mock", emailVerified: true },
@@ -214,26 +213,6 @@ function setupTestApp() {
         _sum: { reviewCount: 5, estUsdCost: 0.25, inputTokens: 2500, outputTokens: 1000 },
       }),
     },
-    orgBilling: {
-      upsert: async ({ create, update }: any) => ({
-        orgId: "org-1",
-        provider: "stripe",
-        plan: create.plan ?? update.plan,
-        status: "ACTIVE",
-        currentPeriodEnd: new Date(),
-        cancelledAt: null,
-      }),
-      update: async ({ data }: any) => ({
-        orgId: "org-1",
-        provider: "stripe",
-        plan: data.plan ?? "FREE",
-        status: data.status ?? "CANCELED",
-        cancelledAt: data.cancelledAt,
-      }),
-    },
-    billingEvent: {
-      findMany: async () => [],
-    },
     orgSettings: {
       findUnique: async () => store.settings,
       upsert: async ({ create, update }: any) => {
@@ -327,7 +306,6 @@ function setupTestApp() {
   const mountRoutes = (r: FastifyInstance) => {
     r.register(reviewRoutes, { prefix: "/orgs" });
     r.register(usageRoutes, { prefix: "/orgs" });
-    r.register(billingRoutes, { prefix: "/orgs" });
     r.register(settingsRoutes, { prefix: "/orgs" });
     r.register(auditRoutes, { prefix: "/orgs" });
     r.register(async (inst) => {
@@ -437,8 +415,8 @@ describe("Dashboard REST API Complete Route Specification", () => {
     });
   });
 
-  describe("Usage & Billing API", () => {
-    it("GET /orgs/:id/usage returns series, totals, and monthly quota status", async () => {
+  describe("Usage API", () => {
+    it("GET /orgs/:id/usage returns series and totals", async () => {
       const res = await app.inject({
         method: "GET",
         url: "/orgs/org-1/usage?range=30d",
@@ -446,43 +424,6 @@ describe("Dashboard REST API Complete Route Specification", () => {
       expect(res.statusCode).toBe(200);
       const body = JSON.parse(res.body);
       expect(body.totals.reviews).toBe(5);
-      expect(body.quota.limit).toBe(50);
-      expect(body.quota.used).toBe(5);
-      expect(body.quota.percentUsed).toBe(10);
-    });
-
-    it("GET /orgs/:id/billing returns plan and billing details", async () => {
-      const res = await app.inject({
-        method: "GET",
-        url: "/orgs/org-1/billing",
-      });
-      expect(res.statusCode).toBe(200);
-      const body = JSON.parse(res.body);
-      expect(body.plan).toBe("free");
-      expect(body.status).toBe("active");
-    });
-
-    it("POST /orgs/:id/billing/subscribe upgrades subscription plan", async () => {
-      const res = await app.inject({
-        method: "POST",
-        url: "/orgs/org-1/billing/subscribe",
-        payload: { plan: "team" },
-      });
-      expect(res.statusCode).toBe(200);
-      const body = JSON.parse(res.body);
-      expect(body.ok).toBe(true);
-      expect(body.plan).toBe("team");
-    });
-
-    it("POST /orgs/:id/billing/cancel cancels subscription", async () => {
-      const res = await app.inject({
-        method: "POST",
-        url: "/orgs/org-1/billing/cancel",
-      });
-      expect(res.statusCode).toBe(200);
-      const body = JSON.parse(res.body);
-      expect(body.ok).toBe(true);
-      expect(body.status).toBe("canceled");
     });
   });
 

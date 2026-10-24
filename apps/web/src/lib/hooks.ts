@@ -162,14 +162,6 @@ export function useUsage(orgId: string | undefined, range: "30d" | "90d" | "12mo
     placeholderData: keepPreviousData,
   });
 }
-export function useBilling(orgId?: string) {
-  return useQuery({
-    queryKey: ["org", orgId ?? "none", "billing"],
-    queryFn: async () =>
-      normalizeBilling(await api.get<Record<string, unknown>>(`/orgs/${orgId}/billing`)),
-    enabled: !!orgId,
-  });
-}
 export function useSettings(orgId?: string) {
   return useQuery({
     queryKey: ["org", orgId ?? "none", "settings"],
@@ -241,6 +233,30 @@ export function useGithubDisconnect() {
     mutationFn: () => api.post<{ ok: boolean }>(`/auth/github/disconnect`),
   });
 }
+/** The org-level GitHub App connect/disconnect (the settings "GitHub connection"
+ *  section's primary actions; the install URL opens in a new tab — GitHub
+ *  handles the install, and its webhook is what records the row). */
+export function useGithubOrgConnect(orgId: string) {
+  return useMutation({
+    mutationFn: async (fullName?: string) => {
+      const r = await api.post<{ installUrl?: string }>(`/orgs/${orgId}/github/connect`, {
+        fullName,
+      });
+      return r?.installUrl ?? null;
+    },
+  });
+}
+export function useGithubOrgDisconnect(orgId: string) {
+  return useMutation({
+    mutationFn: () => api.post<{ ok: boolean }>(`/orgs/${orgId}/github/disconnect`),
+  });
+}
+export function useSetGithubActiveRepos(orgId: string) {
+  return useMutation({
+    mutationFn: (repoIds: string[]) =>
+      api.put<{ ok: boolean; activeRepoIds: string[] }>(`/orgs/${orgId}/github-repos`, { repoIds }),
+  });
+}
 export function useSessions() {
   return useQuery({
     queryKey: ["me", "sessions"],
@@ -300,17 +316,6 @@ export function useByokRevoke(orgId: string) {
     mutationFn: () => api.del(`/orgs/${orgId}/providers/byok`),
   });
 }
-export function useSubscribe(orgId: string) {
-  return useMutation({
-    mutationFn: (body: { plan: string; atPeriodEnd?: boolean }) =>
-      api.post<{ plan: string; status?: string }>(`/orgs/${orgId}/billing/subscribe`, body),
-  });
-}
-export function useCancelSubscription(orgId: string) {
-  return useMutation({
-    mutationFn: () => api.post(`/orgs/${orgId}/billing/cancel`, { atPeriodEnd: true }),
-  });
-}
 export function useInvite(orgId: string) {
   return useMutation({
     mutationFn: (body: { email: string; role: string }) =>
@@ -343,7 +348,6 @@ export function useSignOutAll() {
 
 import type {
   AuthMe,
-  NormalizedBilling,
   NormalizedFindings,
   NormalizedJob,
   NormalizedMembers,
@@ -386,7 +390,6 @@ export function normalizeAuthMe(r: unknown): AuthMe {
           return {
             id: String(m.id ?? ""),
             name: String(m.name ?? "org"),
-            plan: (m.plan as string) ?? "free",
             role: (m.role as string) ?? "viewer",
           };
         })
@@ -396,21 +399,10 @@ export function normalizeAuthMe(r: unknown): AuthMe {
 
 export function normalizeOrg(r: unknown): NormalizedOrg {
   const o = (r ?? {}) as Record<string, unknown>;
-  const b = (o.billing ?? {}) as Record<string, unknown>;
   return {
     id: String(o.id ?? ""),
     name: String(o.name ?? "org"),
-    plan: (o.plan as string) ?? "free",
-    status:
-      (o.planStatus as string) ?? (b.status as string) ?? "active",
-    renewalAt:
-      o.renewalAt != null
-        ? String(o.renewalAt)
-        : b.renewalAt != null
-          ? String(b.renewalAt)
-          : b.nextInvoiceAt != null
-            ? String(b.nextInvoiceAt)
-            : null,
+    status: "active",
   };
 }
 
@@ -432,6 +424,32 @@ export function normalizeMemberList(r: unknown): NormalizedMembers {
 
 export function normalizeInstall(r: unknown): NormalizedInstall {
   const o = (r ?? {}) as Record<string, unknown>;
+  // The current github.ts shape: `{ installs: [{ id, status, accountLogin, createdAt, repos }] }`.
+  // The ACTIVE install with at least one connected repo is the "connected" signal;
+  // a REMOVED-only history still reports `connected: false` but carries the
+  // last account name so the UI can show "last seen as <login>".
+  const installs = Array.isArray(o.installs) ? (o.installs as Array<Record<string, unknown>>) : [];
+  if (installs.length > 0) {
+    const activeInstall = installs.find((i) => i.status === "ACTIVE" && i.repos != null && (i.repos as unknown[]).length > 0) ??
+      installs.find((i) => i.status === "ACTIVE");
+    if (activeInstall) {
+      return {
+        connected: true,
+        installId: String(activeInstall.id ?? ""),
+        account: activeInstall.accountLogin != null ? String(activeInstall.accountLogin) : null,
+        connectedAt: activeInstall.createdAt != null ? String(activeInstall.createdAt) : undefined,
+        reposCount: activeInstall.repos != null ? (activeInstall.repos as unknown[]).length : 0,
+      };
+    }
+    const lastInstall = installs[0];
+    return {
+      connected: false,
+      installId: lastInstall?.id != null ? String(lastInstall.id) : undefined,
+      account: lastInstall?.accountLogin != null ? String(lastInstall.accountLogin) : null,
+      connectedAt: undefined,
+      reposCount: 0,
+    };
+  }
   if (o.connected !== undefined) {
     return {
       connected: !!o.connected,
@@ -574,7 +592,6 @@ export function normalizeUsage(r: unknown): NormalizedUsage {
   const o = (r ?? {}) as Record<string, unknown>;
   const seriesRaw = Array.isArray(o.series) ? o.series : [];
   const totals = (o.totals ?? {}) as Record<string, unknown>;
-  const quotaRaw = (o.quota ?? {}) as Record<string, unknown>;
   const byProvider = Array.isArray(o.byProvider)
     ? (o.byProvider as Array<Record<string, unknown>>).map((p) => ({
         provider: String(p.provider ?? p.model ?? "provider"),
@@ -598,37 +615,8 @@ export function normalizeUsage(r: unknown): NormalizedUsage {
       reviews: Number(totals.reviews ?? 0),
       estUsd: Number(totals.estUsd ?? totals.est_usd ?? 0),
     },
-    quota: {
-      used: Number(quotaRaw.used ?? 0),
-      limit: Number(quotaRaw.limit ?? 0),
-      percentUsed: Number(quotaRaw.percentUsed ?? quotaRaw.percent_used ?? 0),
-      committed:
-        quotaRaw.committed != null ? Number(quotaRaw.committed) : undefined,
-    },
     perReviewUsd: perReview,
     byProvider,
-  };
-}
-
-export function normalizeBilling(r: unknown): NormalizedBilling {
-  const o = (r ?? {}) as Record<string, unknown>;
-  const inv = Array.isArray(o.invoices) ? o.invoices : [];
-  const quotaRaw = (o.quota ?? {}) as Record<string, unknown>;
-  return {
-    plan: String(o.plan ?? "free"),
-    status: String(o.status ?? "active") as NormalizedBilling["status"],
-    renewalAt: o.renewalAt != null ? String(o.renewalAt) : null,
-    invoices: (inv as Array<Record<string, unknown>>).map((x) => ({
-      id: String(x.id ?? ""),
-      date: String(x.date ?? x.issued_at ?? ""),
-      amountUsd: Number(x.amountUsd ?? x.amount_usd ?? 0),
-      status: String(x.status ?? "paid"),
-    })),
-    quota: {
-      used: Number(quotaRaw.used ?? 0),
-      limit: Number(quotaRaw.limit ?? 0),
-      percentUsed: Number(quotaRaw.percentUsed ?? quotaRaw.percent_used ?? 0),
-    },
   };
 }
 
@@ -653,6 +641,11 @@ export function normalizeSettings(r: unknown): NormalizedSettings {
       : Array.isArray(o.suppressed_categories)
         ? (o.suppressed_categories as string[])
         : undefined,
+    activeReposForReview: Array.isArray(o.activeReposForReview)
+      ? (o.activeReposForReview as string[])
+      : Array.isArray(o.active_repos_for_review)
+        ? (o.active_repos_for_review as string[])
+        : undefined,
   };
 }
 
@@ -670,7 +663,6 @@ export function normalizeProviders(r: unknown): NormalizedProviders {
       provider: String(x.provider ?? ""),
       model: String(x.model ?? ""),
       maxTokens: typeof x.maxTokens === "number" ? x.maxTokens : undefined,
-      tierGate: x.tierGate as string | undefined,
       available: x.available === false ? false : undefined,
     })),
   };
@@ -703,7 +695,6 @@ export type {
   NormalizedFindings,
   NormalizedSecurity,
   NormalizedUsage,
-  NormalizedBilling,
   NormalizedSettings,
   NormalizedProviders,
   NormalizedAudit,

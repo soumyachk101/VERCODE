@@ -55,7 +55,7 @@ export async function orgRoutes(app: FastifyInstance) {
       },
     });
 
-    reply.code(201).send({ org: { id: org.id, slug: org.slug, name: org.name, plan: org.plan } });
+    reply.code(201).send({ org: { id: org.id, slug: org.slug, name: org.name } });
   });
 
   // A GET /:id (the tenancy middleware resolves + 404s cross-org).
@@ -75,7 +75,6 @@ export async function orgRoutes(app: FastifyInstance) {
         id: org.id,
         slug: org.slug,
         name: org.name,
-        plan: org.plan,
         status: org.status,
         members: org.memberships.length,
       },

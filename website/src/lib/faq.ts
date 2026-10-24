@@ -1,7 +1,7 @@
 // The 16 canonical FAQ items — IA §3.4's table, in the 4 groups
 // (getting-started 4 / reviews-findings 4 / security-privacy 4 /
-// billing-limits 4; the 16th row, "export or delete", lands in
-// billing-limits — WFR-204's "≥ 15" is a floor, not a cap).
+// usage-limits 4; the 16th row, "export or delete", lands in
+// usage-limits — WFR-204's "≥ 15" is a floor, not a cap).
 //
 // This is the single source both surfaces read: the visible /faq page
 // renders these, and the schema-generator's FAQPage block uses the same
@@ -19,7 +19,7 @@ export type FaqGroup =
   | "getting-started"
   | "reviews-findings"
   | "security-privacy"
-  | "billing-limits";
+  | "usage-limits";
 
 export interface FaqItem {
   group: FaqGroup;
@@ -33,7 +33,7 @@ export const FAQ_GROUPS: readonly { id: FaqGroup; label: string }[] = [
   { id: "getting-started", label: "Getting started" },
   { id: "reviews-findings", label: "Reviews & findings" },
   { id: "security-privacy", label: "Security & privacy" },
-  { id: "billing-limits", label: "Billing & limits" },
+  { id: "usage-limits", label: "Usage & cost" },
 ];
 
 export const FAQ_ITEMS: FaqItem[] = [
@@ -95,11 +95,11 @@ export const FAQ_ITEMS: FaqItem[] = [
     anchor: "FR-313",
   },
   // §3.4 row 8 — NFR-28 (raw diffs not stored beyond the review lifetime;
-  // findings retained per plan window, then purged).
+  // findings retained for the retention window, then purged).
   {
     group: "reviews-findings",
     q: "Where is my code stored?",
-    a: "Your source is not stored as a durable asset. Raw diffs and file contents live in an org-scoped cache with a 24-hour TTL and in worker memory for the review's duration (NFR-28). What persists is the analysis: findings and summaries, retained for your plan's window, then hard-purged on schedule. A finding may quote a bounded snippet of the diff; the full file does not reach the database.",
+    a: "Your source is not stored as a durable asset. Raw diffs and file contents live in an org-scoped cache with a 24-hour TTL and in worker memory for the review's duration (NFR-28). What persists is the analysis: findings and summaries, retained for your organization's window, then hard-purged on schedule. A finding may quote a bounded snippet of the diff; the full file does not reach the database.",
     anchor: "NFR-28",
   },
   // §3.4 row 9 — NFR-09 (+ NFR-29: the provider gets a bounded context on
@@ -139,15 +139,15 @@ export const FAQ_ITEMS: FaqItem[] = [
   // §3.4 row 13 — NFR-18 (skip-with-notice, never a silent stop; a skip
   // is before the AI stage, zero tokens).
   {
-    group: "billing-limits",
-    q: "What happens when I hit my quota?",
-    a: "The review is skipped with a notice posted on the pull request, and a dashboard row and banner show the reason and the upgrade path (NFR-18: skip-with-notice, never a silent stop). The skip happens before the AI stage, so it consumes zero tokens. The 80% warning on the quota strip is the early signal that the cap is near.",
+    group: "usage-limits",
+    q: "What happens when I hit the monthly usage cap?",
+    a: "The review is skipped with a notice posted on the pull request, and a dashboard row and banner show the reason (NFR-18: skip-with-notice, never a silent stop). The skip happens before the AI stage, so it consumes zero tokens. The 80% warning on the usage strip is the early signal that the cap is near.",
     anchor: "NFR-18",
   },
   // §3.4 row 14 — the MIT license + the public repo (LICENSE.md,
   // README.md).
   {
-    group: "billing-limits",
+    group: "usage-limits",
     q: "Is VERCODE open source?",
     a: "Yes. The repository is MIT-licensed, with the license at LICENSE.md. The review pipeline, the static-analysis rules, and the dashboard code are in the tree. The docs are written so that each claim can be checked against the code it points at; the open-source posture is a differentiator, not a garnish.",
     anchor: "LICENSE.md",
@@ -156,18 +156,18 @@ export const FAQ_ITEMS: FaqItem[] = [
   // hosted pipeline needs the GitHub App + a provider key; BYOK/Ollama
   // shifts the model spend to the customer.
   {
-    group: "billing-limits",
+    group: "usage-limits",
     q: "Can I self-host it?",
-    a: "The code is self-hostable: the repo is MIT-licensed. The hosted pipeline needs two external credentials: the GitHub App installation and an AI provider key. With BYOK or Ollama the model spend is on your bill, not VERCODE's — the Enterprise plan is built around exactly this cost-shifting shape.",
+    a: "The code is self-hostable: the repo is MIT-licensed. The hosted pipeline needs two external credentials: the GitHub App installation and an AI provider key. With BYOK or Ollama the model spend is on your bill, not VERCODE's — enterprise agreements are built around exactly this cost-shifting shape.",
     anchor: "LICENSE.md + DEPLOYMENT §5",
   },
   // §3.4 row 16 — FR-404 (deletion on access revocation) + NFR-27
-  // (retention windows: 30/90/365/custom days for findings; 180-day
+  // (retention windows: 30 days for findings; 180-day
   // audit floor).
   {
-    group: "billing-limits",
+    group: "usage-limits",
     q: "How do I export or delete my data?",
-    a: "Removing the GitHub App installation triggers deletion: the install is marked removed, the diff cache is evicted immediately, and an export window opens for your findings before any hard-purge (FR-404). Findings are retained 30 days on Free, 90 on Developer, 365 on Team, or custom on Enterprise; the audit log keeps a 180-day minimum regardless of plan (NFR-27).",
+    a: "Removing the GitHub App installation triggers deletion: the install is marked removed, the diff cache is evicted immediately, and an export window opens for your findings before any hard-purge (FR-404). Findings are retained 30 days, then hard-purged on schedule; the audit log keeps a 180-day minimum (NFR-27).",
     anchor: "FR-404 + NFR-27",
   },
 ];
@@ -176,53 +176,6 @@ export const FAQ_ITEMS: FaqItem[] = [
 export function topN(n: number): FaqItem[] {
   return FAQ_ITEMS.slice(0, n);
 }
-
-// ---------------------------------------------------------------------------
-// The 6-question pricing FAQ (content/faq/pricing/, the separate FAQPage
-// block on /pricing — IA §3.3 block 4; a distinct item set from the 16 on
-// /faq, per CONTENT_SCHEMAS.md §3 CS-07's "a separate FAQPage block" note).
-// The same byte-equivalence rule applies: the visible /pricing answers and
-// the pricing FAQPage's acceptedAnswer.text are generated from this list.
-// ---------------------------------------------------------------------------
-
-export const PRICING_FAQ: FaqItem[] = [
-  {
-    group: "billing-limits",
-    q: "Which plan should I start on?",
-    a: "Start on Free: it is a permanent plan, not a trial, with 50 reviews a month. Move to Developer when you need more volume at the same per-review cost; move to Team when the org needs the strong-model pass and 5,000 reviews a month. Enterprise is the cost-shifting and compliance shape: BYOK, Ollama, frontier access, SSO.",
-    anchor: "PRICING_STRATEGY §2",
-  },
-  {
-    group: "billing-limits",
-    q: "What happens when I reach the quota cap?",
-    a: "The review is skipped before the AI stage runs, so it consumes zero tokens, and a notice is posted on the pull request (NFR-18: skip-with-notice, never a silent stop). The dashboard shows the skip row, the reason, and the upgrade path; the 80% warning banner fires before the cap is reached.",
-    anchor: "NFR-18",
-  },
-  {
-    group: "billing-limits",
-    q: "Can I use my own provider key (BYOK)?",
-    a: "Yes, on the plans that carry provider settings. The key is encrypted with AES-256-GCM under a KMS-wrapped master key (FR-313), masked in the dashboard, and revocable at any time. With BYOK or a self-hosted Ollama, the model spend is on your bill, not VERCODE's.",
-    anchor: "FR-313",
-  },
-  {
-    group: "billing-limits",
-    q: "Do you offer annual billing?",
-    a: "Yes: a Team or Enterprise annual prepay carries a discount for the commit. The exact discount percentage is a market decision and is set per plan, not a fixed published figure. Annual billing reduces churn and improves the NRR the launch target names.",
-    anchor: "PRICING_STRATEGY §4",
-  },
-  {
-    group: "billing-limits",
-    q: "What if I exceed my quota during the month?",
-    a: "The over-cap review is skipped with a notice, not silently billed beyond the cap (NFR-18). On Team and Enterprise, a metered overage is available as an opt-in, at a published per-review rate with a cap; Free and Developer are hard caps. The overage is transparent: the dashboard shows what will be billed before it bills.",
-    anchor: "PRICING_STRATEGY §3",
-  },
-  {
-    group: "billing-limits",
-    q: "Can I self-host VERCODE?",
-    a: "The code is MIT-licensed and self-hostable. The hosted pipeline requires a GitHub App installation and an AI provider key. With BYOK or Ollama the model spend is on your bill, not VERCODE's — the Enterprise plan is the commercial shape built around that cost-shifting.",
-    anchor: "LICENSE.md + DEPLOYMENT §5",
-  },
-];
 
 // The 5-question teaser set for the / landing page's FAQ block (IA §3.1's
 // block 6): the first 5 of the 16, in order. The slice, not a separate

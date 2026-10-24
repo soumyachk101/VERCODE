@@ -8,18 +8,10 @@ import path from "node:path";
 // measurement, not a checkbox" rule (RELEASE_CRITERIA.md §2).
 
 const ROOT = path.resolve(import.meta.dirname, "..");
-// The repo root is one level up from website/ (the monorepo layout:
-// repo-root/packages/contracts/src/plans.ts is the quota source of truth).
-const REPO_ROOT = path.resolve(ROOT, "..");
 
 // Read a file relative to the website app root.
 function read(rel: string): string {
   return fs.readFileSync(path.join(ROOT, rel), "utf8");
-}
-
-// Read a file relative to the repo root (the packages/* source-of-truth files).
-function readRepo(rel: string): string {
-  return fs.readFileSync(path.join(REPO_ROOT, rel), "utf8");
 }
 
 function readJson<T>(rel: string): T {
@@ -44,7 +36,7 @@ describe("UT-web-sitemap-count (W-AC-01)", () => {
     // no-trailing-slash per the static export's `trailingSlash: false`
     // default — the WFR-103 spec's "every WFR-101 URL" check is on the
     // route path, not the trailing-slash variant).
-    const docsTopics = ["quickstart", "github-app", "api", "rules", "security", "providers", "pricing", "quotas", "privacy"];
+    const docsTopics = ["quickstart", "github-app", "api", "rules", "security", "providers", "quotas", "privacy"];
     for (const t of docsTopics) {
       expect(sitemap).toContain(`/docs/${t}`);
     }
@@ -95,36 +87,6 @@ describe("UT-web-faq-byte (W-AC-04)", () => {
     const modSrc = read("src/lib/faq.ts");
     for (const group of ["getting-started", "reviews-findings", "security-privacy", "billing-limits"]) {
       expect(modSrc).toContain(group);
-    }
-  });
-});
-
-// ---------------------------------------------------------------------------
-// UT-web-pricing-drift (W-AC-03): the /pricing page's numbers == the
-// content/pricing/ source, byte-equal (a structural drift-impossibility).
-// ---------------------------------------------------------------------------
-describe("UT-web-pricing-drift (W-AC-03)", () => {
-  it("the pricing.json offers match the plans.ts quota table", () => {
-    const pricing = readJson<{ offers: { plan: string; price: string }[] }>("content/pricing/pricing.json");
-    // The quota source of truth is the contracts package (USAGE_QUOTAS.md §2's
-    // "plans.ts is the source of truth" rule; a hardcoded quota number
-    // elsewhere is a defect, AC-401). The repo-root-relative path.
-    const plans = readRepo("packages/contracts/src/plans.ts");
-    // The 4 plan names are the ALL_PLANS set.
-    expect(pricing.offers.map((o) => o.plan)).toEqual(["free", "developer", "team", "enterprise"]);
-    // The quota numbers rendered on /pricing (from QUOTA_ROWS in lib/pricing.ts)
-    // must equal the plans.ts constants. The plans.ts FREE_QUOTA.reviewsPerMonth
-    // is 50 — the website's quota table's free cell is "50".
-    expect(plans).toContain("reviewsPerMonth: 50");
-    expect(plans).toContain("reviewsPerMonth: 5000");
-  });
-
-  it("a PLACEHOLDER price is rejected in a prod build (the CONTENT_SCHEMAS §5.2 rule)", () => {
-    const pricing = readJson<{ offers: { price: string }[] }>("content/pricing/pricing.json");
-    // The first build's prices are real numbers (0/24/199/custom) — no
-    // PLACEHOLDER leaked into a prod-bound value.
-    for (const o of pricing.offers) {
-      expect(o.price).not.toEqual("PLACEHOLDER");
     }
   });
 });

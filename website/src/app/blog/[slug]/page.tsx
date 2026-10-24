@@ -89,11 +89,11 @@ export default async function BlogArticlePage({
     ? [
         {
           href: "/docs/quotas/",
-          label: "The quotas docs — per-plan limits and the skip-with-notice rule",
+          label: "The usage docs — per-review cost accounting and the skip-with-notice rule",
         },
         {
-          href: "/pricing/",
-          label: "The pricing page — the four plans with their literal numbers",
+          href: "/docs/rules/",
+          label: "The rules docs — custom review rules and confidence floors",
         },
       ]
     : [
@@ -106,9 +106,9 @@ export default async function BlogArticlePage({
           label: "The security docs — least-privilege scopes, encryption, retention",
         },
       ];
-  const ctaHref = post.tags.includes("quotas") ? "/pricing/" : "/docs/rules/";
+  const ctaHref = post.tags.includes("quotas") ? "/docs/quotas/" : "/docs/rules/";
   const ctaLabel = post.tags.includes("quotas")
-    ? "See the pricing page"
+    ? "Read the usage docs"
     : "Read the docs";
 
   return (

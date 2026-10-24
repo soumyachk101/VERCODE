@@ -8,8 +8,8 @@
  * is the reader). Used by the SSG pages (changelog, blog) only; the
  * static export bakes it in, no Node APIs at runtime.
  *
- * The JSON-file helpers below (loadPricing / loadFacts) use direct JSON
- * imports, not fs: a static import is tree-shaken into the build, needs
+ * The JSON-file helper below (loadFacts) uses a direct JSON
+ * import, not fs: a static import is tree-shaken into the build, needs
  * no path resolution at runtime, and keeps the data statically
  * analyzable. A caller (e.g. the llms.txt builder) does not need to
  * care where the bytes came from.
@@ -20,7 +20,6 @@ import { join, relative, sep } from "node:path";
 // .js extension is the NodeNext-style import specifier — it resolves to
 // the .tsx file because tsconfig's moduleResolution: "bundler" strips it.
 import { parseFrontMatter, type FrontMatter } from "./markdown.js";
-import { PRICING, type PricingJSON } from "./pricing.js";
 import factsJsonRaw from "../../content/facts/product-facts.json";
 
 // parseFrontMatter returns { front, body } under the pure-string markdown.ts
@@ -310,15 +309,7 @@ export function publishedDocs(docs: readonly DocPage[]): DocPage[] {
   return docs.filter((d) => d.front.status === "published");
 }
 
-/** The pricing JSON (already parsed + typed by pricing.ts). */
-export function loadPricing(): PricingJSON {
-  return PRICING;
-}
-
 /** The product facts JSON, typed. */
 export function loadFacts(): FactsJSON {
   return factsJsonRaw as FactsJSON;
 }
-
-/** The already-parsed pricing data (the same object pricing.ts exports). */
-export { PRICING };

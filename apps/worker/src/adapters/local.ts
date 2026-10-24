@@ -28,9 +28,7 @@ import type { ChangeSet } from "@vercode/diff-engine";
  * Build a the mock task → provider map (a the dev default, TRD.md §18).
  *
  * Every task gets a the same MockAdapter with a the "good" scenario — a
- * deterministic, a zero real-token-cost result. A the call count is
- * exposed on a the adapter so a test can assert "a zero provider calls"
- * (a the quota-skip test, AC-402).
+ * deterministic, a zero real-token-cost result.
  */
 export function makeMockAiProviders(): Partial<Record<ReviewTask, AIProvider>> {
   const deep = new MockAdapter("good");

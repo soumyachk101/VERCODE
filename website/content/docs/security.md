@@ -28,7 +28,7 @@ Each finding carries the finding shape the pipeline publishes: a category, a sev
 
 ## The severity model
 
-The severity scale is four levels: **critical, high, medium, low**. The model is fixed and is not org-configurable — an org configures which severities it sees (the rollup filter), not what a severity means. A security-category finding is reviewed on the strongest model the plan's tier allows, and that pass is never downgraded for cost (the routing invariant in the model-routing doc, invariant 3).
+The severity scale is four levels: **critical, high, medium, low**. The model is fixed and is not org-configurable — an org configures which severities it sees (the rollup filter), not what a severity means. A security-category finding is reviewed on the strongest model the org's quota tier allows, and that pass is never downgraded for cost (the routing invariant in the model-routing doc, invariant 3).
 
 The deterministic static-analysis pass produces the high-precision security findings: a Semgrep rule that flags an injection sink or a hardcoded credential is a measured check, not an estimate. The model's security findings are the delta on top of it.
 

@@ -52,7 +52,7 @@ log "running the migrate service (a one-shot schema apply)..."
 # 2. the app stack (a postgres + redis + web + api + worker + the mocks).
 # ---------------------------------------------------------------------------
 log "booting the dev stack..."
-"${DC[@]}" up -d postgres redis web api worker mock-github mock-ai mock-billing || fail "the stack did not come up"
+"${DC[@]}" up -d postgres redis web api worker mock-github mock-ai || fail "the stack did not come up"
 
 # A wait for a healthiness (a the compose healthchecks; a bounded wait so
 # the smoke doesn't hang forever).
@@ -77,5 +77,5 @@ log "running the in-stack smoke (a health + a mock PR through the pipeline)..."
 "${DC[@]}" run --rm smoke || fail "the smoke check failed"
 
 log "smoke target PASSED (a health + a mock PR through the pipeline, DEPLOYMENT §2)"
-log "the stack is running: web=http://localhost:3000 api=http://localhost:4000 mock-github=http://localhost:8091 mock-ai=http://localhost:8092 mock-billing=http://localhost:8093"
+log "the stack is running: web=http://localhost:3000 api=http://localhost:4000 mock-github=http://localhost:8091 mock-ai=http://localhost:8092"
 log "tear down with: docker compose -f ${COMPOSE_FILE} down"

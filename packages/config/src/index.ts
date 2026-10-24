@@ -42,15 +42,6 @@ const AiSchema = z.object({
 });
 export type AiConfig = z.infer<typeof AiSchema>;
 
-const BillingSchema = z.object({
-  BILLING_PROVIDER: z.enum(["stripe", "razorpay"]).default("stripe"),
-  STRIPE_SECRET_KEY: z.string().optional(),
-  STRIPE_WEBHOOK_SECRET: z.string().optional(),
-  RAZORPAY_KEY_ID: z.string().optional(),
-  RAZORPAY_KEY_SECRET: z.string().optional(),
-  BILLING_CURRENCY: z.string().default("USD"),
-});
-export type BillingConfig = z.infer<typeof BillingSchema>;
 
 const ObservabilitySchema = z.object({
   SENTRY_DSN_API: z.string().optional(),
@@ -78,7 +69,6 @@ export type LimitsConfig = z.infer<typeof LimitsSchema>;
 const DevMockSchema = z.object({
   USE_MOCK_GITHUB: z.enum(["true", "false"]).default("true"),
   USE_MOCK_AI: z.enum(["true", "false"]).default("true"),
-  USE_MOCK_BILLING: z.enum(["true", "false"]).default("true"),
 });
 export type DevMockConfig = z.infer<typeof DevMockSchema>;
 
@@ -90,7 +80,6 @@ export const AppConfigSchema = z.object({
   core: CoreSchema,
   github: GithubSchema,
   ai: AiSchema,
-  billing: BillingSchema,
   observability: ObservabilitySchema,
   limits: LimitsSchema,
   devMock: DevMockSchema,
@@ -148,14 +137,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       OLLAMA_BASE_URL: flat.OLLAMA_BASE_URL,
       AI_FALLBACK_PROVIDER: flat.AI_FALLBACK_PROVIDER,
     },
-    billing: {
-      BILLING_PROVIDER: flat.BILLING_PROVIDER,
-      STRIPE_SECRET_KEY: flat.STRIPE_SECRET_KEY,
-      STRIPE_WEBHOOK_SECRET: flat.STRIPE_WEBHOOK_SECRET,
-      RAZORPAY_KEY_ID: flat.RAZORPAY_KEY_ID,
-      RAZORPAY_KEY_SECRET: flat.RAZORPAY_KEY_SECRET,
-      BILLING_CURRENCY: flat.BILLING_CURRENCY,
-    },
     observability: {
       SENTRY_DSN_API: flat.SENTRY_DSN_API,
       SENTRY_DSN_WORKER: flat.SENTRY_DSN_WORKER,
@@ -176,7 +157,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     devMock: {
       USE_MOCK_GITHUB: flat.USE_MOCK_GITHUB,
       USE_MOCK_AI: flat.USE_MOCK_AI,
-      USE_MOCK_BILLING: flat.USE_MOCK_BILLING,
     },
   };
   const parsed = AppConfigSchema.safeParse(nested);
@@ -210,13 +190,6 @@ export const KNOWN_VARS = [
   "ANTHROPIC_API_KEY",
   "OLLAMA_BASE_URL",
   "AI_FALLBACK_PROVIDER",
-  // billing
-  "BILLING_PROVIDER",
-  "STRIPE_SECRET_KEY",
-  "STRIPE_WEBHOOK_SECRET",
-  "RAZORPAY_KEY_ID",
-  "RAZORPAY_KEY_SECRET",
-  "BILLING_CURRENCY",
   // observability
   "SENTRY_DSN_API",
   "SENTRY_DSN_WORKER",
@@ -235,7 +208,6 @@ export const KNOWN_VARS = [
   // dev mock
   "USE_MOCK_GITHUB",
   "USE_MOCK_AI",
-  "USE_MOCK_BILLING",
   // website (the public-website surface; docs/WEBSITE/TECHNICAL_ARCHITECTURE.md §6 —
   // the config package validates the set; the website's static export reads
   // VERCODE_WEBSITE_BASE_URL at build time, the /api/track route reads the HMAC key)

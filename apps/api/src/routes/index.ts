@@ -12,12 +12,11 @@ import { authRoutes } from "./auth.js";
 import { accountRoutes } from "./account.js";
 import { orgRoutes } from "./orgs.js";
 import { githubRoutes } from "./github.js";
+import { reposRoutes } from "./repos.js";
 import { healthRoutes } from "./health.js";
 import { githubWebhookRoutes } from "./webhooks.js";
-import { billingWebhookRoutes } from "./billing-webhook.js";
 import { reviewRoutes } from "./reviews.js";
 import { usageRoutes } from "./usage.js";
-import { billingRoutes } from "./billing.js";
 import { settingsRoutes } from "./settings.js";
 import { auditRoutes } from "./audit.js";
 import { BullQueue, type Enqueueable } from "../queue.js";
@@ -40,9 +39,11 @@ export function registerRoutes(app: FastifyInstance, config: AppConfig) {
     router.register(async (inst) => {
       await githubRoutes(inst, queue);
     }, { prefix: "/orgs" });
+    router.register(async (inst) => {
+      await reposRoutes(inst);
+    }, { prefix: "/orgs" });
     router.register(reviewRoutes, { prefix: "/orgs" });
     router.register(usageRoutes, { prefix: "/orgs" });
-    router.register(billingRoutes, { prefix: "/orgs" });
     router.register(settingsRoutes, { prefix: "/orgs" });
     router.register(auditRoutes, { prefix: "/orgs" });
   };
@@ -61,10 +62,4 @@ export function registerRoutes(app: FastifyInstance, config: AppConfig) {
   };
   app.register(githubWebhooksPlugin, { prefix: "/webhooks" });
   app.register(githubWebhooksPlugin, { prefix: "/api/v1/webhooks" });
-
-  const billingWebhooksPlugin = async (a: FastifyInstance) => {
-    await billingWebhookRoutes(a, config);
-  };
-  app.register(billingWebhooksPlugin, { prefix: "/webhooks" });
-  app.register(billingWebhooksPlugin, { prefix: "/api/v1/webhooks" });
 }

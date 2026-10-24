@@ -1,8 +1,7 @@
-// The usage routes: GET /orgs/:id/usage (API_SPECIFICATION.md "Usage & billing").
-// Returns monthly usage aggregates, token spend, and quota capacity.
+// The usage routes: GET /orgs/:id/usage (API_SPECIFICATION.md "Usage").
+// Returns monthly usage aggregates: the daily series + the month's totals.
 
 import type { FastifyInstance } from "fastify";
-import { planQuota, type Plan } from "@vercode/contracts";
 
 export async function usageRoutes(app: FastifyInstance) {
   const db = app.auth.db;
@@ -44,10 +43,6 @@ export async function usageRoutes(app: FastifyInstance) {
     const outputTokens = Number(monthTotals._sum?.outputTokens ?? 0);
     const estUsd = Number(monthTotals._sum?.estUsdCost ?? 0);
 
-    const quota = planQuota(org.plan.toLowerCase() as Plan);
-    const reviewLimit = quota.reviewsPerMonth;
-    const percentUsed = Math.min(100, Math.round((reviewsUsed / reviewLimit) * 100));
-
     reply.send({
       series: dailyRows.map((d) => ({
         day: d.day,
@@ -68,11 +63,6 @@ export async function usageRoutes(app: FastifyInstance) {
           medium: 0,
           low: 0,
         },
-      },
-      quota: {
-        used: reviewsUsed,
-        limit: reviewLimit,
-        percentUsed,
       },
     });
   });

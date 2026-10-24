@@ -20,7 +20,7 @@ import { SITE_NAME } from "@/lib/site.js";
 
 // 120–158 chars (WFR-102's meta description band; the on-page gate).
 const PRIVACY_META_DESCRIPTION =
-  "What is stored and what is not, the retention window per plan, the AI subprocessor boundary, and the 30-day data-subject request path.";
+  "What is stored and what is not, the retention windows, the AI subprocessor boundary, and the 30-day data-subject request path.";
 
 export const metadata: Metadata = {
   title: `Privacy policy — ${SITE_NAME}`,
@@ -45,7 +45,7 @@ const schemaBlocks = generateSchemaFor({
 
 const toc: TocEntry[] = [
   { id: "what-we-store", label: "What we store" },
-  { id: "retention", label: "Retention per plan" },
+  { id: "retention", label: "Retention windows" },
   { id: "subprocessors", label: "Subprocessors" },
   { id: "data-subjects", label: "Data subject requests" },
 ];
@@ -110,58 +110,32 @@ export default function LegalPrivacyPage() {
               is stored is the analysis: the findings (with bounded code
               snippets), the usage record, and the audit event. Usage
               events are kept 24 months; audit events are kept a minimum
-              of 180 days under every tier (NFR-27).
+              of 180 days (NFR-27).
             </p>
           </section>
 
-          {/* Section 2 — the retention table per plan, with the 180-day
+          {/* Section 2 — the retention table, with the 180-day
               audit floor. The "a number the reader can verify" rule:
               every figure here comes from USAGE_QUOTAS.md §2. */}
 
-          <section aria-label="Retention per plan" id="retention">
+          <section aria-label="Retention windows" id="retention">
             <h2 className="text-[20px] font-semibold text-[var(--text)]">
-              Retention per plan
+              Retention windows
             </h2>
             <p>
-              Findings are retained for the window shown below, then
-              hard-deleted on schedule. Audit events retain their 180-day
-              minimum under every tier — the audit floor is a compliance
-              obligation, not a plan feature (NFR-27; USAGE_QUOTAS.md
-              §2).
+              Findings are retained for a fixed window, then
+              hard-deleted on schedule: 30 days for standard findings.
+              Audit events retain their 180-day minimum — the audit floor
+              is a compliance obligation, not a feature (NFR-27;
+              USAGE_QUOTAS.md §2).
             </p>
             <dl className="mt-4 space-y-4">
               <div className="space-y-1">
                 <dt className="text-[16px] font-semibold text-[var(--text)]">
-                  Free
+                  Findings
                 </dt>
                 <dd className="mt-1 text-[16px] text-[var(--muted)]">
                   Findings retained 30 days; audit events retained 180 days.
-                </dd>
-              </div>
-              <div className="space-y-1">
-                <dt className="text-[16px] font-semibold text-[var(--text)]">
-                  Developer
-                </dt>
-                <dd className="mt-1 text-[16px] text-[var(--muted)]">
-                  Findings retained 90 days; audit events retained 180 days.
-                </dd>
-              </div>
-              <div className="space-y-1">
-                <dt className="text-[16px] font-semibold text-[var(--text)]">
-                  Team
-                </dt>
-                <dd className="mt-1 text-[16px] text-[var(--muted)]">
-                  Findings retained 365 days; audit events retained 180 days.
-                </dd>
-              </div>
-              <div className="space-y-1">
-                <dt className="text-[16px] font-semibold text-[var(--text)]">
-                  Enterprise
-                </dt>
-                <dd className="mt-1 text-[16px] text-[var(--muted)]">
-                  Findings retained for a custom period (365 days or more,
-                  negotiated per account); audit events retained 180 days
-                  minimum.
                 </dd>
               </div>
             </dl>

@@ -3,10 +3,9 @@
 // A mocked-DB + mocked-provider test: no live Postgres/Redis/GitHub. A the
 // DB is a structural mock that records what a the persist-then-publish
 // transaction wrote, so a we can assert a the invariants:
-//   1. quota-exceeded → skipped, zero provider calls, notice posted
-//   2. provider-down → partial status, deterministic findings still publish
-//   3. same-SHA redelivery → no-op (a the idempotency gate, ADR-007)
-//   4. publish failure → findings still persisted (a the persist-then-publish
+//   1. provider-down → partial status, deterministic findings still publish
+//   2. same-SHA redelivery → no-op (a the idempotency gate, ADR-007)
+//   3. publish failure → findings still persisted (a the persist-then-publish
 //      invariant, ERROR_HANDLING.md §6)
 //
 // A the pipeline is exercised end-to-end (dequeue → load → diff → static →
@@ -16,7 +15,6 @@
 import { describe, it, expect } from "vitest";
 import {
   runReviewJob,
-  checkQuotaPlan,
   validateFindings,
   type ReviewJobOutcome,
   type CanonicalFinding,
@@ -32,7 +30,6 @@ import { makeMockGithubClient, MockGithubPublisher } from "../adapters/github-mo
 import type { ReviewJobPayload, WorkerDeps } from "../config.js";
 import type { DbClient } from "@vercode/database";
 import type { PRDiff } from "@vercode/github";
-import { FREE_QUOTA, DEVELOPER_QUOTA } from "@vercode/contracts";
 
 // ---------------------------------------------------------------------------
 // A the diff fixture (a two-file PR, inlined for determinism — a the mock
@@ -97,8 +94,7 @@ interface RecordedUsage {
 }
 
 interface MockDbConfig {
-  orgPlan: "FREE" | "DEVELOPER" | "TEAM" | "ENTERPRISE";
-  monthlyUsage: RecordedUsage[]; // a the pre-existing usage (a the quota gate)
+  monthlyUsage: RecordedUsage[]; // a the pre-existing usage rows the mock records
   existingTerminalJob: boolean; // a the same-SHA idempotency gate
   existingPublishedReviewId: string | null;
   repoFullName: string;
@@ -113,7 +109,6 @@ interface MockDbConfig {
 
 function makeMockDb(config: Partial<MockDbConfig> = {}) {
   const self: Required<MockDbConfig> = {
-    orgPlan: "DEVELOPER",
     monthlyUsage: [],
     existingTerminalJob: false,
     existingPublishedReviewId: null,
@@ -133,7 +128,6 @@ function makeMockDb(config: Partial<MockDbConfig> = {}) {
     organization: {
       findFirst: async () => ({
         id: "org-1",
-        plan: self.orgPlan,
         status: "ACTIVE",
         settings: self.orgSettings
           ? {
@@ -309,32 +303,8 @@ const PAYLOAD: ReviewJobPayload = {
 // ---------------------------------------------------------------------------
 
 describe("a the review-job handler (M5 T5.1/T5.2/T5.3)", () => {
-  it("[1] a quota-exceeded job → skipped, zero provider calls, notice posted", async () => {
-    // A the org is over its plan's reviews-per-month cap.
-    const { dbClient, state } = makeMockDb({
-      orgPlan: "FREE",
-      monthlyUsage: [{ orgId: "org-1", reviewCount: FREE_QUOTA.reviewsPerMonth, estUsdCost: "0" }],
-    });
-    const publisher = new MockGithubPublisher();
-    const deps = makeDeps({ db: dbClient, scenario: "good", publisher });
-
-    const result = await runReviewJob(deps, PAYLOAD);
-
-    expect(result.status).toBe("SKIPPED");
-    expect(result.skipReason).toBe("quota_exceeded");
-    // A zero AI provider calls (NFR-18 / AC-402).
-    expect(deps.deepCalls).toBe(0);
-    expect(deps.securityCalls).toBe(0);
-    expect(result.usage.inputTokens).toBe(0);
-    expect(result.usage.outputTokens).toBe(0);
-    expect(result.findings.length).toBe(0);
-    // A the skip is persisted (a the "never silent" rule) + a notice posted.
-    expect(state.reviewJobs.some((j) => j.status === "SKIPPED")).toBe(true);
-    expect(publisher.records.some((r) => r.summary.toLowerCase().includes("quota"))).toBe(true);
-  });
-
-  it("[2] a provider-down job → partial status, deterministic findings still publish", async () => {
-    const { dbClient, state } = makeMockDb({ orgPlan: "DEVELOPER" });
+  it("[1] a provider-down job → partial status, deterministic findings still publish", async () => {
+    const { dbClient, state } = makeMockDb();
     const publisher = new MockGithubPublisher();
     const deps = makeDeps({ db: dbClient, scenario: "down", publisher });
     deps.testSleep = async () => {}; // a the provider-down path is fast (no real backoff wait)
@@ -359,9 +329,8 @@ describe("a the review-job handler (M5 T5.1/T5.2/T5.3)", () => {
     expect(publisher.records[0].summary.toLowerCase()).toContain("unavailable");
   });
 
-  it("[3] a same-SHA redelivery → no-op (a the idempotency gate, ADR-007)", async () => {
+  it("[2] a same-SHA redelivery → no-op (a the idempotency gate, ADR-007)", async () => {
     const { dbClient, state } = makeMockDb({
-      orgPlan: "DEVELOPER",
       existingTerminalJob: true,
       existingPublishedReviewId: "gh-review-123",
       monthlyUsage: [{ orgId: "org-1", reviewCount: 1, estUsdCost: "0.01" }],
@@ -381,8 +350,8 @@ describe("a the review-job handler (M5 T5.1/T5.2/T5.3)", () => {
     expect(publisher.records.length).toBe(0);
   });
 
-  it("[4] a publish failure → findings still persisted (a persist-then-publish)", async () => {
-    const { dbClient, state } = makeMockDb({ orgPlan: "DEVELOPER" });
+  it("[3] a publish failure → findings still persisted (a persist-then-publish)", async () => {
+    const { dbClient, state } = makeMockDb();
     const publisher = new MockGithubPublisher();
     publisher.failNext = () => new Error("GitHub 429 rate-limited");
     const deps = makeDeps({ db: dbClient, scenario: "good", publisher });
@@ -398,50 +367,6 @@ describe("a the review-job handler (M5 T5.1/T5.2/T5.3)", () => {
     // A a the publish failed, so no published review id is stored.
     expect(state.reviewJobs[0]?.publishedGithubReviewId).toBeUndefined();
     expect(publisher.records.length).toBe(0);
-  });
-});
-
-describe("checkQuota (a the single enforcement point, plans.ts + usage_events)", () => {
-  it("is over when a the monthly reviews hit a the plan cap", async () => {
-    const { dbClient } = makeMockDb({
-      orgPlan: "FREE",
-      monthlyUsage: [{ orgId: "org-1", reviewCount: FREE_QUOTA.reviewsPerMonth, estUsdCost: "0" }],
-    });
-    const res = await checkQuotaPlan(dbClient, "org-1", "free", "2026-01");
-    expect(res.over).toBe(true);
-  });
-
-  it("is not over when under a the cap", async () => {
-    const { dbClient } = makeMockDb({
-      orgPlan: "FREE",
-      monthlyUsage: [{ orgId: "org-1", reviewCount: FREE_QUOTA.reviewsPerMonth - 1, estUsdCost: "0" }],
-    });
-    const res = await checkQuotaPlan(dbClient, "org-1", "free", "2026-01");
-    expect(res.over).toBe(false);
-  });
-
-  it("is over when a the token-spend cap is reached", async () => {
-    const { dbClient } = makeMockDb({
-      orgPlan: "FREE",
-      monthlyUsage: [{ orgId: "org-1", reviewCount: 1, estUsdCost: String(FREE_QUOTA.tokenSpendCapMonthlyUsd) }],
-    });
-    const res = await checkQuotaPlan(dbClient, "org-1", "free", "2026-01");
-    expect(res.over).toBe(true);
-  });
-
-  it("developer plan has a separate cap (DEVELOPER_QUOTA)", async () => {
-    const { dbClient } = makeMockDb({
-      orgPlan: "DEVELOPER",
-      monthlyUsage: [
-        {
-          orgId: "org-1",
-          reviewCount: DEVELOPER_QUOTA.reviewsPerMonth,
-          estUsdCost: "0",
-        },
-      ],
-    });
-    const res = await checkQuotaPlan(dbClient, "org-1", "developer", "2026-01");
-    expect(res.over).toBe(true);
   });
 });
 
@@ -540,7 +465,7 @@ describe("a the pure pipeline stages (a the policy-engine-backed functions)", ()
 
 describe("a the in-memory diff-client seam (USE_MOCK_GITHUB=true path)", () => {
   it("a reads a the fixture diff + a the mock publisher records publishes", async () => {
-    const { dbClient } = makeMockDb({ orgPlan: "DEVELOPER" });
+    const { dbClient } = makeMockDb();
     const publisher = new MockGithubPublisher();
     const deps = makeDeps({ db: dbClient, scenario: "good", publisher });
     const result = await runReviewJob(deps, PAYLOAD);

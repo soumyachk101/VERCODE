@@ -10,9 +10,9 @@
  * / neon / glow, and an uppercase content label / table header.
  *
  * The 0-FAIL rule: any banned tell in the shipped HTML is a red lane.
- * A "FAIL" is a banned-tell *hit*; a "PASS" is 0 hits over the 7
- * marketing-page HTML files (the out/ dir's index/features/pricing/faq/
- * about + the 3 content-surface index.html's).
+ * A "FAIL" is a banned-tell *hit*; a "PASS" is 0 hits over the 6
+ * marketing-page HTML files (the out/ dir's index/features/faq/
+ * about + the 2 content-surface index.html's).
  *
  * The check is on the *shipped* surface, not the source — a dev-only
  * placeholder in a .tsx comment does not FAIL the gate (the source's
@@ -26,7 +26,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = path.join(ROOT, "out");
 
 // The marketing + content-surface pages the tells check applies to (the
-// 7-page set: the WFR-101 marketing pages + the 3 index.html's). The
+// 6-page set: the WFR-101 marketing pages + the 2 index.html's). The
 // /docs/<topic>, /blog/<slug>, /changelog/<date> pages are content (a
 // tell-free by-construction, the .prose-vercode rule is a *reading*
 // column, not a marketing surface) — the gate asserts the *marketing*
@@ -34,7 +34,6 @@ const OUT = path.join(ROOT, "out");
 const MARKETING_PAGES = [
   "index.html",
   "features/index.html",
-  "pricing/index.html",
   "faq/index.html",
   "about/index.html",
   "docs/index.html",
@@ -72,7 +71,7 @@ const TELS = [
     name: "vanity-total",
     re: /(?<!does not publish a )10,000\+\s*(?:teams|customers|companies)/i,
   },
-  // A "most popular" star / ribbon on a pricing card (a banned tell).
+  // A "most popular" star / ribbon on a feature card (a banned tell).
   {
     name: "most-popular-ribbon",
     re: /most popular\b/i,

@@ -24,6 +24,7 @@ export async function settingsRoutes(app: FastifyInstance) {
         maxLines: 3000,
         provider: "openai",
         tokenSpendCapMonthlyUsd: 0,
+        activeReposForReview: [],
       });
       return;
     }
@@ -34,6 +35,7 @@ export async function settingsRoutes(app: FastifyInstance) {
       maxLines: settings.maxLines,
       provider: settings.provider,
       tokenSpendCapMonthlyUsd: Number(settings.tokenSpendCapMonthly),
+      activeReposForReview: (settings.activeReposForReview ?? []) as unknown[],
     });
   });
 
@@ -51,9 +53,14 @@ export async function settingsRoutes(app: FastifyInstance) {
         maxLines?: number;
         provider?: string;
         tokenSpendCapMonthlyUsd?: number;
+        activeReposForReview?: string[];
       };
 
       const userId = req.user.userId ?? "";
+
+      const activeReposForReview = Array.isArray(body.activeReposForReview)
+        ? body.activeReposForReview.map(String)
+        : undefined;
 
       const updated = await db.orgSettings.upsert({
         where: { orgId: id },
@@ -65,6 +72,7 @@ export async function settingsRoutes(app: FastifyInstance) {
           provider: body.provider ?? "openai",
           tokenSpendCapMonthly: body.tokenSpendCapMonthlyUsd !== undefined ? new Prisma.Decimal(body.tokenSpendCapMonthlyUsd) : new Prisma.Decimal(0),
           updatedBy: userId,
+          activeReposForReview: activeReposForReview ? (activeReposForReview as unknown as Prisma.InputJsonValue) : undefined,
         },
         update: {
           confidenceFloor: body.confidenceFloor !== undefined ? new Prisma.Decimal(body.confidenceFloor) : undefined,
@@ -73,6 +81,8 @@ export async function settingsRoutes(app: FastifyInstance) {
           provider: body.provider !== undefined ? body.provider : undefined,
           tokenSpendCapMonthly: body.tokenSpendCapMonthlyUsd !== undefined ? new Prisma.Decimal(body.tokenSpendCapMonthlyUsd) : undefined,
           updatedBy: userId,
+          activeReposForReview:
+            activeReposForReview !== undefined ? (activeReposForReview as unknown as Prisma.InputJsonValue) : undefined,
         },
       });
 
@@ -93,6 +103,7 @@ export async function settingsRoutes(app: FastifyInstance) {
         maxLines: updated.maxLines,
         provider: updated.provider,
         tokenSpendCapMonthlyUsd: Number(updated.tokenSpendCapMonthly),
+        activeReposForReview: (updated.activeReposForReview ?? []) as unknown[],
       });
     }
   );

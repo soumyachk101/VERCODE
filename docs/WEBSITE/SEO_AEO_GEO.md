@@ -45,7 +45,7 @@ The rules:
 
 | Surface | `changefreq` | Why |
 | --- | --- | --- |
-| `/` , `/features`, `/pricing` | `weekly` | the marketing pages change on a release cadence, not daily (`WFR-103`'s "marketing `weekly`") |
+| `/` , `/features` | `weekly` | the marketing pages change on a release cadence, not daily (`WFR-103`'s "marketing `weekly`") |
 | `/faq`, `/legal/*` | `monthly` | a slow-changing surface |
 | `/docs/*` | `daily` | the docs ship *with* the feature (`CONTENT_STRATEGY.md §2.1`'s cadence) |
 | `/blog/*` | `monthly` | the *sitemap* is conservative; the *actual* cadence target is 2-weekly (`CONTENT_STRATEGY.md §2.2`'s note) — the sitemap tells the truth about the *page*, not the ambition |
@@ -142,9 +142,9 @@ From `INFORMATION_ARCHITECTURE_AND_PAGES.md §5` (the *no-orphan* rules):
 
 **The AEO-specific linking rules (added here):**
 
-- **A link's anchor text states the fact, not the destination.** "the Team plan's 5,000-review quota" beats "pricing" — an answer engine that extracts only a link's anchor text gets the fact from the anchor.
-- **A link's target page repeats the anchor's key noun.** A page linked as "the Team plan" must have "Team plan" in its H1 + its title + its first paragraph. A link that promises a term the target doesn't use is a broken promise to a crawler.
-- **The context-to-product path is 1 hop.** `/blog/<slug>` → `/docs/<topic>` → `/pricing` — a reader (and a crawler) reaches the pricing table in ≤ 2 clicks from any entry page. A deeper path is a conversion leak.
+- **A link's anchor text states the fact, not the destination.** "the GitHub App's least-privilege permissions" beats "docs" — an answer engine that extracts only a link's anchor text gets the fact from the anchor.
+- **A link's target page repeats the anchor's key noun.** A page linked as "the GitHub App connect flow" must have "GitHub App connect flow" in its H1 + its title + its first paragraph. A link that promises a term the target doesn't use is a broken promise to a crawler.
+- **The context-to-product path is 1 hop.** `/blog/<slug>` → `/docs/<topic>` → `/signin` (the connect CTA) — a reader (and a crawler) reaches the connect path in ≤ 2 clicks from any entry page. A deeper path is a conversion leak. The CTA is the connection — there is nothing to purchase first.
 
 ### 2.2 The title / description patterns (by surface)
 
@@ -152,7 +152,6 @@ From `INFORMATION_ARCHITECTURE_AND_PAGES.md §5` (the *no-orphan* rules):
 | --- | --- | --- |
 | `/` | "AI code review for GitHub teams — VERCODE" | the wedge + "a deterministic-first review that posts a verdict + evidence-backed inline comments" |
 | `/features` | "What VERCODE does that other AI reviewers don't" | the 4 pillars, one clause each |
-| `/pricing` | "Pricing — Free, Developer, Team, Enterprise — VERCODE" | "Start free. 50 reviews/mo on the Free plan; the Team plan is 5,000 reviews/mo." |
 | `/faq` | "FAQ — will VERCODE post comments, which models, is it open source" | the 3 highest-intent questions, named |
 | `/docs/<topic>` | "<Topic> — VERCODE docs" | the one-sentence purpose, with the literal |
 | `/blog/<slug>` | the article's headline (≤ 110 chars, `WFR-303`) | the dek (the 1-sentence claim) |
@@ -167,18 +166,17 @@ An answer engine (a Google AI Overview, a Perplexity answer, a Copilot answer, a
 
 | # | Rule | A bad example | A good example |
 | --- | --- | --- | --- |
-| **Q1** | The answer lives at the **top** of the page (the first 300 tokens), not at the bottom | "Learn about our pricing below… (four sections later)…" | "The Team plan is $X/mo and includes 5,000 reviews per month." — the first paragraph |
+| **Q1** | The answer lives at the **top** of the page (the first 300 tokens), not at the bottom | "Learn about how VERCODE works below… (four sections later)…" | "VERCODE connects your GitHub repositories and posts a summary verdict + inline findings on each review." — the first paragraph |
 | **Q2** | Declarative **subject–verb–object** sentences | "VERCODE's pipeline leverages static analysis…" | "VERCODE runs ESLint and Semgrep on changed files before the LLM." |
 | **Q3** | Literal numbers **with units** | "sub-5-minute reviews" | "p50 under 120 seconds, p95 under 300 seconds." |
-| **Q4** | A table or list when the answer *is* tabular | "We offer several plans with different limits…" | a `<table>` of plan × quota (the `/pricing` quota table, `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.3`'s block 3) |
-| **Q5** | The JSON-LD text **==** the visible text (byte-equivalent for the FAQ, `STRUCTURED_DATA.md §4.2`) | a schema answer that says "50/month" and a page that says "up to 50 reviews" | the same string, generated once |
+| **Q4** | A table or list when the answer *is* tabular | "We offer several configuration options…" | a `<table>` of the GitHub App's permission list (the `/docs/github-app` permissions, `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.4`'s connect topic) |
+| **Q5** | The JSON-LD text **==** the visible text (byte-equivalent for the FAQ, `STRUCTURED_DATA.md §4.2`) | a schema answer that says "0.6" and a page that says "high confidence" | the same string, generated once |
 
 ### 3.2 The "answer at the top of the page" rule
 
 Every page opens with a **self-contained answer paragraph** before any navigation, illustration, or secondary content:
 
-- `/` — the H1 (the wedge) + a 1–2 sentence subhead that names what the product does.
-- `/pricing` — the H1 + "Start free. Pay when your team grows." + **the first plan's price** in the same viewport (the `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.3`'s block 1). An answer engine that answers "how much is VERCODE" from the first 300 tokens gets the number, not a navigation.
+- `/` — the H1 (the wedge) + a 1–2 sentence subhead that names what the product does (the value loop, connect → review → findings → usage report).
 - `/faq` — the H1 + a 2-sentence orientation.
 - `/docs/<topic>` — the H1 + a **1-sentence purpose** (`INFORMATION_ARCHITECTURE_AND_PAGES.md §3.5`) + the first factual statement. A docs page is a *fact sheet*; the fact is first.
 - `/blog/<slug>` — the H1 + the dek (the 1-sentence claim).
@@ -193,7 +191,7 @@ The `FAQPage` on `/faq` carries ≥ 15 `Question`s, and each `acceptedAnswer.tex
 Three consequences an editor must internalize:
 
 - **Editing the visible FAQ text is not possible** — the text is edited in `content/faq/`, and it changes *both* surfaces. A "just tweak the wording on the page" edit is a `content/` edit.
-- **The answer must be self-contained.** A `FAQPage` answer that begins "As mentioned above, it depends on your plan…" is unquotable in a snippet. Each answer starts with the subject: "VERCODE posts comments on your pull requests…".
+- **The answer must be self-contained.** A `FAQPage` answer that begins "As mentioned above, it depends on your setup…" is unquotable in a snippet. Each answer starts with the subject: "VERCODE posts comments on your pull requests…".
 - **A question that is asked as a keyword is answered as a sentence.** The 3 example Q/A pairs in `STRUCTURED_DATA.md §3.5` are the model: a 1–3 sentence answer, the first sentence carrying the whole answer.
 
 ### 3.4 The AEO keyword map
@@ -204,11 +202,11 @@ The map from a *search/answer intent* to the *page that answers it*. Each entry 
 | --- | --- | --- | --- |
 | **AI code review** | `/` | "What is AI code review, and how is VERCODE's different from a bot that comments?" | The hero's verdict device ("Needs changes · 2 high") + the "how it works" 3 steps + the `HowTo` JSON-LD (`STRUCTURED_DATA.md §3.6`) |
 | **AI code reviewer** | `/features` | "What does the AI code reviewer actually do — what does it catch and what does it skip?" | The 4 pillars, each a 2–3 sentence declarative claim + the security-findings rollup story (`WFR-205`) |
-| **automatic code review tool** | `/features#cost-discipline` | "Can code review run automatically on every pull request, without a human reading the diff first?" | The "Install → Open a PR → Read the review" sequence + the cost-discipline paragraph (the per-review cost cap) |
-| **CodeRabbit alternative** | `/features` + `/pricing` | "What does a deterministic-first, cost-disciplined alternative to CodeRabbit do differently?" | The deterministic-precision pillar (static analysis before the LLM) + the pricing table + the confidence-floor answer (FAQ q3). **Constraint:** a competitor comparison is allowed *only* when every cell is a *measured* figure from `BENCHMARK_DATASET.md`; a "we are better" assertion is a banned claim (`CONTENT_STRATEGY.md §1.3`) |
+| **automatic code review tool** | `/features#connect-not-configure` | "Can code review run automatically on every pull request, without a human reading the diff first?" | The "Connect your repo → Open a PR → Read the review" sequence + the connect-not-configure paragraph (the plain usage report) |
+| **CodeRabbit alternative** | `/features` + `/docs` | "What does a deterministic-first alternative to CodeRabbit do differently?" | The deterministic-precision pillar (static analysis before the LLM) + the connect story + the confidence-floor answer (FAQ q3). **Constraint:** a competitor comparison is allowed *only* when every cell is a *measured* figure from `BENCHMARK_DATASET.md`; a "we are better" assertion is a banned claim (`CONTENT_STRATEGY.md §1.3`) |
 | **AI PR review** | `/docs/quickstart` | "How do I get AI review on my pull requests?" | The 3-step quickstart + the `HowTo` + the permission list (the least-privilege list, `FR-210`) |
 | **GitHub AI code review** | `/docs/github-app` | "Which GitHub permissions does the AI code review app need, and does it work on fork PRs?" | The permission list (a table — a list is the answer, Q4) + the fork-PR answer (the sandboxed path, `FR-203`) |
-| **AI code review for teams** | `/pricing` | "What does AI code review cost a team, and which plan fits a 20–200 developer org?" | The plan ladder table (a `Product`+`Offer` per plan) + the "which plan do I need" pricing FAQ |
+| **AI code review for teams** | `/docs/connect` | "How does a team connect its GitHub repositories to get reviews?" | The connect-flow guide (install URL, repository selection, disconnect) + the usage-report fact sheet — no pricing, plans, or limits to quote (`INFORMATION_ARCHITECTURE_AND_PAGES.md §3.4`'s GitHub-connection topics) |
 | **LLM code review** | `/blog/why-static-analysis-before-the-llm` | "Is LLM-based code review accurate, and what makes an LLM reviewer less noisy?" | The article's one claim + its measured benchmark + the "deterministic code review" argument (`CONTENT_STRATEGY.md §2.3`'s 3-part test) |
 | **deterministic code review** | `/features#deterministic-precision` | "What is deterministic code review, and why does it beat a pure-LLM reviewer on false positives?" | The deterministic-precision pillar + the ADR-005 story (static analysis before the model) + the confidence floor (0.6) |
 
@@ -225,26 +223,14 @@ Generative engines differ from answer engines in one way that matters: an answer
 
 ### 4.1 `llms.txt` (the machine-readable index)
 
-`WFR-401`: a top-level `/llms.txt` listing, in plain markdown, the key product facts — pricing, quotas, rate limits, the wedge, the 4 pillars, the "open-source?" answer, the "self-hosted?" answer — **in the same order as the hero → CTA**. `llms.txt` is a *machine-readable index* for LLMs; it is **not** a schema replacement (JSON-LD is), it is the natural-language summary layer.
+`WFR-401`: a top-level `/llms.txt` listing, in plain markdown, the key product facts — the wedge, the 4 pillars, the "open-source?" answer, the "self-hosted?" answer — **in the same order as the hero → CTA**. `llms.txt` is a *machine-readable index* for LLMs; it is **not** a schema replacement (JSON-LD is), it is the natural-language summary layer.
 
 **The exact file format:**
 
 ```markdown
 # Vercode
 
-> VERCODE is the AI code-review a team actually reads. VERCODE runs static analysis on the changed files before the LLM stage, then posts a summary verdict and evidence-backed inline comments on your GitHub pull request. The Free plan includes 50 reviews per month.
-
-## Pricing
-- Free plan: $0 per month. 50 reviews per month, 20 files per review, 1 concurrent review, 30-day finding retention, 3 custom rules, the standard model tier. https://vercode.com/pricing
-- Developer plan: PLACEHOLDER per month. 500 reviews per month, 60 files per review, 3 concurrent reviews, 90-day finding retention, 10 custom rules, the standard model tier. https://vercode.com/pricing
-- Team plan: PLACEHOLDER per month. 5,000 reviews per month, 100 files per review, 10 concurrent reviews, 365-day finding retention, 50 custom rules, the standard and strong model tiers. https://vercode.com/pricing
-- Enterprise plan: a negotiated price. A configurable quota (the floor: 50,000 reviews per month), BYOK and Ollama, SSO/SCIM, data-residency. https://vercode.com/pricing
-
-## Quotas and limits
-- The Free plan includes 50 reviews per calendar month. A review over the quota is skipped with a posted notice on the pull request; it is never a silent stop, and a skipped review consumes no AI tokens.
-- The Team plan includes 5,000 reviews per calendar month.
-- Review latency: p50 under 120 seconds, p95 under 300 seconds, measured from webhook receipt to GitHub publish completion.
-- A plan's monthly token-spend cap is a per-organization backstop; the platform cap is the backstop behind it.
+> VERCODE runs AI code review on your pull requests. Connect your GitHub App and reviews publish to the PR - no plans, no caps, plain usage visibility.
 
 ## What VERCODE does
 - VERCODE runs ESLint and Semgrep on the changed files before the LLM stage.
@@ -269,10 +255,9 @@ Generative engines differ from answer engines in one way that matters: an answer
 
 - **The first line is a one-line description header** — `# Vercode`, then a `>` blockquote carrying the *one-line description* (the wedge + the one differentiating sentence). This is the `llms.txt` convention: a title + a description, then sections.
 - **Then a markdown list of the key facts**, grouped under `##` section headings, each fact a `- ` bullet with the literal numbers and a canonical URL.
-- **The order mirrors the page** — the wedge first, then pricing (the `hero → CTA` order, `WFR-401`), then the quotas, then the pillars, then the two yes/no answers, then the "where to read more" index. The order is a *narrative* order, so a truncated read still yields the top facts.
+- **The order mirrors the page** — the wedge first (the `hero → CTA` order, `WFR-401`), then the pillars, then the two yes/no answers, then the "where to read more" index. The order is a *narrative* order, so a truncated read still yields the top facts.
 - **Every bullet is a self-contained fact** with the literal number and a URL. A bullet that requires another bullet to be understood is not a fact.
-- **`llms.txt` is generated**, not hand-written — from `content/pricing/pricing.json` + `packages/contracts/src/plans.ts` + a `content/facts/` file of the narrative facts. A hand-written `llms.txt` drifts (the "triple source" rule, §4.3).
-- **The `PLACEHOLDER` prices** are the `PRICING_STRATEGY.md §7` deferral, the same placeholders as `STRUCTURED_DATA.md §3.4`. They are a *one-line* edit in `pricing.json` at launch.
+- **`llms.txt` is generated**, not hand-written — from a `content/facts/` file of the narrative facts. A hand-written `llms.txt` drifts (the "triple source" rule, §4.3).
 - **The file is a `.txt`, not `.md`** — it is served as `text/plain; charset=utf-8` (a machine reads it, a human reads it in a browser).
 
 ### 4.2 `/llms-full.txt` (the `U6` decision: ship both)
@@ -290,11 +275,11 @@ A `WFR-401` fact is present in **three** places, and all three are generated fro
 
 | # | Where | The form |
 | --- | --- | --- |
-| 1 | **The visible page text** | a sentence or a table cell on `/pricing`, `/faq`, `/docs/pricing`, `/` |
+| 1 | **The visible page text** | a sentence or a table cell on `/faq`, `/` |
 | 2 | **The JSON-LD** | the `Product`/`Offer`/`FAQPage`/`SoftwareApplication` blocks (`STRUCTURED_DATA.md §3`) |
 | 3 | **`llms.txt` + `/api/answer`** | the `ProductFact` JSON (`CONTENT_SCHEMAS.md §3`) rendered as the bullet + returned as the endpoint's answer |
 
-The drift risk is *structural*, not behavioural: the three surfaces are generated from `content/pricing/pricing.json` + `packages/contracts/src/plans.ts` + `content/facts/`, so a change propagates to all three or to none. The CI lane asserts the consistency (§5.1) — a fact whose JSON-LD text is not present in the visible HTML is a build failure (`STRUCTURED_DATA.md §5.1`'s `triple-source` check).
+The drift risk is *structural*, not behavioural: the three surfaces are generated from `content/facts/`, so a change propagates to all three or to none. The CI lane asserts the consistency (§5.1) — a fact whose JSON-LD text is not present in the visible HTML is a build failure (`STRUCTURED_DATA.md §5.1`'s `triple-source` check).
 
 ### 4.4 The `/api/answer` endpoint contract (`WFR-403`)
 
@@ -310,28 +295,20 @@ GET /api/answer?q=<urlencoded query>
 
 ```json
 {
-  "query": "what's the team plan price",
-  "intent": "pricing.team.price",
-  "answer": "The Team plan is PLACEHOLDER per month. It includes 5,000 reviews per month, 100 files per review, 10 concurrent reviews, 365-day finding retention, 50 custom rules, and the standard and strong model tiers.",
+  "query": "does VERCODE have plans or caps",
+  "intent": "faq.plans",
+  "answer": "VERCODE has no plans, no caps, and no pricing. Connect your GitHub App and reviews publish to the PR with plain usage visibility.",
   "facts": [
     {
-      "id": "pricing.team.price",
-      "label": "Team plan price",
-      "value": "PLACEHOLDER",
-      "unit": "USD/month",
-      "source": "https://vercode.com/pricing",
-      "asOf": "2026-10-01"
-    },
-    {
-      "id": "quota.team.reviewsPerMonth",
-      "label": "Team plan reviews per month",
-      "value": "5000",
-      "unit": "reviews/month",
-      "source": "https://vercode.com/docs/pricing",
+      "id": "usage.visibility",
+      "label": "Usage visibility",
+      "value": "plain",
+      "unit": "",
+      "source": "https://vercode.com",
       "asOf": "2026-10-01"
     }
   ],
-  "source": "https://vercode.com/pricing",
+  "source": "https://vercode.com",
   "generated": false
 }
 ```
@@ -351,13 +328,13 @@ GET /api/answer?q=<urlencoded query>
 
 **The contract rules:**
 
-- **The query language is bounded and enumerated.** A small Zod enum of *intents* (`pricing.team.price`, `quota.free.reviewsPerMonth`, `faq.openSource`, `faq.selfHosted`, `latency.p50`, `latency.p95`, `pricing.planComparison`, …) + a bounded keyword match against the query (`TECHNICAL_ARCHITECTURE.md §4.2`'s "a small Zod enum + a bounded keyword match"). An intent that is not in the enum is *not* answered — it returns the 404 body. An endpoint that answers *everything* is a hallucination surface.
+- **The query language is bounded and enumerated.** A small Zod enum of *intents* (`faq.plans`, `faq.openSource`, `faq.selfHosted`, `latency.p50`, `latency.p95`, …) + a bounded keyword match against the query (`TECHNICAL_ARCHITECTURE.md §4.2`'s "a small Zod enum + a bounded keyword match"). An intent that is not in the enum is *not* answered — it returns the 404 body. An endpoint that answers *everything* is a hallucination surface.
 - **`generated: false` is always present.** It states the answer was *looked up*, not generated. A generative engine reading the endpoint knows it is a *deterministic* source — the strongest possible citation signal.
 - **`asOf` is required on every fact.** A fact without a date is a fact that will be wrong at some point and still be cited. The date is the fact's freshness (`CONTENT_STRATEGY.md §3`'s "the crawler is told the truth" principle, applied to facts).
 - **`source` is the canonical URL of the human-readable page.** The endpoint's answer is quotable *because* the human can check it — a fact without a human-checkable source is a claim, not a fact.
 - **A `404` is a legitimate, non-error answer.** The endpoint does not guess and it does not fall back to an LLM. "I don't have that fact" is the correct answer for an un-enumerated question.
 - **The endpoint is read-only, public, and un-authenticated** (an answer engine makes anonymous HTTP calls). It is rate-limited like any other public route (`docs/API/RATE_LIMITING.md`).
-- **The endpoint reads the same facts as the site** (`TECHNICAL_ARCHITECTURE.md §4.3`'s "the single DB coupling": the website does not read the app's Postgres in P2; the pricing/quota facts live in `content/pricing/` and the `apps/api`'s `/api/answer` reads the *same* file at build time). The OpenAPI drift gate applies (`RELEASE_CRITERIA gate 11`, `TECHNICAL_ARCHITECTURE.md §1`'s "a contract change — the route is added to `docs/API/OPENAPI.yaml` first").
+- **The endpoint reads the same facts as the site** (`TECHNICAL_ARCHITECTURE.md §4.3`'s "the single DB coupling": the website does not read the app's Postgres in P2; the fact records live in `content/facts/` and the `apps/api`'s `/api/answer` reads the *same* file at build time). The OpenAPI drift gate applies (`RELEASE_CRITERIA gate 11`, `TECHNICAL_ARCHITECTURE.md §1`'s "a contract change — the route is added to `docs/API/OPENAPI.yaml` first").
 
 ### 4.5 Citation hygiene (the rules every fact obeys)
 
@@ -367,7 +344,7 @@ These are the rules that make a citing LLM *correct* rather than *plausible*:
 2. **No vanity totals.** "10,000+ teams", "the most popular AI reviewer", "developers love it" — a total with no source, no measurement, and no date. Banned (`CONTENT_STRATEGY.md §1.3`, `DESIGN_SYSTEM_AND_TYPOGRAPHY.md §6`'s checklist). The corollary: **if there is no social proof, the section is omitted, not fabricated** (`PRD.md WFR-202`).
 3. **Named figures, not rounded ones.** "5,000 reviews per month", not "thousands of reviews". "p50 under 120 seconds", not "fast". A rounded figure invites a paraphrase into a false precision.
 4. **Every figure has a source and a date.** The `ProductFact` record carries `source` + `asOf` (§4.4); a fact on a page carries a doc reference (`NFR-02`, `USAGE_QUOTAS.md §2`, `FR-206`). A figure with no traceable source does not ship (`CONTENT_STRATEGY.md §2.1`'s "every number is traceable to a doc in `docs/`").
-5. **A claim about a *plan* is a claim about a *specific* plan.** "VERCODE supports 5,000 reviews" is ambiguous (which plan?); "The Team plan includes 5,000 reviews per month" is quotable. The `ProductFact.label`/`value`/`unit` triple forces the specificity.
+5. **A claim about a *feature* is a claim about a *specific* behavior.** "VERCODE supports 5,000 reviews" is ambiguous (under what conditions?); "A single review covers up to 100 files per pull request" is quotable. The `ProductFact.label`/`value`/`unit` triple forces the specificity.
 6. **Negative claims are stated as honestly as positive ones.** "VERCODE does not run your tests" and "VERCODE does not persist source code" are facts with a source (`L-1`, `SECURITY/PRIVACY.md`) — a fact an LLM cites about a *limitation* is as valuable as one about a feature (`CONTENT_STRATEGY.md §1.1`'s "honesty about limits").
 7. **One claim per page.** A page asserting three unrelated things is not quotable for any of them (`CONTENT_STRATEGY.md §3`'s point 1).
 
@@ -418,15 +395,15 @@ The GSC is the *only* source for "is it indexed" — a self-hosted crawler check
 
 ### 5.4 The AEO citation-rate sampling (manual, monthly)
 
-`PRD.md §7`'s KPI #3: **"Answer-engine citation rate — ≥ 1 in 5 top LLM answers to 'best AI code review' cite VERCODE verbatim on pricing/quota — manual sampling, monthly"**. `PRD.md §8 U7` records the *automation* as a **P3** decision (the automated lane is deferred; the manual procedure is the P2 measurement).
+`PRD.md §7`'s KPI #3: **"Answer-engine citation rate — ≥ 1 in 5 top LLM answers to 'best AI code review' cite VERCODE verbatim on how it works — manual sampling, monthly"**. `PRD.md §8 U7` records the *automation* as a **P3** decision (the automated lane is deferred; the manual procedure is the P2 measurement).
 
 **The procedure (a fixed protocol, so two samplers measure the same thing):**
 
-1. **The query set (fixed, 8 queries).** Run every query *verbatim*, in a fresh session, on each of the 4 surfaces below. The queries: "best AI code review tool", "AI code review for GitHub teams", "CodeRabbit alternative", "AI PR review tools", "how much does AI code review cost", "deterministic code review tools", "AI code review that is not noisy", "AI code review pricing". (The set is derived from §3.4's AEO keyword map; it changes only by a *documented* edit, so the monthly numbers are comparable.)
+1. **The query set (fixed, 8 queries).** Run every query *verbatim*, in a fresh session, on each of the 4 surfaces below. The queries: "best AI code review tool", "AI code review for GitHub teams", "CodeRabbit alternative", "AI PR review tools", "deterministic code review tools", "AI code review that is not noisy", "is AI code review accurate", "how does VERCODE post reviews". (The set is derived from §3.4's AEO keyword map; it changes only by a *documented* edit, so the monthly numbers are comparable.)
 2. **The surfaces (4).** (a) a general LLM with web search enabled; (b) a dedicated search-answer surface (a Perplexity-style answer page); (c) a search engine's AI answer (a Google AI Overview where available); (d) a coding-assistant answer (a Copilot-style web answer). Each surface is recorded separately — the citation rates are *not* averaged into one number.
 3. **The capture.** For each (query × surface): the full answer text is pasted into the report, with the date, the surface, the model/product name, and — where visible — the cited URLs.
 4. **The scoring (three outcomes per answer).**
-   - **Cited:** VERCODE is cited, and the cited fact about pricing/quota is *correct* (matches `content/pricing/pricing.json` + `plans.ts`).
+   - **Cited:** VERCODE is cited, and the cited fact is *correct* (matches the `content/facts/` records).
    - **Cited but wrong:** VERCODE is cited but a number is wrong, absent, or materially misstated. **This is the serious outcome** — it is a *drift* signal, and it is routed to the owner of the fact (the `CONTENT_STRATEGY.md §5` table's "the doc owner") within the week.
    - **Not cited.** (A VERCODE mention with no URL is scored as *not cited* — an unlinked mention is not a citation.)
 5. **The rate.** `citation rate = (correctly-cited answers) / (total answers)` per surface and overall. The KPI is **≥ 1 in 5** on the "best AI code review"-class queries. A rate below the target for two consecutive months triggers a **content-gap review** (which §3.4 keyword's page is thin?) — *not* a schema change (the schema is not the bottleneck for a *citation*).
@@ -440,7 +417,7 @@ The GEO test asks a *named* LLM a question about VERCODE and checks whether the 
 
 **The procedure:**
 
-1. **The fact set (fixed).** Pick the **10 facts** that a generative engine is most likely to be asked about, from the `ProductFact` register (`CONTENT_SCHEMAS.md §3`): the wedge; the Free plan's price + quota; the Team plan's quota; the price of the Team plan (or "a negotiated price"); the review latency p50/p95; the confidence floor; the open-source answer; the self-hosted answer; the "does it store source code" answer; the model-routing answer. The set is fixed so the score is comparable across months.
+1. **The fact set (fixed).** Pick the **10 facts** that a generative engine is most likely to be asked about, from the `ProductFact` register (`CONTENT_SCHEMAS.md §3`): the wedge; the how-it-works 3 steps; the static-analysis-before-LLM order; the verdict + inline findings shape; the review latency p50/p95; the confidence floor; the open-source answer; the self-hosted answer; the "does it store source code" answer; the model-routing answer. The set is fixed so the score is comparable across months.
 2. **The surfaces.** Ask each fact's question on at least **2** web-facing LLM surfaces (an LLM with web search; a dedicated answer engine). Use the *public* surfaces a user would reach — the *logged-in*, *personalized*, or *tool-calling* variants are *not* the surfaces an answer engine's user gets, and they are not reproducible.
 3. **The prompt form (fixed).** The question, verbatim, in the *natural phrasing a user would type*, plus the neutral instruction: *"What is VERCODE's <fact>? Answer with the source."* The prompt is recorded alongside the answer; a changed prompt invalidates the comparison.
 4. **The scoring (per answer, per fact).**
@@ -453,7 +430,7 @@ The GEO test asks a *named* LLM a question about VERCODE and checks whether the 
 
 **The "measured, not the claimed" rule, concretely:**
 
-- A report says *"the GEO fact accuracy rate was 9 of 10 on the sampled surfaces in 2026-10; 1 fact was wrong (the Team plan price), corrected on 2026-10-08"* — **not** *"LLMs cite VERCODE correctly"*.
+- A report says *"the GEO fact accuracy rate was 9 of 10 on the sampled surfaces in 2026-10; 1 fact was wrong (the review latency p95), corrected on 2026-10-08"* — **not** *"LLMs cite VERCODE correctly"*.
 - A surface that could not be tested (a login wall, a region block, a quota) is recorded as **blocked, not claimed** — the same posture as `RELEASE_CRITERIA gate 13` (a live suite with no credentials is "marked blocked") and `CI_CD.md §7`'s "CI does not claim a live integration that the credentialed lane didn't actually run". The GEO test is a *measurement*; an unmeasurable surface is reported as unmeasured.
 - The monthly report's numbers are the *only* numbers quoted about the GEO posture. There is no "LLM visibility score" bought from a vendor and quoted in a deck (the "no vanity totals" rule, `CONTENT_STRATEGY.md §1.3`).
 

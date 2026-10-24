@@ -2,10 +2,10 @@
 # The VERCODE dev stack (DEPLOYMENT §2 "the dev topology").
 #
 #   postgres (16)  redis (7)  web  api  worker  mock-github  mock-ai
-#   mock-billing  (migrate — a one-shot profile service)
+
 #
 # The whole system runs LOCALLY with NO external credentials: the mock
-# GitHub / mock AI / mock billing stand in for the real integrations, so a
+# GitHub / mock AI stand in for the real integrations, so a
 # full end-to-end pipeline run is local (TRD §18 "the dev-stack"). The mock
 # flags are the ENVIRONMENT_VARIABLES §7 dev-only vars.
 #
@@ -26,7 +26,7 @@
 #
 # Ports (host → container):
 #   web 3000 → 3000   api 4000 → 4000   mock-github 8091   mock-ai 8092
-#   mock-billing 8093   postgres 5432   redis 6379
+#
 # ---------------------------------------------------------------------------
 
 name: vercode
@@ -67,12 +67,6 @@ x-app-env: &app-env
   # service serves the same fixture the @vercode/ai-providers MockAdapter
   # returns, INTEGRATION_TEST_PLAN §1 "a the mock providers' state").
   AI_DEFAULT_PROVIDER: mock
-  # The billing (a the Stripe test-mode signature source — a the
-  # mock-billing service signs with the fixture secret, a a Stripe
-  # test-mode signature, not a live call).
-  BILLING_PROVIDER: stripe
-  STRIPE_WEBHOOK_SECRET: whsec_test_vercode_dev_stack_secret
-  BILLING_CURRENCY: USD
   # The observability (a the local defaults; a the Sentry DSNs are unset
   # in dev — a the OTel collector isn't part of the dev stack).
   OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
@@ -93,7 +87,6 @@ x-app-env: &app-env
   # the credentialed lane didn't actually run").
   USE_MOCK_GITHUB: "true"
   USE_MOCK_AI: "true"
-  USE_MOCK_BILLING: "true"
 
 services:
   # --- the stateful deps ---------------------------------------------------
@@ -278,36 +271,6 @@ services:
       retries: 10
       start_period: 5s
 
-  mock-billing:
-    image: node:22-slim
-    working_dir: /app
-    command: ["node", "index.js"]
-    environment:
-      PORT: "8093"
-    volumes:
-      - ./mock-billing:/app:ro
-    ports:
-      - "8093:8093"
-    healthcheck:
-      test:
-        ["CMD", "node", "-e", "fetch('http://127.0.0.1:8093/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 5s
-
-  # --- the smoke target (DEPLOYMENT §2) ------------------------------------
-  #
-  # `docker compose -f infra/docker/compose.yaml run --rm smoke` — a
-  # one-shot container that (1) hits every service's /healthz, (2) POSTs a
-  # signed mock-PR webhook to the api, (3) polls the worker's recorded
-  # publish (a the pipeline's terminal step), (4) reads the mock-ai's call
-  # log + the mock-billing's signature source. It runs INSIDE the compose
-  # network (a the `smoke` service's env points at the in-network names).
-  #
-  # The host-side entry point is `./infra/docker/smoke/smoke.sh` (a it
-  # boots the stack first, then runs `compose run --rm smoke`). A direct
-  # `compose run smoke` against an already-up stack also works.
   smoke:
     image: node:22-slim
     working_dir: /app
@@ -318,8 +281,7 @@ services:
       WEB_BASE: http://web:3000
       MOCK_GITHUB_BASE: http://mock-github:8091
       MOCK_AI_BASE: http://mock-ai:8092
-      MOCK_BILLING_BASE: http://mock-billing:8093
-      GITHUB_WEBHOOK_SECRET: test-webhook-secret-dev
+            GITHUB_WEBHOOK_SECRET: test-webhook-secret-dev
     volumes:
       - ./smoke:/app:ro
       - worker-data:/data
@@ -332,7 +294,6 @@ services:
         condition: service_healthy
       mock-ai:
         condition: service_healthy
-      mock-billing:
         condition: service_healthy
 
 volumes:

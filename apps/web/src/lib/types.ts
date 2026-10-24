@@ -2,8 +2,6 @@
 // packages/contracts). Shapes the routes don't yet return are marked optional /
 // defaulted at the edge (the UI renders an honest zero or dash, never a guess).
 
-export type Plan = "free" | "developer" | "team" | "enterprise";
-
 export type Severity = "critical" | "high" | "medium" | "low";
 
 export type FindingCategory =
@@ -25,7 +23,6 @@ export type Role = "owner" | "admin" | "developer" | "viewer";
 export interface OrgSummary {
   id: string;
   name: string;
-  plan: Plan;
   role: Role;
 }
 export interface AuthMe {
@@ -62,12 +59,6 @@ export interface Session {
 export interface OrgDetail {
   id: string;
   name: string;
-  plan: Plan;
-  planStatus?: "active" | "past_due" | "canceled" | "upgrading";
-  billing?: {
-    renewalAt?: string | null;
-    status?: string;
-  };
 }
 
 export interface Member {
@@ -146,7 +137,6 @@ export interface ReviewJob {
   commitSha: string;
   status: JobStatus;
   skipReason?:
-    | "quota_exceeded"
     | "same_sha"
     | "install_removed"
     | "pr_closed"
@@ -243,7 +233,6 @@ export interface RoutingRow {
   provider: string;
   model: string;
   maxTokens?: number;
-  tierGate?: "standard" | "standard+strong" | "any";
   available?: boolean;
 }
 export interface ProvidersResponse {
@@ -258,13 +247,6 @@ export interface UsageDaily {
   inputTokens: number;
   outputTokens: number;
   estUsd: number;
-}
-export interface Quota {
-  used: number;
-  limit: number;
-  percentUsed: number;
-  /** reviews already committed (queued jobs) past the spent mark */
-  committed?: number;
 }
 export interface UsageByProvider {
   provider: string;
@@ -281,23 +263,7 @@ export interface UsageResponse {
     estUsd: number;
     bySeverity?: Record<string, number>;
   };
-  quota: Quota;
   byProvider?: UsageByProvider[];
-}
-
-// ---------------------------------------------------------------- billing
-export interface Invoice {
-  id: string;
-  date: string;
-  amountUsd: number;
-  status: string;
-}
-export interface BillingResponse {
-  plan: Plan;
-  status: "active" | "past_due" | "canceled" | "upgrading";
-  renewalAt?: string | null;
-  invoices: Invoice[];
-  quota: Quota;
 }
 
 // ---------------------------------------------------------------- audit
@@ -316,7 +282,6 @@ export interface AuditResponse {
 }
 
 export const SKIP_REASON_LABEL: Record<string, string> = {
-  quota_exceeded: "Quota reached",
   same_sha: "Already reviewed at this commit",
   install_removed: "GitHub App disconnected",
   pr_closed: "PR closed",

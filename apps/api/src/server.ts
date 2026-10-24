@@ -1,7 +1,7 @@
 // The Fastify API bootstrap + plugin registration (TRD.md §5). M2's T2.3–T2.5.
 //
 // The `api` owns: authentication, dashboard REST, the webhook ingress
-// (verify + enqueue only), the billing webhooks, and the job enqueue. It does
+// (verify + enqueue only), and the job enqueue. It does
 // NOT run the review pipeline (SERVICE_BOUNDARIES.md "the api does not run the
 // pipeline; it only enqueues").
 

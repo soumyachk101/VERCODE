@@ -7,11 +7,13 @@ import {
   IconSparkles,
 } from "../icons";
 
+// Capability copy is evidence-backed; the cost-discipline card is written
+// in terms of model routing (strong model only where it earns it).
 const FEATURES = [
   {
     icon: IconBolt,
     title: "Zero-config detection",
-    body: "VERCODE reads your manifests and directory shape to pre-fill lint targets, review tasks, and file budgets — every detection is an editable rule, not a hidden guess.",
+    body: "VERCODE reads your manifests and directory shape to pre-fill lint targets, review tasks, and file budgets: every detection is an editable rule, not a hidden guess.",
   },
   {
     icon: IconSparkles,
@@ -36,7 +38,7 @@ const FEATURES = [
   {
     icon: IconBranch,
     title: "Cost discipline by design",
-    body: "Per-plan quotas and per-review cost accounting: the strong model runs only where it earns its spend, and the static pass costs almost nothing.",
+    body: "The strong model routes to the tasks that earn it; static analysis carries everything else at near-zero cost, and per-review cost accounting shows where the spend went.",
   },
 ];
 
@@ -44,16 +46,13 @@ export function Features() {
   return (
     <section className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
       <div className="max-w-2xl">
-        <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-color)]">
-          Capabilities
-        </span>
-        <h2 className="mt-3 text-[28px] font-bold tracking-[-0.01em] text-[hsl(var(--text-1))] sm:text-[34px]">
-          Built on four principles, shipped as six features
+        <h2 className="text-[28px] font-bold tracking-[-0.01em] text-[hsl(var(--text-1))] sm:text-[34px]">
+          What VERCODE does on every pull request
         </h2>
         <p className="mt-4 text-[15px] leading-relaxed text-[hsl(var(--text-2))]">
-          Deterministic first, evidence-backed, cost-disciplined, and a workspace —
-          not just a bot. Every feature below is one of those principles you can
-          point at in the dashboard.
+          Deterministic analysis first, evidence-backed AI second, your rules
+          enforced at the merge gate. Every capability below is something you
+          can point at in the dashboard.
         </p>
       </div>
 
@@ -69,19 +68,19 @@ export function Features() {
         ))}
       </div>
 
-      {/* the stats strip */}
+      {/* the stats strip: tabular numbers, no monospace (house rule) */}
       <dl className="mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-[10px] border border-[hsl(var(--line))] bg-[hsl(var(--line))] sm:grid-cols-4">
         {[
           ["<120s", "review published at p50"],
-          ["5,000", "reviews a month on Team"],
           ["0.6", "default confidence floor"],
+          ["5", "least-privilege App scopes"],
           ["180 days", "audit log retention"],
         ].map(([value, label]) => (
           <div key={label} className="bg-[hsl(var(--panel))] px-5 py-6">
             <dt className="order-last mt-1 text-[12px] uppercase tracking-wider text-[hsl(var(--text-3))]">
               {label}
             </dt>
-            <dd className="font-mono text-[24px] font-semibold tabular-nums text-[hsl(var(--text-1))]">
+            <dd className="text-[24px] font-semibold tabular-nums text-[hsl(var(--text-1))]">
               {value}
             </dd>
           </div>

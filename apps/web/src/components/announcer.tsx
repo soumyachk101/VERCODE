@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * The polite live-region announcer (ACCESSIBILITY §3): new findings, a
- * finding action ("Finding 'X' marked fixed"), and a quota change ("Usage
- * is now 80% of this month's quota") all push a message here; a role="status"
+ * finding action ("Finding 'X' marked fixed"), and a usage change ("Usage
+ * is now 80% of the 30-day total") all push a message here; a role="status"
  * region in the shell reads it. A screen reader is told the data arrived,
  * not just re-scrolled.
  */
@@ -22,7 +22,7 @@ export function announce(text: string): void {
 
 /**
  * The polite region (role="status" + aria-live="polite"). Mount one per
- * shell — it's the keyboard/sr target when findings or quota change.
+ * shell — it's the keyboard/sr target when findings or usage change.
  */
 export function LiveRegion() {
   const [msg, setMsg] = useState<Message | null>(null);

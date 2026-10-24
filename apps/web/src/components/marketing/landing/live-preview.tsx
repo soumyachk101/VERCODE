@@ -1,10 +1,10 @@
 "use client";
 
-// The live product preview — the "See it in action" section on the landing
+// The live product preview: the "See it in action" section on the landing
 // page. When a session exists it pulls real data from the API (org reviews,
-// security rollup, quota) and renders it in the same dark-palette panel
-// style as the dashboard. When no session exists it renders the
-// representative sample with a clear "sample data" label — never
+// security rollup, usage totals) and renders it in the same dark-palette
+// panel style as the dashboard. When no session exists it renders the
+// representative sample with a clear "sample data" label: never
 // fabricated customer data.
 
 import { useAuthMe, useInstall, useRepos, useReviews, useSecurity, useUsage } from "@/lib/hooks";
@@ -38,8 +38,7 @@ export function LivePreview() {
     openFindings: sec?.total ?? 0,
     critical: sec?.open?.critical ?? 0,
     reviews7d: rev?.items?.length ?? 0,
-    avgReviewTime: spend,
-    quotaUsed: usg ? Math.round((usg.quota?.percentUsed ?? 0) * 100) : 0,
+    reviews30d: usg ? `${usg.totals.reviews} · ${usg.totals.estUsd.toFixed(2)} USD` : "No reviews yet",
     connectedRepos: rep?.repos?.length ?? 0,
     installState: (inst?.connected ? "connected" : "not-connected") as "connected" | "not-connected",
   };
@@ -47,7 +46,7 @@ export function LivePreview() {
   const isLive = signedIn && orgId !== null;
 
   return (
-    <section className="border-y border-[hsl(var(--line))] bg-[hsl(var(--panel))]">
+    <section className="bg-[hsl(var(--panel))]">
       <div className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
         <div className="max-w-2xl">
           <h2 className="text-[28px] font-bold tracking-[-0.01em] text-[hsl(var(--text-1))] sm:text-[34px]">
@@ -55,14 +54,14 @@ export function LivePreview() {
           </h2>
           <p className="mt-4 text-[15px] leading-relaxed text-[hsl(var(--text-2))]">
             {isLive
-              ? "Live data from your org: open findings, last 7 days of reviews, and this month's quota."
-              : "The overview panel as it appears the moment you sign in. What you see here is a sample — your org data replaces it after you connect a repository."}
+              ? "Live data from your org: open findings, the last 7 days of reviews, and 30 days of usage."
+              : "The overview panel as it appears the moment you sign in. What you see here is a sample: your org data replaces it after you connect a repository."}
           </p>
         </div>
 
         {loading ? (
           <div className="mt-12 grid grid-cols-1 gap-px overflow-hidden rounded-[10px] border border-[hsl(var(--line))] bg-[hsl(var(--line))] sm:grid-cols-2 lg:grid-cols-3">
-            {["Open findings", "Reviews · 7 days", "Quota used · 30d", "Connected repos", "30-day spend", "Install status"].map((label) => (
+            {["Open findings", "Reviews · 7 days", "Usage · 30d", "Connected repos", "30-day spend", "Install status"].map((label) => (
               <div key={label} className="flex flex-col items-start gap-3 bg-[hsl(var(--background))] p-6">
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-[hsl(var(--text-3))]">{label}</span>
                 <div className="h-7 w-32 animate-pulse rounded bg-[hsl(var(--highlight))]" />
@@ -83,9 +82,9 @@ export function LivePreview() {
                 sub: isLive ? "across all connected repos" : "sample",
               },
               {
-                label: "Quota used · 30d",
-                value: `${data.quotaUsed}%`,
-                sub: isLive ? "of this month's plan" : "free tier · sample",
+                label: "Usage · 30d",
+                value: data.reviews30d,
+                sub: "reviews · estimated cost",
               },
               {
                 label: "Connected repos",
@@ -97,7 +96,7 @@ export function LivePreview() {
               },
               {
                 label: "30-day spend",
-                value: data.avgReviewTime,
+                value: spend,
                 sub: "model + compute",
               },
               {
@@ -118,7 +117,7 @@ export function LivePreview() {
                     <IconShield width={14} height={14} className="text-[hsl(var(--success))]" />
                   )}
                 </div>
-                <div className="mt-3 font-mono text-[26px] font-bold leading-none tracking-[-0.02em] text-[hsl(var(--text-1))]">
+                <div className="mt-3 text-[26px] font-bold leading-none tracking-[-0.02em] tabular-nums text-[hsl(var(--text-1))]">
                   {item.value}
                 </div>
                 <div className="mt-1 text-[12px] text-[hsl(var(--text-3))]">{item.sub}</div>

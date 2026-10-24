@@ -11,9 +11,8 @@ import { GITHUB_REPO, signinUrl, srcParam } from "@/lib/site.js";
  * `Organization.sameAs` value (the `GITHUB_REPO` in `lib/site.ts`).
  *
  * The CTA links come from `lib/site.ts`'s helpers (the `signinUrl` +
- * `srcParam` — the `WFR-501/502/504` contract: the primary CTA on `/`
- * + `/pricing` is `/signin`, carrying a `?src=web-{page}` beacon param,
- * and the paid-plan cards carry a `?plan=<id>` override).
+ * `srcParam` — the `WFR-501/504` contract: the primary CTA on `/`
+ * is `/signin`, carrying a `?src=web-{page}` beacon param.
  */
 
 export interface NavLink {
@@ -30,10 +29,9 @@ export interface NavLink {
 export { GITHUB_REPO };
 
 /** The header nav (IA §4's "the product mark + the wordmark (left);
- *  the nav links — Features, Pricing, Docs, Changelog, Blog (right)"). */
+ *  the nav links — Features, Docs, Changelog, Blog (right)"). */
 export const NEXT_LINKS: readonly NavLink[] = [
   { label: "Features", href: "/features/" },
-  { label: "Pricing", href: "/pricing/" },
   { label: "Docs", href: "/docs/" },
   { label: "Changelog", href: "/changelog/" },
   { label: "Blog", href: "/blog/" },
@@ -53,7 +51,6 @@ export const FOOTER_LINKS: readonly {
     title: "Product",
     links: [
       { label: "Features", href: "/features/" },
-      { label: "Pricing", href: "/pricing/" },
       { label: "Changelog", href: "/changelog/" },
     ],
   },
@@ -86,21 +83,20 @@ export const FOOTER_LINKS: readonly {
 ];
 
 /** The 404's 5 top links (IA §3.1's state: "a helpful 404 … + the 5 top
- *  links"; the brief's exact set: `/`, `/pricing`, `/docs/quickstart`,
+ *  links"; the brief's exact set: `/`, `/docs/quickstart`,
  *  `/features`, `/faq`). */
 export const TOP_5_LINKS: readonly NavLink[] = [
   { label: "Home", href: "/" },
-  { label: "Pricing", href: "/pricing/" },
   { label: "Quickstart", href: "/docs/quickstart/" },
   { label: "Features", href: "/features/" },
   { label: "FAQ", href: "/faq/" },
 ];
 
 /**
- * The primary CTA href (WFR-501/502/504): the "Start a free review"
+ * The primary CTA href (WFR-501/504): the "Start a free review"
  * button on the header → `/signin` with the `?src=web-header` beacon
  * param (the `WFR-504` one first-party cookieless beacon). Built from
- * `lib/site.ts`'s `signinUrl` + `srcParam` so the header and the
- * pricing-page CTAs share one literal (the single-source rule).
+ * `lib/site.ts`'s `signinUrl` + `srcParam` so the header and the other
+ * page CTAs share one literal (the single-source rule).
  */
 export const HEADER_CTA_HREF: string = signinUrl() + srcParam("web-header");

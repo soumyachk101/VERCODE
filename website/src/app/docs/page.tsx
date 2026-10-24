@@ -33,7 +33,7 @@ function groupOf(doc: DocPage): DocsGroup {
 
 // 120–158 chars (WFR-102's meta description band; the on-page gate).
 const DOC_META_DESCRIPTION =
-  "The docs hub: nine topics in four groups. Install the App, read the API contract, tune custom rules, the security rollup, providers, plans, quotas, retention.";
+  "The docs hub: eight topics in four groups. Install the App, read the API contract, tune custom rules, the security rollup, providers, usage, retention.";
 
 export const metadata: Metadata = {
   title: `Docs — ${SITE_NAME}`,

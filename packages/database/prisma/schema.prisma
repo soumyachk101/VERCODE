@@ -340,6 +340,7 @@ model OrgSettings {
   maxLines            Int     @default(3000) @map("max_lines")
   provider            String  @default("openai")
   tokenSpendCapMonthly Decimal @default(0) @map("token_spend_cap_monthly") @db.Decimal(12, 6)
+  activeReposForReview Json?  @map("active_repos_for_review")
   updatedBy           String  @map("updated_by")
   updatedAt           DateTime @updatedAt @map("updated_at")
 

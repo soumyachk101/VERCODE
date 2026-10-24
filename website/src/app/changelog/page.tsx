@@ -184,7 +184,7 @@ export default function ChangelogIndexPage() {
       <p className="cl-docs">
         The docs behind these releases: the{" "}
         <a href="/docs/rules/">rules and pipeline docs</a> and the{" "}
-        <a href="/docs/quotas/">quota docs</a>.
+        <a href="/docs/providers/">usage and providers docs</a>.
       </p>
     </main>
   );

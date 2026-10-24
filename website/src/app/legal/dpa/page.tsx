@@ -180,8 +180,8 @@ export default function LegalDpaPage() {
               The audit-log floor
             </h2>
             <p>
-              Audit events are retained a minimum of 180 days under every
-              tier (NFR-27: "audit log 180 days minimum"). The audit log
+              Audit events are retained a minimum of 180 days
+              (NFR-27: "audit log 180 days minimum"). The audit log
               is append-only — a mutation of the record is structurally
               impossible through the API; only a retention hard-delete
               expires an event by age. An audit retention below the

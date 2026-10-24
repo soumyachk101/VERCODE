@@ -44,7 +44,7 @@ The families, with a representative route each:
 | Reviews & findings | `GET /orgs/:id/reviews` | The review job list, job detail, findings |
 | Security rollup | `GET /orgs/:id/security` | The org-wide security findings view |
 | Configuration | `GET /orgs/:id/settings` | Floors, budgets, provider, custom rules |
-| Usage & billing | `GET /orgs/:id/usage` | Usage, plan, invoices, quota |
+| Usage | `GET /orgs/:id/usage` | Usage and quota |
 | Audit | `GET /orgs/:id/audit` | The audit log, filtered |
 
 The full per-endpoint detail — request and response shapes, error codes, capability gates — is in the API specification; the OpenAPI file is the machine-readable form.

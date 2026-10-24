@@ -103,7 +103,7 @@ export function githubWebhookRoutes(
   }
 
   // The raw-body parser (the HMAC is computed over the *raw* bytes, not a
-  // re-serialized object — the same invariant as the billing route).
+  // re-serialized object — the same invariant as the GitHub ingress).
   app.addContentTypeParser(
     "application/json",
     { parseAs: "buffer" },
@@ -453,7 +453,7 @@ async function handlePullRequest(
   }
 
   // The enqueue (the payload is ONLY the pointer + correlation — the
-  // worker re-reads the org/quota/settings, SERVICE_BOUNDARIES "a job
+  // worker re-reads the org settings from Postgres; SERVICE_BOUNDARIES "a job
   // payload is a pointer, not an authority").
   // A the payload is ONLY the pointer + a the 4 correlation fields (a no
   // deliveryId, a no diff, a no findings: a the receipt row already

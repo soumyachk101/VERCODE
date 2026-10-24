@@ -1,5 +1,5 @@
 // M3's T3.1–T3.3 route-level assertions (TASK_BREAKDOWN's M3 "verified
-// state"): the `POST /webhooks/github` + `POST /webhooks/billing` routes,
+// state"): the `POST /webhooks/github` route,
 // exercised on a real Fastify app + the routes' raw-body parser + a mocked
 // Prisma surface (an in-memory fake, no Postgres) + an in-memory queue (no
 // Redis, the `Enqueueable` seam from `queue.ts`). No network, no DB, no
@@ -17,17 +17,9 @@
 // - a `pull_request` opened event → 202 + a review_jobs row + a enqueued
 //   job (IT-webhook-opened; the payload is ONLY the `jobId` pointer +
 //   correlation, a NFR-04 "no LLM / no diff fetch on the ingress path").
-//
-// Billing (`POST /webhooks/billing`):
-// - a forged / unsigned event → 401 BILLING_REJECTED + a org_billing
-//   UNCHANGED (ST-billing-forged, AC-403 "a client-claim is inert").
-// - a re-delivered event (a the same provider event id) → 200 no-op (a
-//   ST-billing-replay / IT-payment-03 "a replay is a no-op, the plan state
-//   is not double-moved").
 
 import { describe, it, expect, beforeEach } from "vitest";
 import Fastify from "fastify";
-import { createHmac } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import type { AppConfig } from "@vercode/config";
 import type {
@@ -40,20 +32,16 @@ import type {
   AuditEvent,
   WebhookDelivery,
   RetentionJob,
-  BillingEvent,
-  OrgBilling,
 } from "@prisma/client";
+import { createHmac } from "node:crypto";
 import { githubWebhookRoutes } from "./routes/webhooks.js";
-import { billingWebhookRoutes } from "./routes/billing-webhook.js";
 import { createInMemoryQueue, type InMemoryQueue } from "./queue.js";
 
 // ---------------------------------------------------------------------------
-// The test config (a GITHUB_WEBHOOK_SECRET for the HMAC + a
-// STRIPE_WEBHOOK_SECRET + the mock-billing flag).
+// The test config (a GITHUB_WEBHOOK_SECRET for the HMAC).
 // ---------------------------------------------------------------------------
 
 const GITHUB_SECRET = "test-github-webhook-secret";
-const STRIPE_SECRET = "test-stripe-webhook-secret";
 
 function testConfig(): AppConfig {
   return {
@@ -72,11 +60,6 @@ function testConfig(): AppConfig {
       GITHUB_API_BASE: "https://api.github.com",
     },
     ai: { AI_DEFAULT_PROVIDER: "mock" },
-    billing: {
-      BILLING_PROVIDER: "stripe",
-      STRIPE_WEBHOOK_SECRET: STRIPE_SECRET,
-      BILLING_CURRENCY: "USD",
-    },
     observability: { LOG_LEVEL: "info" },
     limits: {
       PLATFORM_TOKEN_SPEND_CAP_USD: 100000,
@@ -87,7 +70,7 @@ function testConfig(): AppConfig {
       WORKER_CONCURRENCY: 4,
       QUEUE_MAX_ATTEMPTS: 3,
     },
-    devMock: { USE_MOCK_GITHUB: "true", USE_MOCK_AI: "true", USE_MOCK_BILLING: "true" },
+    devMock: { USE_MOCK_GITHUB: "true", USE_MOCK_AI: "true" },
   };
 }
 
@@ -102,24 +85,18 @@ interface Seed {
   repo?: GithubRepo;
   jobs?: ReviewJob[];
   delivery?: WebhookDelivery;
-  billingRow?: OrgBilling;
-  billingEvent?: BillingEvent;
 }
 
 export function mockPrisma(seed: Seed = {}) {
   const audits: AuditEvent[] = [];
   const retentionJobs: RetentionJob[] = [];
-  // Only include the seeded rows (a undefined seed → a no row, a not a
-  // `[undefined]` array that breaks a the `.find` predicate).
-  const billingEvents: BillingEvent[] = seed.billingEvent ? [seed.billingEvent] : [];
-  const orgBillings: OrgBilling[] = seed.billingRow ? [seed.billingRow] : [];
   const jobs: ReviewJob[] = [...(seed.jobs ?? [])];
   const installs: GithubInstall[] = seed.install ? [seed.install] : [];
   const repos: GithubRepo[] = seed.repo ? [seed.repo] : [];
   const deliveries: WebhookDelivery[] = seed.delivery ? [seed.delivery] : [];
   const orgs: Organization[] = seed.org ? [seed.org] : [];
 
-  const state = { audits, retentionJobs, billingEvents, orgBillings, jobs, installs, repos, deliveries, orgs };
+  const state = { audits, retentionJobs, jobs, installs, repos, deliveries, orgs };
 
   const auditEvent = {
     create: async ({ data }: { data: Record<string, unknown> }) => {
@@ -262,34 +239,6 @@ export function mockPrisma(seed: Seed = {}) {
     findMany: async () => state.retentionJobs,
   };
 
-  const billingEvent = {
-    findUnique: async ({ where }: { where: { provider_providerEventId: { provider: string; providerEventId: string } } }) =>
-      state.billingEvents.find(
-        (b) => b.provider === where.provider_providerEventId.provider && b.providerEventId === where.provider_providerEventId.providerEventId
-      ) ?? null,
-    create: async ({ data }: { data: Record<string, unknown> }) => {
-      const row = {
-        id: `billing-event-${state.billingEvents.length + 1}`,
-        processedAt: new Date(),
-        ...data,
-      } as unknown as BillingEvent;
-      state.billingEvents.push(row);
-      return row;
-    },
-    findMany: async () => state.billingEvents,
-  };
-
-  const orgBilling = {
-    findFirst: async ({ where }: { where: Record<string, unknown> }) =>
-      state.orgBillings.find((b) => b.provider === (where.provider as string) && b.providerCustomerId === (where.providerCustomerId as string)) ?? null,
-    update: async ({ where, data }: { where: { orgId: string }; data: Record<string, unknown> }) => {
-      const row = state.orgBillings.find((b) => b.orgId === where.orgId);
-      if (!row) throw new Error("billing row not found");
-      Object.assign(row, data);
-      return row;
-    },
-  };
-
   const prismaMock = {
     auditEvent,
     webhookDelivery,
@@ -298,8 +247,6 @@ export function mockPrisma(seed: Seed = {}) {
     organization,
     reviewJob,
     retentionJob,
-    billingEvent,
-    orgBilling,
   } as unknown as PrismaClient;
 
   return { db: prismaMock, state };
@@ -317,8 +264,8 @@ async function buildGithubApp(seed: Seed = {}) {
   const config = testConfig();
 
   const app = Fastify({ logger: false });
-  // The auth plugin decorates `app.auth` (the billing route reads
-  // `app.auth.db`). A minimal stand-in with the db + a no-op config.
+  // The auth plugin decorates `app.auth` (the route reads `app.auth.db`).
+  // A minimal stand-in with the db + a no-op config.
   app.decorate("auth", { db, config, hashToken: () => "", argon2: undefined, newSessionToken: () => "" } as unknown as {
     db: PrismaClient;
     config: AppConfig;
@@ -331,24 +278,6 @@ async function buildGithubApp(seed: Seed = {}) {
   }, { prefix: "/webhooks" });
   await app.ready();
   return { app, db, queue, state, config };
-}
-
-async function buildBillingApp(seed: Seed = {}) {
-  const { db, state } = mockPrisma(seed);
-  const config = testConfig();
-  const app = Fastify({ logger: false });
-  app.decorate("auth", { db, config, hashToken: () => "", argon2: undefined, newSessionToken: () => "" } as unknown as {
-    db: PrismaClient;
-    config: AppConfig;
-    hashToken: (t: string) => string;
-    argon2: typeof import("argon2");
-    newSessionToken: () => string;
-  });
-  app.register(async (a: FastifyInstance) => {
-    await billingWebhookRoutes(a, config);
-  }, { prefix: "/webhooks" });
-  await app.ready();
-  return { app, db, state, config };
 }
 
 // The GitHub event helpers.
@@ -681,162 +610,3 @@ describe("POST /webhooks/github installation events (M3 T3.3)", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// The billing route tests (a ST-billing-forged / -replay, a AC-403).
-// ---------------------------------------------------------------------------
-
-describe("POST /webhooks/billing (M3 T3.3)", () => {
-  function billingSignature(rawBody: string, secret: string = STRIPE_SECRET): string {
-    // A the Stripe `Stripe-Signature` shape: a `t=<unix>,v1=<hex hmac>`.
-    const v1 = createHmac("sha256", secret).update(rawBody).digest("hex");
-    return `t=${Math.floor(Date.now() / 1000)},v1=${v1}`;
-  }
-
-  it("a forged / unsigned billing event → 401 + a org_billing UNCHANGED (a ST-billing-forged, a AC-403)", async () => {
-    const billingRow: OrgBilling = {
-      orgId: "org-1",
-      provider: "stripe",
-      providerCustomerId: "cus_123",
-      providerSubscriptionId: "sub_1",
-      plan: "free",
-      status: "TRIALING",
-      currentPeriodEnd: null,
-      cancelledAt: null,
-      updatedAt: new Date(),
-    } as unknown as OrgBilling;
-    const { app, state } = await buildBillingApp({ billingRow });
-    const body = {
-      id: "evt_forged",
-      type: "invoice.paid",
-      data: { object: { customer: "cus_123" } },
-    };
-    const raw = JSON.stringify(body);
-    // A a missing signature header (a the forged / unsigned case).
-    const res = await app.inject({
-      method: "POST",
-      url: "/webhooks/billing",
-      headers: { "content-type": "application/json" },
-      payload: raw,
-    });
-    expect(res.statusCode).toBe(401);
-    expect(res.json().error.code).toBe("BILLING_REJECTED");
-    // A the org_billing state is UNCHANGED (a the client-claim / a the
-    // forged-event is inert, a AC-403 "a client-claim is inert").
-    expect(state.orgBillings[0].status).toBe("TRIALING");
-    // A a the audit row (a the "a forged event is rejected + a audited").
-    expect(state.audits.some((a) => a.action === "billing.rejected")).toBe(true);
-    // A NO receipt row (a a rejection is not a valid event).
-    expect(state.billingEvents.length).toBe(0);
-  });
-
-  it("a verified event moves the org_billing state (a IT-payment-01, a AC-403)", async () => {
-    const billingRow: OrgBilling = {
-      orgId: "org-1",
-      provider: "stripe",
-      providerCustomerId: "cus_123",
-      providerSubscriptionId: "sub_1",
-      plan: "free",
-      status: "TRIALING",
-      currentPeriodEnd: null,
-      cancelledAt: null,
-      updatedAt: new Date(),
-    } as unknown as OrgBilling;
-    const { app, state } = await buildBillingApp({ billingRow });
-    const body = {
-      id: "evt_paid",
-      type: "invoice.paid",
-      data: { object: { customer: "cus_123" } },
-    };
-    const raw = JSON.stringify(body);
-    const res = await app.inject({
-      method: "POST",
-      url: "/webhooks/billing",
-      headers: { "content-type": "application/json", "stripe-signature": billingSignature(raw) },
-      payload: raw,
-    });
-    expect(res.statusCode).toBe(200);
-    // A the state moved to ACTIVE (a the §4 mapping: a invoice.paid → a
-    // ACTIVE).
-    expect(state.orgBillings[0].status).toBe("ACTIVE");
-    // A a the receipt row (a the idempotency key).
-    expect(state.billingEvents.some((b) => b.providerEventId === "evt_paid")).toBe(true);
-  });
-
-  it("a re-delivered event (a the same event id) → 200 no-op (a ST-billing-replay / a IT-payment-03, a a the plan state is not double-moved)", async () => {
-    const billingRow: OrgBilling = {
-      orgId: "org-1",
-      provider: "stripe",
-      providerCustomerId: "cus_123",
-      providerSubscriptionId: "sub_1",
-      plan: "free",
-      status: "TRIALING",
-      currentPeriodEnd: null,
-      cancelledAt: null,
-      updatedAt: new Date(),
-    } as unknown as OrgBilling;
-    const existing: BillingEvent = {
-      id: "be-1",
-      provider: "stripe",
-      providerEventId: "evt_replay",
-      type: "invoice.paid",
-      processedAt: new Date(),
-    } as unknown as BillingEvent;
-    const { app, state } = await buildBillingApp({ billingRow, billingEvent: existing });
-    const body = {
-      id: "evt_replay",
-      type: "invoice.paid",
-      data: { object: { customer: "cus_123" } },
-    };
-    const raw = JSON.stringify(body);
-    const res = await app.inject({
-      method: "POST",
-      url: "/webhooks/billing",
-      headers: { "content-type": "application/json", "stripe-signature": billingSignature(raw) },
-      payload: raw,
-    });
-    expect(res.statusCode).toBe(200);
-    expect(res.json().replay).toBe(true);
-    // A the state is NOT double-moved (a the idempotency row was already
-    // there, a the event was already processed).
-    expect(state.orgBillings[0].status).toBe("TRIALING");
-    // A NO second receipt row (a the UK makes a replay a no-op).
-    expect(state.billingEvents.length).toBe(1);
-  });
-
-  it("a client-supplied plan claim (a no verified event) is INERT (a AC-403, a THREAT_MODEL T-14)", async () => {
-    // A the "a client claim of 'I'm on Team' is inert" is structural: a
-    // the ONLY state-mover is a the verified webhook (a this test asserts a
-    // a forged event + a a client-claim field in the body do NOT change
-    // a the plan).
-    const billingRow: OrgBilling = {
-      orgId: "org-1",
-      provider: "stripe",
-      providerCustomerId: "cus_123",
-      providerSubscriptionId: "sub_1",
-      plan: "team",
-      status: "ACTIVE",
-      currentPeriodEnd: null,
-      cancelledAt: null,
-      updatedAt: new Date(),
-    } as unknown as OrgBilling;
-    const { app, state } = await buildBillingApp({ billingRow });
-    const body = {
-      id: "evt_claim",
-      type: "invoice.paid",
-      plan: "enterprise", // a a client-supplied plan claim (a INERT).
-      data: { object: { customer: "cus_123" } },
-    };
-    const raw = JSON.stringify(body);
-    // A a forged signature (a a no verified event) → a a reject, a the
-    // state UNCHANGED.
-    const res = await app.inject({
-      method: "POST",
-      url: "/webhooks/billing",
-      headers: { "content-type": "application/json", "stripe-signature": billingSignature(raw, "wrong-secret") },
-      payload: raw,
-    });
-    expect(res.statusCode).toBe(401);
-    expect(state.orgBillings[0].status).toBe("ACTIVE");
-    expect(state.orgBillings[0].plan).toBe("team");
-  });
-});

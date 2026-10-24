@@ -7,10 +7,12 @@ import { useRepos, useReviews, useSecurity } from "@/lib/hooks";
 import { PageHead } from "@/components/Settings";
 import { DataBlock, EmptyBlock } from "@/components/DataBlock";
 import { Panel, PanelTitle } from "@/components/cards";
+import { KpiStrip, type KpiRow } from "@/components/KpiStrip";
 import { Table, TRow, TCell } from "@/components/Table";
 import { Pill } from "@/components/Pill";
 import { Search } from "@/components/controls";
 import { relativeTime } from "@/lib/format";
+import { RepoConnectCard } from "@/components/RepoConnectCard";
 
 export function RepositoriesClient() {
   return (
@@ -36,8 +38,17 @@ function RepositoriesBody() {
   // returns; a missing rollup is a grey dash, not a fabricated zero.
   const openHc = sec.data ? sec.data.open.high + sec.data.open.critical : null;
 
+  // Overview strip: the connected count is the real number. KpiStrip's
+  // value type is number, so a missing security rollup (openHc == null) is
+  // deliberately omitted rather than printed as a fabricated 0 — a count
+  // is a claim, never a guess.
+  const kpiRows: KpiRow[] = [
+    { key: "connected", label: "Connected repositories", value: list.length, sign: "count" },
+    ...(openHc != null ? [{ key: "open-hc", label: "Open high/critical", value: openHc, sign: "count" as const }] : []),
+  ];
+
   return (
-    <div>
+    <div style={{ display: "grid", gap: 16 }}>
       <PageHead
         title="Repositories"
         finding={
@@ -54,6 +65,7 @@ function RepositoriesBody() {
           />
         }
       />
+      <KpiStrip rows={kpiRows} cols={2} />
       <Panel>
         <PanelTitle>Connected repositories</PanelTitle>
         <DataBlock result={repos} block="repositories">
@@ -113,6 +125,7 @@ function RepositoriesBody() {
           </p>
         )}
       </Panel>
+      <RepoConnectCard orgId={orgId} />
     </div>
   );
 }

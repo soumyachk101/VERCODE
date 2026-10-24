@@ -1,6 +1,6 @@
 ---
 title: "Model providers & BYOK"
-description: "Task-routed model selection across OpenAI, Anthropic, and Ollama; BYOK key encryption, and how the Enterprise plan shifts model spend to the customer's key."
+description: "Task-routed model selection across OpenAI, Anthropic, and Ollama; BYOK key encryption, and how model spend can be shifted to the customer's own key."
 date: 2026-10-23
 status: published
 tags: [providers, byok, models]
@@ -25,7 +25,7 @@ The default routes, per task:
 | Security review | strongest the tier allows | A miss is an incident; never downgraded for cost |
 | Summary | cheap model | A narrative over validated findings; low stakes |
 
-The plan's tier gates which models a task may resolve to: Free and Developer resolve within the standard tier; Team adds the strong tier; Enterprise resolves to any tier, including a frontier model.
+The org's quota gates which models a task may resolve to: a 50- or 500-review quota resolves within the standard tier; a 5,000-review quota adds the strong tier; an enterprise agreement resolves to any tier, including a frontier model.
 
 ## BYOK
 
@@ -33,9 +33,9 @@ An org admin stores a provider key at the org level (FR-313, the BYOK surface, F
 
 While a BYOK key is set, the model calls run on the org's key and the org's provider spend. The platform's default provider is used only when no key is set.
 
-## Ollama and the Enterprise story
+## Ollama and the cost-shifting story
 
-Ollama is the self-hosted-model adapter: a model on the org's infrastructure, with zero provider spend on VERCODE's side (the marginal cost is the org's compute, out of scope of VERCODE's accounting). On the Enterprise plan, BYOK and Ollama are the cost-shifting play: the account is near-zero COGS for VERCODE because the model spend is on the customer's bill. Frontier-model access and data residency are the compliance shapes on top of that.
+Ollama is the self-hosted-model adapter: a model on the org's infrastructure, with zero provider spend on VERCODE's side (the marginal cost is the org's compute, out of scope of VERCODE's accounting). With BYOK and Ollama the spend shifts: the account is near-zero COGS for VERCODE because the model spend is on the customer's bill. Frontier-model access and data residency are the compliance shapes on top of that.
 
 ## Fallback
 
@@ -46,4 +46,4 @@ Source: docs/TECHNICAL/MODEL_ROUTING.md (the routing table + the fallback, FR-31
 ## Related
 
 - [Security findings](/docs/security/) — why the security pass is never downgraded for cost
-- [Pricing](/docs/pricing/) — the tier-gated model access per plan
+- [Quotas](/docs/quotas/) — the tier-gated model access

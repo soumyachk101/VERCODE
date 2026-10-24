@@ -113,11 +113,9 @@ export function CommitHistory({
                   </p>
                   {job.skipReason && (
                     <p className="finding-line" style={{ margin: 0 }}>
-                      {job.skipReason === "quota_exceeded"
-                        ? "Quota reached this month — this review was skipped. Upgrade or reduce review volume."
-                        : job.error
-                          ? `Failure: ${job.error}`
-                          : "This review was skipped."}
+                      {job.error
+                        ? `Failure: ${job.error}`
+                        : "This review was skipped."}
                     </p>
                   )}
                   {detailHref && (

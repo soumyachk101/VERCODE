@@ -1,6 +1,6 @@
 // The landing surface (IA §3.1): "Is this AI code review actually trustworthy,
 // and can I try it?" The 7 blocks in order (the hero→CTA stack, WFR-201/202):
-// hero → how it works → capability → pricing teaser → [social proof, omitted]
+// hero → how it works → capability → [social proof, omitted]
 // → FAQ teaser → closing CTA. The section order is the WFR-202 assertion.
 import type { Metadata } from "next";
 import { JsonLd } from "../components/JsonLd";
@@ -12,7 +12,6 @@ import {
   signinUrl,
   srcParam,
 } from "../lib/site";
-import { planOffer, formatPrice, type Plan } from "../lib/pricing";
 import { HOME_FAQ_SLICE } from "../lib/faq";
 import { generateSchemaFor } from "../lib/schema-generator";
 
@@ -71,7 +70,7 @@ const PILLARS = [
   },
   {
     title: "Cost discipline",
-    body: "Per-org quotas and per-review cost accounting keep the spend bounded. The strong model runs only where it earns its spend; the static pass costs almost nothing.",
+    body: "Per-review cost accounting keeps the spend bounded. The strong model runs only where it earns its spend; the static pass costs almost nothing.",
   },
   {
     title: "A workspace, not just a bot",
@@ -79,33 +78,15 @@ const PILLARS = [
   },
 ];
 
-// The 3-card teaser (IA §3.1 block 4: Free / Team / Enterprise; the Developer
-// rung lives on /pricing). Prices + positioning come from the content/pricing
-// source of truth (the WFR-203 consistency rule, never hand-typed).
-const TEASER_PLANS: Plan[] = ["free", "team", "enterprise"];
-
 // WFR-202: the social-proof section is omitted until real customer logos
 // exist (the "omit, don't fabricate" rule; content/ has no logo wall yet).
-// When the first real logos land, the block re-enters between here and the
-// FAQ teaser, in this same position.
+// When the first real logos land, the block re-enters between the
+// capability block and the FAQ teaser, in this same position.
 
 // The top-5 teaser, same text as /faq's full answers (the WFR-204 rule;
 // HOME_FAQ_SLICE is lib/faq.js's top-5 helper, the same slice the root
 // FAQPage schema block carries).
 const FAQ_TEASER = HOME_FAQ_SLICE;
-
-// formatPrice returns the figure + the unit ("$24 per month", "Custom
-// negotiated"). The figure carries the tabular face; the unit is meta.
-function priceParts(offer: ReturnType<typeof planOffer>): {
-  figure: string;
-  unit: string;
-} {
-  const full = formatPrice(offer);
-  const split = full.indexOf(" ");
-  return split === -1
-    ? { figure: full, unit: "" }
-    : { figure: full.slice(0, split), unit: full.slice(split + 1) };
-}
 
 export default function Home() {
   const heroCta = signinUrl() + srcParam("home");
@@ -225,75 +206,7 @@ export default function Home() {
         </div>
       </Reveal>
 
-      {/* Block 4 — the pricing teaser (3 cards; the Team card carries the
-          accent's soft tint + a soft accent border, not a hard 2px line,
-          the single visual differentiation, DESIGN_SYSTEM §3, the
-          premium pass). The 3 cards are `Reveal`s with a `data-stagger`
-          index (§5 one-time 100ms + 60ms cascade). */}
-      <Reveal as="section">
-        <div
-          aria-labelledby="pricing-teaser-heading"
-          className="mx-auto max-w-[960px] px-5 py-20 sm:py-24"
-        >
-          <div className="max-w-[720px]">
-            <h2
-              id="pricing-teaser-heading"
-              className="text-[30px] font-semibold tracking-[-0.02em] text-[var(--text)] sm:text-[34px]"
-            >
-              Pricing
-            </h2>
-            <p className="mt-3 text-[16px] leading-[1.6] text-[var(--muted)]">
-              A permanent Free tier, a Developer step, and a Team plan that
-              turns on the strong-model pass.
-            </p>
-          </div>
-          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {TEASER_PLANS.map((plan, i) => {
-              const offer = planOffer(plan);
-              const isTeam = plan === "team";
-              const price = priceParts(offer);
-              return (
-                <Reveal key={plan} dataStagger={i}>
-                  <div
-                    className={`flex h-full flex-col rounded-[var(--radius-card)] p-6 ${
-                      isTeam
-                        ? "border border-[var(--accent-tint-border)] bg-[var(--accent-tint-bg)]"
-                        : "border border-[var(--hard-border)] bg-[var(--surface)]"
-                    }`}
-                  >
-                    <h3 className="text-[15px] font-semibold text-[var(--text)]">
-                      {offer.plan}
-                    </h3>
-                    <p className="mt-3 flex items-baseline gap-1.5">
-                      <span
-                        className={`tnum text-[30px] font-semibold leading-none tracking-[-0.02em] ${
-                          isTeam ? "text-[var(--accent-color)]" : "text-[var(--text)]"
-                        }`}
-                      >
-                        {price.figure}
-                      </span>
-                      {price.unit ? (
-                        <span className="text-[13px] text-[var(--muted)]">
-                          {price.unit}
-                        </span>
-                      ) : null}
-                    </p>
-                    <p className="mt-3 text-[14px] leading-[1.7] text-[var(--muted)]">
-                      {offer.positioning}
-                    </p>
-                    <div className="mt-6 flex-1" />
-                    <a href="/pricing/" className="link-cta">
-                      See all plans
-                    </a>
-                  </div>
-                </Reveal>
-              );
-            })}
-          </div>
-        </div>
-      </Reveal>
-
-      {/* Block 6 — the FAQ teaser (the top-5 items; the byte-equivalence
+      {/* Block 5 — the FAQ teaser (the top-5 items; the byte-equivalence
           rule WFR-204 — the same strings /faq renders, from the same
           array). The premium pass sets the question at 17px with the
           answer a half line below. */}
@@ -330,7 +243,7 @@ export default function Home() {
         </div>
       </Reveal>
 
-      {/* Block 7 — the closing CTA (the premium pass: the raised band
+      {/* Block 6 — the closing CTA (the premium pass: the raised band
           keeps its tone step, no rules; the line is at the display
           scale and the one primary button carries the accent — nothing
           else on the band is red). */}
@@ -344,8 +257,8 @@ export default function Home() {
               {TAGLINE}
             </h2>
             <p className="mt-4 max-w-[440px] text-[16px] leading-[1.7] text-[var(--muted)]">
-              The free tier starts a real review on a real pull request — no
-              trial clock, no card.
+              A free review starts on a real pull request — no trial
+              clock, no card.
             </p>
             <a href={closingCta} className="btn-cta mt-8">
               Start a free review

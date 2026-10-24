@@ -5,7 +5,6 @@ import {
   ReviewJobSchema,
   ReviewRequestPayloadSchema,
 } from "./findings.js";
-import { PlanSchema, type PlanQuota, planQuota, FREE_QUOTA, DEVELOPER_QUOTA, TEAM_QUOTA, ENTERPRISE_QUOTA } from "./plans.js";
 
 // The shared request/response payload schemas for the dashboard REST API
 // (API_SPECIFICATION.md "schemas are the shared Zod types in packages/contracts
@@ -113,28 +112,10 @@ export const SetBYOKKeyRequestSchema = z.object({
 export type SetBYOKKeyRequest = z.infer<typeof SetBYOKKeyRequestSchema>;
 
 // ---------------------------------------------------------------------------
-// Usage & billing (API_SPECIFICATION.md "Usage & billing")
+// Usage (API_SPECIFICATION.md "Usage")
 // ---------------------------------------------------------------------------
 export const UsageRangeSchema = z.enum(["30d", "90d", "12mo"]);
 export type UsageRange = z.infer<typeof UsageRangeSchema>;
-
-export const ListInvoicesQuerySchema = z.object({
-  cursor: z.string().optional(),
-  limit: z.number().int().positive().max(50).default(20),
-});
-export type ListInvoicesQuery = z.infer<typeof ListInvoicesQuerySchema>;
-
-export const SubscribeRequestSchema = z.object({
-  plan: PlanSchema,
-  /** `true` = cancel at the end of the current period (a default, a not an immediate cancel). */
-  atPeriodEnd: z.boolean().default(true),
-});
-export type SubscribeRequest = z.infer<typeof SubscribeRequestSchema>;
-
-export const CancelSubscriptionRequestSchema = z.object({
-  atPeriodEnd: z.boolean().default(true),
-});
-export type CancelSubscriptionRequest = z.infer<typeof CancelSubscriptionRequestSchema>;
 
 // ---------------------------------------------------------------------------
 // Audit (API_SPECIFICATION.md "Audit")
@@ -149,19 +130,12 @@ export const ListAuditQuerySchema = z.object({
 });
 export type ListAuditQuery = z.infer<typeof ListAuditQuerySchema>;
 
-// Re-export the finding/job/plan schemas for a single import surface
-// (contracts/src/index.ts "re-export plan helpers (single import surface)").
+// Re-export the finding/job schemas for a single import surface
+// (contracts/src/index.ts "re-export helpers (single import surface)").
 export {
-  PlanSchema,
-  planQuota,
-  FREE_QUOTA,
-  DEVELOPER_QUOTA,
-  TEAM_QUOTA,
-  ENTERPRISE_QUOTA,
   ReviewFindingSchema,
   ReviewSummarySchema,
   ReviewJobSchema,
   ReviewRequestPayloadSchema,
 };
-export type { PlanQuota };
 

@@ -89,7 +89,7 @@ function isTableSeparator(line: string): boolean {
  * Emit a GFM table (a real `<table>` with a caption + scope, the
  * SEO_AEO_GEO.md "a table is the most quotable format" rule). The
  * header row becomes `<th scope="col">`; body rows are `<td>`. The
- * machine-readable format (the /docs quotas + pricing tables) is what
+ * machine-readable format (the /docs quotas tables) is what
  * makes the AEO-extractable numbers quotable.
  */
 function renderTable(
