@@ -2,7 +2,7 @@
 
 The JSON-LD contract for the website. `WFR-102` says every page has one JSON-LD block; this doc is the per-route type table, the generator architecture, the exact example blocks, and the validation lane. The *why* (why byte-equivalence matters for LLM citation) lives in `SEO_AEO_GEO.md §3`; the *route set* is `INFORMATION_ARCHITECTURE_AND_PAGES.md §1`; the *content types* (front-matter shapes) are `CONTENT_SCHEMAS.md`.
 
-> **The rule:** no JSON-LD is hand-written in a page file. A single `schema-generator.ts` (`apps/website/src/lib/`, referenced as "the single source of truth" in `TECHNICAL_ARCHITECTURE.md §4.1`) emits every `WFR-102` block from page data. A content change in one file updates `FAQPage`+`/api/answer`+`llms.txt` in one build; a drift is structurally impossible, not just policed (`INFORMATION_ARCHITECTURE_AND_PAGES.md §3.3`'s consistency rule).
+> **The rule:** no JSON-LD is hand-written in a page file. A single `schema-generator.ts` (`website/src/lib/`, referenced as "the single source of truth" in `TECHNICAL_ARCHITECTURE.md §4.1`) emits every `WFR-102` block from page data. A content change in one file updates `FAQPage`+`/api/answer`+`llms.txt` in one build; a drift is structurally impossible, not just policed (`INFORMATION_ARCHITECTURE_AND_PAGES.md §3.3`'s consistency rule).
 
 ## 1. The per-route type table
 
@@ -11,7 +11,7 @@ The JSON-LD contract for the website. `WFR-102` says every page has one JSON-LD 
 | `/` | `Organization` + `WebSite` + `SoftwareApplication` + `HowTo` + `FAQPage` + `BreadcrumbList` | `WebSite` on the root carries `hasPart` listing the top-level routes; `HowTo` is the "how it works" 3-step; `FAQPage` is the top-5 teaser (the full 15 live on `/faq`); `BreadcrumbList` is `["Vercode", "Home"]`. |
 | `/features` | `SoftwareApplication` + `WebSite` + `BreadcrumbList` | One `SoftwareApplication` block; the 4 pillars are `hasPart` on the app block (a `CreativeWork` per pillar is over-scope in P2 — the pillars are a numbered narrative, not a product feature list, `DESIGN_SYSTEM_AND_TYPOGRAPHY.md §2`'s "no icon-topped feature cards"). |
 | `/faq` | `FAQPage` + `BreadcrumbList` | ≥ 15 questions; each `mainEntity` `Question` + `acceptedAnswer` `Answer`; the visible answer text **matches the JSON-LD text byte-for-byte** (`WFR-204`; `SEO_AEO_GEO.md §3`'s Q5 check). |
-| `/docs` | `ItemList` + `BreadcrumbList` | An `ItemList` of the 9 P2 docs topics (`INFORMATION_ARCHITECTURE_AND_PAGES.md §3.5`'s quickstart/github-app/api/rules/security/providers/quotas/privacy list) with `itemListElement` `@id` refs to each `/docs/<topic>` page. |
+| `/docs` | `ItemList` + `BreadcrumbList` | An `ItemList` of the 9 P2 docs topics (`INFORMATION_ARCHITECTURE_AND_PAGES.md §3.4`'s quickstart/github-app/api/rules/security/providers/usage/connect/privacy list) with `itemListElement` `@id` refs to each `/docs/<topic>` page. |
 | `/docs/<topic>` | `Article` + `BreadcrumbList` | `Article` with `headline` (the H1), `description` (meta description), `dateModified`, `author` (a `Person` — the doc owner, `CONTENT_SCHEMAS.md`'s `docsAuthor` field), `mainEntityOfPage`, `about` (the product, a `SoftwareApplication` `@id` reference). `BreadcrumbList` is `["Vercode", "Docs", <topic>]`. |
 | `/changelog` | `ItemList` + `BreadcrumbList` | An `ItemList` listing the **last 10** releases (`WFR-302`), each element is a `@type: "CreativeWork"` stub with `@id` pointing to `/changelog/<date>`. |
 | `/changelog/<date>` | `CreativeWork` + `BreadcrumbList` | `CreativeWork` with `name` (version + title), `dateCreated` (the ISO date), `author` (the release engineer's `Person`), `about` (`SoftwareApplication` ref), `@id` (the canonical URL). `WFR-302` says "a `CreativeWork` (or `Release` on a dedicated page)" — P2 uses `CreativeWork`; a `Release`-flavoured sub-block is a P3 nicety (`PRD.md §6` out-of-scope list, a richer release schema). |
@@ -34,7 +34,7 @@ The JSON-LD contract for the website. `WFR-102` says every page has one JSON-LD 
 The generator is a single function, pinned in `TECHNICAL_ARCHITECTURE.md §4.1`:
 
 ```ts
-// apps/website/src/lib/schema-generator.ts
+// website/src/lib/schema-generator.ts
 // The single source of truth for every WFR-102 JSON-LD block.
 // No page file writes JSON-LD by hand; it imports this module.
 
@@ -311,7 +311,7 @@ The `WFR-104` rule: a `BreadcrumbList` on **every** `/docs/*`, `/changelog/*`, `
   "itemListOrder": "https://schema.org/DescendingOrder",
   "numberOfItems": 10,
   "itemListElement": [
-    { "@type": "ListItem", "position": 1, "name": "v1.4.0 — the quota strip + a 80% warning banner", "item": "https://vercode.com/changelog/2026-09-28" },
+    { "@type": "ListItem", "position": 1, "name": "v1.4.0 — the GitHub connect settings + the plain usage page", "item": "https://vercode.com/changelog/2026-10-24" },
     { "@type": "ListItem", "position": 2, "name": "v1.3.2 — a BYOK key-rotation fix", "item": "https://vercode.com/changelog/2026-09-14" },
     { "@type": "ListItem", "position": 3, "name": "v1.3.0 — the security-findings rollup", "item": "https://vercode.com/changelog/2026-08-30" }
   ]
@@ -365,7 +365,7 @@ The `FAQPage` `acceptedAnswer.text` and the *visible* FAQ answer are byte-identi
 | Check | Tool | The rule |
 | --- | --- | --- |
 | **JSON-LD validity** | `ld-lint` (the schema.org validator) | 0 errors on every page's `<script type="application/ld+json">` (a `RELEASE_CRITERIA` gate, a new website-specific lane, `TECHNICAL_ARCHITECTURE.md §5`'s "a `Website JSON-LD validity`" lane — a `ld-lint` run on every `WFR-101` route + the `sitemap.xml` entries). |
-| **The byte-equivalence** | a custom `triple-source` check (a small Node script in the CI lane) | Greps the built HTML for the `FAQPage` `acceptedAnswer.text` + the `Article.headline`; asserts each is a *substring* of the HTML (a "the JSON-LD text == the visible text" rule). A mismatch is a `RELEASE_CRITERIA gate 12` docs-drift failure (a "a fact change that's not in the visible text + the JSON-LD + the llms.txt simultaneously is a defect" — the `USAGE_QUOTAS.md §6`'s "a two-source quota is a drift vector" rule, applied to the website). |
+| **The byte-equivalence** | a custom `triple-source` check (a small Node script in the CI lane) | Greps the built HTML for the `FAQPage` `acceptedAnswer.text` + the `Article.headline`; asserts each is a *substring* of the HTML (a "the JSON-LD text == the visible text" rule). A mismatch is a `RELEASE_CRITERIA gate 12` docs-drift failure (a "a fact change that's not in the visible text + the JSON-LD + the llms.txt simultaneously is a defect" — the same two-source-drift rule the pre-removal `USAGE_QUOTAS.md §6` quota check enforced, now applied to the surviving fact registers). |
 
 ### 5.2 The CI lane (the "new" website lane)
 

@@ -57,18 +57,27 @@ This file is the canonical *index* of functional requirements. Full descriptions
 | FR-403 | Optional pgvector retrieval | P2 |
 | FR-404 | Data deletion on access revocation | P0 |
 
+## GitHub Connect
+
+| ID | Requirement | Priority |
+| --- | --- | :-: |
+| FR-601 | GitHub connect settings page: shows install account, repository selection, and known-but-disconnected repos; initiates App install | P0 |
+| FR-602 | Repo-connect card: re-enable a disconnected repo under an active install, or start the App install flow when no active install exists | P0 |
+| FR-603 | Personal GitHub OAuth (connect own account, `user:read` handle only): start/callback/disconnect | P0 |
+| FR-604 | Active-for-review repo set per org, persisted to org settings | P0 |
+
 ## Dashboard
 
 | ID | Requirement | Priority |
 | --- | --- | :-: |
-| FR-501 | Overview (recent reviews, severity counts, usage vs quota, install health) | P0 |
+| FR-501 | Overview (recent reviews, severity counts, usage, install health) | P0 |
 | FR-502 | Repositories list + per-repo detail | P0 |
 | FR-503 | PR review detail (job history by commit, findings, cost, status) | P0 |
 | FR-504 | Security findings rollup | P0 |
 | FR-505 | Custom rules (org + repo) | P0 |
 | FR-506 | Usage analytics (Recharts, real data) | P0 |
-| FR-507 | Org management (members, roles, invitations, billing, quotas) | P0 |
+| FR-507 | Org management (members, roles, invitations) | P0 |
 | FR-508 | AI provider settings (routing, BYOK P1) | P0 |
-| FR-509 | Billing (plan, invoices, usage, upgrade/downgrade/cancel) | P0 |
+| FR-509 | Usage reporting (per-review tokens, model, estimated USD cost, attributed to org; plain visibility — no plans, no quota gating; spend backstop is the platform token-spend cap only) | P0 |
 | FR-510 | Audit log | P0 |
 | FR-511 | Account settings (profile, sessions, sign-out) | P0 |

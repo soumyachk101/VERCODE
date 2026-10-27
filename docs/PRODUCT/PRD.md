@@ -1,5 +1,7 @@
 # VERCODE — Product Requirements Document (PRD)
 
+> **Direction note (2026-10):** VERCODE is now no-paywall. All plan tiers, quota gating, and billing/payments (Stripe, invoices, plan-based retention) have been removed. Usage is a **plain visibility report** sourced from `usage_events`; the only spend backstop is the platform-wide token-spend cap (`PLATFORM_TOKEN_SPEND_CAP_USD`), which is an abuse guard, not a plan quota. GitHub connect settings + repo-connect UI are part of the product: users connect GitHub (App install, or re-enabling a disconnected repo) and choose the active-for-review repo set; a personal GitHub OAuth (handle-only) backs account settings. This document's plan/billing sections below were updated to match.
+
 ## 1. Product Summary
 
 VERCODE is an AI code-review SaaS for development teams. It automatically reviews GitHub pull requests by combining deterministic static analysis with LLM-driven reasoning, publishes evidence-backed inline comments and a summary verdict to the PR, and gives organizations a premium dashboard to manage, audit, and configure the system.
@@ -15,7 +17,7 @@ Target: engineering teams of 3–500 developers who already use GitHub and want 
 | P3 | Reviews without evidence — "this looks wrong" with no reason | Every finding carries a category, severity, confidence, and a suggested fix |
 | P4 | Security findings buried in chat history | Dedicated security-findings rollup, severity-gated, org-visible |
 | P5 | No org-level visibility into review quality | Dashboard: review history, finding trends, usage/cost, audit log |
-| P6 | Unbounded AI cost | Per-org quotas, per-review cost accounting, plan-based limits |
+| P6 | Unbounded AI cost | Per-review cost accounting, plain usage visibility, and a platform token-spend cap as an abuse backstop |
 
 ## 3. Target Users and Personas
 
@@ -25,7 +27,7 @@ See `USER_PERSONAS.md`. Summary:
 - **Tech lead / senior reviewer** — wants signal over noise, security callouts, a way to mute categories, and a dashboard to check on the team.
 - **Engineering manager** — wants org-level usage, cost, review-coverage, and trend data.
 - **Platform / DevSecOps engineer** — configures the GitHub App, custom rules, model routing, and monitors the system.
-- **Org owner / admin** — manages members, roles, billing, and audit.
+- **Org owner / admin** — manages members, roles, GitHub connections, and audit.
 
 ## 4. Functional Requirements
 
@@ -71,26 +73,33 @@ IDs follow `FR-<n>`. All P0 items are MVP.
 - `FR-313` BYOK: org-level encrypted API-key override (AES-256-GCM, KMS-wrapped master key). *(P1)*
 - `FR-314` Model fallback: on provider failure, fall back to a configured secondary provider, bounded to one retry. *(P1)*
 
-### 4.4 Repository Intelligence
+### 4.4 GitHub Connect
+
+- `FR-601` GitHub connect settings page: shows the active App install (account, repository selection), lists known-but-disconnected repos as candidates, and starts the App install flow when no active install exists. *(P0)*
+- `FR-602` Repo-connect: re-enable a disconnected repo under an active install (audit-traced), or surface the install URL when none exists; the repo-connect card drives this from the repositories page. *(P0)*
+- `FR-603` Personal GitHub OAuth (account settings): connect the user's own GitHub account (handle-only, `user:read` scope, no repo access) with start/callback/disconnect; the token backs audit attribution and user-level integrations. *(P0)*
+- `FR-604` Active-for-review repo set: orgs choose which of their connected repos VERCODE reviews; the set is persisted to org settings and every change is audit-logged. *(P0)*
+
+### 4.5 Repository Intelligence
 
 - `FR-401` Fetch only changed files + their direct import graph (1 hop), not the whole repo. *(P0)*
 - `FR-402` Test-file discovery: flag changed files with adjacent test changes; suggest missing test coverage as a low-severity finding. *(P1)*
 - `FR-403` Optional pgvector index: embedding-based retrieval for large repos, incremental re-index on PR merge. *(P2)*
 - `FR-404` Deletion on access revocation: hard-delete repo data when the GitHub App install is removed (subject to audit retention). *(P0)*
 
-### 4.5 Dashboard
+### 4.6 Dashboard
 
 Every page reads from the real API. No fabricated data, ever.
 
-- `FR-501` Overview: recent reviews, finding counts by severity, org usage vs quota, install health. *(P0)*
+- `FR-501` Overview: recent reviews, finding counts by severity, org usage, install health. *(P0)*
 - `FR-502` Repositories: list connected repos, last-reviewed PR, finding trends. *(P0)*
 - `FR-503` PR review detail: job history for a PR (by commit), findings with file/line, AI summary, cost, status. *(P0)*
 - `FR-504` Security findings: org-wide rollup, severity-filtered, with source PR link. *(P0)*
 - `FR-505` Custom rules: org-level and repo-level review rules (category suppression, confidence floor, quiet categories, per-language toggles). *(P0)*
 - `FR-506` Usage analytics: reviews/day, findings/PR, cost/PR, provider breakdown — Recharts from real `usage_events`. *(P0)*
-- `FR-507` Organization management: members, roles, invitations, billing, plan, quotas. *(P0)*
+- `FR-507` Organization management: members, roles, invitations, GitHub connections. *(P0)*
 - `FR-508` AI provider settings: provider selection, model routing, BYOK key management (masked display), per-task model overrides. *(P0; BYOK P1)*
-- `FR-509` Billing: plan, invoices, usage breakdown, upgrade/downgrade/cancel. *(P0 with Stripe stub; live payments P1)*
+- `FR-509` Usage reporting: per-review token + cost breakdown, org usage over time, plain visibility — no plans, no quota gating; the platform token-spend cap is the only spend backstop. *(P0)*
 - `FR-510` Audit log: member actions, review publications, role changes, key rotations — with actor + timestamp + source IP. *(P0)*
 - `FR-511` Account settings: profile, email, session list, sign-out everywhere. *(P0)*
 
@@ -104,16 +113,16 @@ See `NON_FUNCTIONAL_REQUIREMENTS.md` for the full list. Summary:
 - `NFR-04` Webhook integrity: 100% rejection of unsigned/replayed webhooks (replay detected via idempotency key + timestamp window). *(P0)*
 - `NFR-05` Availability: 99.5% API uptime target; queue-based workers tolerate 30 min of API degradation. *(P0)*
 - `NFR-06` Security: OWASP ASVS L2 baseline; prompt-injection defenses; secret redaction in logs and findings. *(P0)*
-- `NFR-07` Cost control: per-org hard caps on monthly token spend; review skips (with posted notice) when quota exceeded. *(P0)*
+- `NFR-07` Cost control: platform-wide token-spend cap (`PLATFORM_TOKEN_SPEND_CAP_USD`); when the cap is hit, review jobs skip (with posted notice) — an abuse backstop, not a plan quota. *(P0)*
 - `NFR-08` Observability: structured JSON logs, OpenTelemetry traces across API→queue→worker→GitHub, Sentry error capture. *(P0)*
 - `NFR-09` Accessibility: WCAG 2.1 AA on dashboard; keyboard navigable; `prefers-reduced-motion` respected (per emil-design-eng skill). *(P0)*
-- `NFR-10` Data retention: findings retained per org plan (Free 30 d, Developer 90 d, Team 1 y, Enterprise custom); audit log 180 d; hard-delete pipeline. *(P0 policy, P1 enforcement)*
+- `NFR-10` Data retention: findings retained per org (per-org retention policy); audit log 180 d; usage events 24 months; hard-delete pipeline. *(P0 policy, P1 enforcement)*
 
 ## 6. Permissions and Roles
 
 | Capability | Owner | Admin | Developer | Viewer |
 | --- | :-: | :-: | :-: | :-: |
-| Manage org (members, billing, plan) | ✓ | ✓ | — | — |
+| Manage org (members, settings) | ✓ | ✓ | — | — |
 | Manage integrations (GitHub App, providers) | ✓ | ✓ | — | — |
 | Manage custom rules | ✓ | ✓ | ✓ | — |
 | Run/re-run reviews | ✓ | ✓ | ✓ | — |
@@ -123,11 +132,9 @@ See `NON_FUNCTIONAL_REQUIREMENTS.md` for the full list. Summary:
 
 All authorization is server-side; the frontend hides but never enforces.
 
-## 7. Usage Limits and Subscription
+## 7. Usage and Spend Backstop
 
-See `BUSINESS/USAGE_QUOTAS.md` and `packages/contracts/src/plans.ts` (source of truth, imported by all services).
-
-Plans: Free, Developer, Team, Enterprise. Quota dimensions: reviews/month, files per review, concurrent reviews, finding retention, custom rule count, model tier access.
+VERCODE is no-paywall: there are no plan tiers, quotas, or invoices. Usage is a plain visibility report sourced from `usage_events` (per-review tokens, model, estimated USD cost, attributed to org). The only spend backstop is the platform-wide token-spend cap (`PLATFORM_TOKEN_SPEND_CAP_USD`, default 100 000): when the platform period spend reaches it, new review jobs are skipped with a posted notice — an abuse guard, not a per-org or per-plan limit.
 
 ## 8. Out of Scope (MVP)
 
@@ -143,7 +150,7 @@ Plans: Free, Developer, Team, Enterprise. Quota dimensions: reviews/month, files
 
 | Risk | Likelihood | Impact | Mitigation |
 | --- | --- | --- | --- |
-| LLM cost exceeds plan pricing at high PR volumes | High | High | Cost model (`OPERATIONS/COST_MODEL.md`), per-review cap, cheap-model routing |
+| LLM token spend exceeds the platform cap at high PR volumes | High | High | Platform token-spend cap (skips with posted notice), cost model (`OPERATIONS/COST_MODEL.md`), per-review budget cap, cheap-model routing |
 | Finding noise destroys trust (repeat user churn) | High | High | Confidence floor default 0.6, dedup, deterministic-first, per-org mute rules |
 | GitHub App review-limit caps (200 PRs/hr on free-tier App limits) | Med | Med | Queue + retry, rate-limit-aware backoff, documented ceiling |
 | Prompt injection via PR descriptions / repo READMEs | High | High | `SECURITY/PROMPT_INJECTION_DEFENSE.md` — repo content is data, never instructions; output schema validation; no tool access in review prompt |
@@ -152,7 +159,7 @@ Plans: Free, Developer, Team, Enterprise. Quota dimensions: reviews/month, files
 
 ## 10. Success Metrics
 
-See `SUCCESS_METRICS.md`. North-star: **% of PRs where ≥ 1 VERCODE finding was acted on (accept/reply/dismiss-with-action) within 7 days.** Supporting: review latency p50/p95, false-positive dismiss rate, orgs hitting quota, cost/review, NPS.
+See `SUCCESS_METRICS.md`. North-star: **% of PRs where ≥ 1 VERCODE finding was acted on (accept/reply/dismiss-with-action) within 7 days.** Supporting: review latency p50/p95, false-positive dismiss rate, platform spend-cap hit rate, cost/review, NPS.
 
 ## 11. Acceptance Criteria
 

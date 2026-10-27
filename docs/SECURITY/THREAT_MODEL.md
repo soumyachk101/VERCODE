@@ -74,7 +74,7 @@ Threat IDs `T-##` are referenced from `SECURITY_ARCHITECTURE.md` and `SECURITY_T
 - **Asset:** the platform codebase (a compromised dependency = RCE in the trusted core).
 - **Vector:** a malicious/compromised npm package, or a build-script supply chain (the pnpm `allowBuilds` surface).
 - **Impact:** High–Critical.
-- **Mitigation:** pinned lockfile (CI installs from the lockfile, not a fresh resolve); `pnpm audit` gate on every PR (a new high/critical CVE blocks); an **explicit** build-script policy (the `pnpm-workspace.yaml` `allowBuilds` — the repo currently has a placeholder `esbuild: set this to true or false` that must be resolved to a *deliberate* choice, defaulting to allow only the known-good build scripts); minimal dependency surface (the stack is deliberately lean); a dependency-update PR is a *reviewed* change, not an auto-merge.
+- **Mitigation:** pinned lockfile (CI installs from the lockfile, not a fresh resolve); `pnpm audit` gate on every PR (a new high/critical CVE blocks); an **explicit** build-script policy (the `pnpm-workspace.yaml` `allowBuilds` — `esbuild` and the Prisma/argon2 set are resolved to `true`; the remaining placeholders for `msgpackr-extract` and `sharp` must be resolved to a *deliberate* choice, defaulting to allow only the known-good build scripts); minimal dependency surface (the stack is deliberately lean); a dependency-update PR is a *reviewed* change, not an auto-merge.
 - **Verification:** CI `pnpm audit` gate; a supply-chain check that the lockfile matches the committed manifest; an explicit `allowBuilds` decision recorded (D-5 in discovery; DEV in TECH_STACK).
 
 ## T-10 — Denial of service
@@ -87,11 +87,11 @@ Threat IDs `T-##` are referenced from `SECURITY_ARCHITECTURE.md` and `SECURITY_T
 
 ## T-11 — API / AI cost abuse
 
-- **Asset:** the provider budget (an attacker or a runaway org burns platform money) + the customer's own bill (a misconfigured org over-spends).
-- **Vector:** a free-plan org opening many large PRs; a bug that loops the pipeline; a malicious re-review request loop.
+- **Asset:** the provider budget (an attacker or a runaway org burns platform money).
+- **Vector:** an org opening many large PRs; a bug that loops the pipeline; a malicious re-review request loop.
 - **Impact:** High (unbounded provider spend is a direct financial loss; it's the classic AI-SaaS failure).
-- **Mitigation:** **two independent caps** — (a) the *plan* quota (reviews/mo + token-spend/mo, `plans.ts`, enforced at pre-flight *before* the AI stage, so an over-cap job consumes **zero** tokens, AC-402); (b) the **platform-level** token-spend ceiling (even a misconfigured/huge plan can't breach the platform's provider budget); anomaly alerting (3× baseline spike); a re-review rate limit (20–2000/hr by plan); skip-with-notice (never a silent stop, which is how abuse hides).
-- **Verification:** `IT-quota-skip` (over-quota → zero tokens consumed + notice); `ST-cost-abuse` (a flood is bounded by the platform cap; the provider-spend metric does not exceed the ceiling); a cost/review regression test in the benchmark gate.
+- **Mitigation:** the **platform-level** token-spend cap (`PLATFORM_TOKEN_SPEND_CAP_USD`, `env.ts`) — even a misconfigured or abusive workload can't breach the platform's provider budget; usage_events feed plain usage reporting, and a re-review rate limit (20–2000/hr) bounds the request-flood vector; skip-with-notice (never a silent stop, which is how abuse hides).
+- **Verification:** `ST-cost-abuse` (a flood is bounded by the platform cap; the provider-spend metric does not exceed the cap); a cost/review regression test in the benchmark gate.
 
 ## T-12 — Source-code leakage (between tenants, or to providers)
 
@@ -109,14 +109,6 @@ Threat IDs `T-##` are referenced from `SECURITY_ARCHITECTURE.md` and `SECURITY_T
 - **Mitigation:** scheduled, **org-scoped** hard-purge jobs (`retention_jobs`) that the retention queue drains; a failure is **alerted on** (a retention failure = a compliance incident, not background noise); ephemeral content by design (there's less to retain); export-before-delete (the org gets its data before the hard-purge); access-revocation triggers immediate eviction (FR-404).
 - **Verification:** `IT-retention-01..03`; a reconciliation check that a `retention_jobs` row in FAILED state > N minutes raises an alert; a "data present after its retention window" audit query (should return zero rows).
 
-## T-14 — Billing manipulation
-
-- **Asset:** the plan/subscription state (an attacker or a bug grants/withholds access incorrectly; a customer is billed wrong).
-- **Vector:** a client-forced "I'm on Team" (client-trusted state); a forged/unsigned provider webhook; a replayed payment event; a downgrade that retroactively revokes.
-- **Impact:** High (revenue integrity + a security issue if a forged webhook grants access).
-- **Mitigation:** **plan state moves only on a verified provider webhook** (signature-checked); a client claim is inert (the dashboard shows the *provider-confirmed* state, with an "Upgrading…" pending state); event-id idempotency (a replay is a no-op); a foreign-customer event (a customer id we didn't create) is rejected + audited; the quota is derived from the *confirmed* plan, so a forged "Team" claim also forges nothing (the quota check reads the durable billing state, not the request).
-- **Verification:** `IT-payment-01` (verified webhook flips state), `IT-payment-02` (unsigned/foreign rejected), `IT-payment-03` (replay no-op); a test that a client-supplied plan claim does **not** change `org_billing`.
-
 ## T-15 — Administrative privilege escalation
 
 - **Asset:** the org's admin/owner actions (granting oneself or others elevated access; a path from Developer → Owner).
@@ -130,7 +122,7 @@ Threat IDs `T-##` are referenced from `SECURITY_ARCHITECTURE.md` and `SECURITY_T
 - **Asset:** the build pipeline (a compromised or malicious build script executing during install = RCE in the trusted core, overlapping T-09).
 - **Vector:** a `prepare`/`postinstall` script in a dependency, or the pnpm `allowBuilds` misconfiguration.
 - **Impact:** Critical.
-- **Mitigation:** an **explicit, reviewed** `allowBuilds` policy (the discovery placeholder `esbuild: set this to true or false` is resolved deliberately — allow only the known-good set: esbuild's own install, if any; deny unknowns); the lockfile is the install source of truth (no fresh resolve); a dependency-update PR is reviewed; `pnpm audit` gate.
+- **Mitigation:** an **explicit, reviewed** `allowBuilds` policy (the `allowBuilds` set is deliberately resolved — esbuild and the Prisma/argon2 set are allowed; the `msgpackr-extract` and `sharp` placeholders are resolved deliberately — allow only the known-good set; deny unknowns); the lockfile is the install source of truth (no fresh resolve); a dependency-update PR is reviewed; `pnpm audit` gate.
 - **Verification:** a CI check that the effective `allowBuilds` set matches the reviewed allowlist; an install that attempts a disallowed build script fails the gate.
 
 ## Residual risks (accepted, documented)

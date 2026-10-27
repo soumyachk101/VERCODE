@@ -10,7 +10,7 @@ What persists, for how long, and how deletion is enforced. References NFR-27/28 
 | Raw repo content (fetched diffs/file contents) | **ephemeral** | **ephemeral** | **ephemeral** | **ephemeral** | Not stored beyond the review lifetime (NFR-28); a Redis cache with a 24 h TTL, not a DB column |
 | `usage_events` | 24 mo | 24 mo | 24 mo | 24 mo (or custom) | Billing + analytics history; append-only, age-hard-delete |
 | `audit_events` | 180 d min | 180 d min | 180 d min | 180 d min (or longer) | Compliance floor; append-only |
-| `org_billing` + invoices | life of subscription + 24 mo | same | same | same | Finance records |
+| `org_billing` + invoices | **dormant** — no live billing feature (no-paywall); the model is retained in the schema pending a separate decision | — | — | — | no rows are written in the live flow; if retained, life of subscription + 24 mo (finance records) |
 | `byok_keys` | life of the key (revocable instantly) | same | same | same | Revocation is immediate; the wrapped key row is hard-deleted on rotation/off |
 | `webhook_deliveries` | 24 h | 24 h | 24 h | 24 h | The replay-dedup window; pruned after |
 | `sessions` | idle 12 h / absolute 30 d | same | same | same | Revocable at any time |

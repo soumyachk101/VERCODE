@@ -1,5 +1,7 @@
 # VERCODE — Documentation Review
 
+> **2026-10 addendum — this review's verdict is SUPERSEDED.** The review's "BUSINESS (4/4)" row and its completeness/consistency verdict were validated against the pre-billing-removal tree. The pricing/plan/quota system was removed product-wide in 2026-10 (the no-paywall direction: usage is now a plain informational report, GitHub connect is the onboarding flow), and three `BUSINESS` docs were deleted with it: `docs/BUSINESS/BILLING_SPECIFICATION.md`, `docs/BUSINESS/PRICING_STRATEGY.md`, and `docs/BUSINESS/USAGE_QUOTAS.md`; **[`docs/BUSINESS/SAAS_LAUNCH_PLAN.md`](BUSINESS/SAAS_LAUNCH_PLAN.md) is now the launch source of truth** — the "BUSINESS (4/4)" line above should be read as "BUSINESS (1/1 surviving: `SAAS_LAUNCH_PLAN.md`)". The historical body below is left intact as the review-time record; the [docs index](README.md) is the current tree map.
+
 Phase 1.7 of the brief: *validate the consistency of the documentation package before application development begins.* This document records (1) the completeness check (every required doc exists), (2) the cross-reference consistency check (PRD↔TRD↔schema↔API↔tests), (3) the contradictions found + resolved, (4) the unresolved decisions/assumptions, and (5) the traceability-matrix link check (FR → component → test).
 
 ## 1. Completeness check (every required doc exists)

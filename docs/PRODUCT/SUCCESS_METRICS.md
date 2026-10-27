@@ -8,7 +8,7 @@ Metrics are defined so a dashboard can compute each one from stored rows without
 
 - Source: `review_findings.id` + `finding_actions` (action_type ∈ {accepted, dismissed_reasonable, fixed, ignored}, `acted_at`).
 - Computation: `count(findings where finding_actions within 7d) / count(findings)` per org, per 30-day rolling window.
-- Target (post-launch, 90 days): ≥ 18% for Team+ plans, ≥ 10% for Free/Developer.
+- Target (post-launch, 90 days): ≥ 10% for all active orgs (no plan tiers).
 
 ## Supporting product metrics
 
@@ -19,17 +19,16 @@ Metrics are defined so a dashboard can compute each one from stored rows without
 | False-positive dismiss rate | Findings dismissed as `dismissed_unreasonable` / total published findings | `finding_actions` | ≤ 35%; trend flat-or-down; a rising trend gates a prompt change |
 | Finding density | Published findings per reviewed PR (post-policy) | `review_findings` grouped by `job_id` | 3–8 sweet spot; < 1 or > 15 triggers a routing/tuning review |
 | Inline anchor success rate | Inline-published findings / (inline + anchor-fallback) | `review_findings.anchor_status` | ≥ 92% |
-| Review coverage | Merged PRs with a VERCODE job / merged PRs (connected repos) | `review_jobs` vs GitHub data | ≥ 95% on Team+ |
-| Cost per review (blended) | `sum(est_usd_cost) / completed jobs` per plan tier | `review_jobs.est_usd_cost` | Free/Dev ≤ $0.15, Team ≤ $0.35 at 95th percentile |
+| Review coverage | Merged PRs with a VERCODE job / merged PRs (connected repos) | `review_jobs` vs GitHub data | ≥ 95% across connected orgs |
+| Cost per review (blended) | `sum(est_usd_cost) / completed jobs` per org | `review_jobs.est_usd_cost` | ≤ $0.35 at 95th percentile (all orgs) |
 
 ## Business metrics
 
 | Metric | Target |
 | --- | --- |
 | Activation | Org reaches "first review published" within 10 min of GitHub install ≥ 80% |
-| Free→paid conversion | ≥ 8% of active free orgs in 60 d |
-| Net revenue retention (Team+) | ≥ 100% by month 6 post-launch |
-| Churn (monthly, Team+) | ≤ 4% |
+| Active-org growth | ≥ 30% net new active orgs per quarter (active = ≥ 1 review in 30 d) |
+| Org retention | ≥ 90% of orgs active in month N still active in month N+6 |
 | NPS (semiannual, org admins) | ≥ 45 |
 
 ## Quality gates (engineering)
@@ -44,5 +43,5 @@ Metrics are defined so a dashboard can compute each one from stored rows without
 ## What we explicitly do NOT optimize for
 
 - **Raw finding volume.** More comments is not success; the metric is *actioned* findings. Volume without action is the CodeRabbit failure mode this product exists to avoid.
-- **Provider cost alone.** Cost-per-review is tracked, but the ceiling is set by plan pricing; a cost drop that tanks precision fails the gate.
-- **100% review success by any means.** Explicit skips (quota, same-SHA, install-removed) are *correct* behavior and excluded from the success denominator; fudging that denominator is a defect.
+- **Provider cost alone.** Cost-per-review is tracked, but the ceiling is the platform token-spend cap; a cost drop that tanks precision fails the gate.
+- **100% review success by any means.** Explicit skips (platform spend cap, same-SHA, install-removed) are *correct* behavior and excluded from the success denominator; fudging that denominator is a defect.

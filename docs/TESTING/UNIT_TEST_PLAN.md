@@ -59,13 +59,14 @@ Each stage is a named pure function with a test; the full pipeline is the integr
 | **SQL-concatenation** | `UT-static-sql-01` a fixture with a known SQL-concatenation pattern → a Semgrep-derived finding (`source: semgrep`, severity `high`, category `security`) — **with the AI provider mocked to throw** (the deterministic stage is provider-independent, AC-301); `UT-static-sql-02` a clean parameterized query → no finding (the false-positive check) |
 | **The runner** | `UT-static-runner-01` a resource cap (a pathological file is bounded, not a crash); `UT-static-runner-02` a generated file → excluded (the classify stage's output feeds the runner's scope) |
 
-## 7. `packages/billing` (the state machine + the idempotency)
+## 7. Usage & spend-cap (the *billing* package is *gone*)
+
+The `billing` package (the plan state machine, `org_billing`, `billing_events`, event idempotency) was *removed* with the no-paywall decision (commit `78b51d9`) — *no unit tests exist for it; a billing seam is no longer a thing in the system*. Usage is *plain visibility reporting* (`usage_events` + the per-job token/cost records), and the only bound is the *platform's* operational token-spend cap, `PLATFORM_TOKEN_SPEND_CAP_USD` (`packages/config`, config-only: a *platform alert* when total spend crosses the limit — **no worker enforcement, no per-org quota, no customer-visible skip**, `INTEGRATION_DESIGN.md`).
 
 | Area | Tests |
 | --- | --- |
-| **The plan state machine** | `UT-billing-state-*`: `trialing → active` (an `invoice.paid`/`subscription` event); `active → past_due` (an `invoice.payment_failed`); `past_due → canceled` (grace exceeded); a downgrade takes effect at period end. Each transition is driven *only* by a verified event (the "only a verified webhook moves state" invariant, AC-403) |
-| **Event idempotency** | `UT-billing-idem-01` a re-delivered event (same event id) → a no-op (the state is not double-moved); `UT-billing-idem-02` a *client* claim of "plan=enterprise" → the state is *unchanged* (a client claim is inert) |
-| **Grace** | `UT-billing-grace-01` a `past_due` org keeps running reviews through the grace window; after grace → `canceled` → quota frozen + new reviews `skipped` with a notice (NFR-18, never a silent stop) |
+| **Usage records** | `UT-usage-record-*`: a completed job writes its `usage_events` row (the token + `estUsdCost` shape); the org-scoped usage query renders only the requesting org's rows |
+| **The spend cap (config-only)** | `UT-spend-cap-*`: the cap is *read* from `packages/config` (`PLATFORM_TOKEN_SPEND_CAP_USD`); crossing it raises the *platform* alert signal — **no** job is *skipped* by it today (the worker has no enforcement code; the "alert, don't gate" behavior) |
 
 ## 8. The pure-package coverage gate
 

@@ -1,77 +1,98 @@
 # VERCODE — Repository Structure
 
-The monorepo layout, mapped to the brief's `PHASE 8` and adapted to what already exists (`packages/contracts`, `scripts/`, `.agents/`).
+The monorepo layout, mapped to the brief's `PHASE 8` and adapted to what already exists.
 
 ```
 VERCODE/
-├── package.json                # monorepo root (exists) — pnpm 9, node>=22
-├── pnpm-workspace.yaml         # (exists) apps/* + packages/*
-├── tsconfig.base.json          # (exists) strict + NodeNext + verbatimModuleSyntax
-├── eslint.config.mjs           # (create) flat config, typescript-eslint, @max-warnings 0
-├── .env.example                # (create) placeholders only
+├── package.json                # monorepo root — pnpm 9, node>=22
+├── pnpm-workspace.yaml         # apps/* + packages/* + website
+├── tsconfig.base.json          # strict + NodeNext + verbatimModuleSyntax
+├── eslint.config.mjs           # flat config, typescript-eslint, @max-warnings 0
+├── vitest.workspace.ts         # root vitest config (per-package suites)
+├── Makefile                    # dev/CI task entry points
+├── auto_sync_worker.sh         # owner sync-daemon launcher (frozen)
+├── skills-lock.json            # installed design skills (frozen)
+├── lockfile-diff.json          # pnpm-workspace allowBuilds drift record
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── SECURITY.md
+├── LICENSE.md
+├── README.md
 │
 ├── apps/
-│   ├── web/                    # Next.js dashboard (create)
-│   │   ├── app/                # App Router routes
-│   │   ├── components/         # shadcn/ui + app components
-│   │   ├── lib/                # api client, hooks, token/theme utils
-│   │   ├── styles/             # design tokens (from DESIGN/DESIGN_SYSTEM.md)
+│   ├── web/                    # Next.js dashboard (App Router)
+│   │   ├── app/                # routes (signin, overview, reviews, repositories,
+│   │   │   │                    #   usage, settings/{github,account,providers,rules,
+│   │   │   │                    #   members,audit}, …)
+│   │   │   ├── components/     # shadcn/ui + app components
+│   │   │   ├── lib/            # api client, hooks
+│   │   │   └── styles/         # design tokens (from DESIGN/DESIGN_SYSTEM.md)
 │   │   └── package.json
-│   ├── api/                    # Fastify API (create)
+│   ├── api/                    # Fastify API
 │   │   ├── src/
-│   │   │   ├── server.ts       # Fastify bootstrap + plugin registration
-│   │   │   ├── routes/         # grouped by domain (auth, orgs, github, reviews, usage, billing, audit)
-│   │   │   ├── middleware/     # auth, tenant, rate-limit, audit, error
-│   │   │   ├── services/       # domain services
-│   │   │   ├── webhooks/       # github + billing webhook handlers
-│   │   │   └── config.ts
+│   │   │   ├── main.ts         # Fastify bootstrap
+│   │   │   ├── server.ts       # app wiring
+│   │   │   ├── queue.ts        # BullMQ enqueue side
+│   │   │   ├── routes/         # grouped by domain: account, audit, auth, github,
+│   │   │   │                    #   health, orgs, repos, reviews, settings, usage,
+│   │   │   │                    #   webhooks (GitHub only)
+│   │   │   ├── plugins/        # auth, tenant
+│   │   │   └── webhooks/       # GitHub webhook handler
 │   │   └── package.json
-│   └── worker/                 # BullMQ consumer + pipeline runner (create)
+│   └── worker/                 # BullMQ consumer + pipeline runner
 │       ├── src/
 │       │   ├── index.ts        # worker bootstrap
-│       │   ├── queues.ts       # queue + DLQ definitions
-│       │   └── jobs/           # review-job, retention-job, billing-rollup-job
+│       │   ├── queues.ts       # queue + DLQ definitions (review, retention,
+│       │   │                    #   review-dead-letter)
+│       │   ├── dlq.ts
+│       │   ├── adapters/       # local + github-mock adapters
+│       │   └── jobs/           # review, policy
 │       └── package.json
 │
 ├── packages/
-│   ├── contracts/              # (exists, extend) Zod schemas + plans.ts
+│   ├── contracts/              # Zod schemas + inferred types
 │   │   ├── src/
-│   │   │   ├── index.ts        # (exists)
-│   │   │   ├── plans.ts        # (create) Plan, PlanQuota, planQuota, *_QUOTA
-│   │   │   ├── findings.ts     # (split out) ReviewFinding/Summary/Job schemas
-│   │   │   ├── webhooks.ts     # GitHub + billing event schemas
-│   │   │   └── api.ts          # request/response payload schemas
-│   │   └── package.json        # (create)
-│   ├── database/               # Prisma schema + client + tenant repos (create)
+│   │   │   ├── index.ts
+│   │   │   ├── api.ts          # request/response payload schemas
+│   │   │   ├── findings.ts     # ReviewFinding/Summary/Job schemas
+│   │   │   └── webhooks.ts     # GitHub event schemas
+│   │   └── package.json
+│   ├── database/               # Prisma schema + client + tenant repos
 │   │   ├── prisma/schema.prisma
-│   │   └── src/ (repositories, migrations)
-│   ├── github/                 # App auth, webhook verify, diff fetch, publish (create)
-│   ├── diff-engine/            # pure diff parser + line map (create)
-│   ├── static-analysis/        # ESLint + Semgrep runners (create)
-│   ├── ai-providers/           # provider interface + adapters + routing (create)
-│   ├── review-engine/          # orchestration (create)
-│   ├── policy-engine/          # confidence/suppression/quota policy (create)
-│   ├── billing/                # plan state machine + provider webhooks (create)
-│   ├── observability/          # logging/tracing/redaction (create)
-│   └── config/                 # env parsing, model routing table, rates (create)
+│   │   └── src/
+│   ├── github/                 # App auth, webhook verify, diff fetch, publish
+│   ├── diff-engine/            # pure diff parser + line map
+│   ├── static-analysis/        # ESLint + Semgrep runners
+│   ├── ai-providers/           # provider interface + adapters + routing
+│   ├── review-engine/          # orchestration
+│   ├── policy-engine/          # confidence/suppression/file-budget policy
+│   ├── observability/          # logging/tracing/redaction
+│   └── config/                 # env parsing, model routing table, rates
 │
 ├── infra/
-│   ├── docker/                 # Dockerfiles + compose (create)
-│   └── deployment/            # deploy manifests (create)
+│   └── docker/                 # Dockerfiles + compose (postgres, redis, web, api,
+│                                #   worker, mock-github, mock-ai) + mock services
 │
 ├── tests/
 │   ├── fixtures/              # diff fixtures, injection fixtures, benchmark set
 │   │   └── benchmark/         # known-bug + clean examples + scoring
-│   ├── integration/           # webhook, queue, provider, tx, publish, payment, tenant
+│   ├── integration/           # webhook, queue, provider, tx, publish, tenant
 │   ├── e2e/                   # Playwright
 │   └── security/              # forged webhooks, cross-tenant, injection, secrets
 │
 ├── docs/                       # (this documentation package)
 │
+├── website/                    # top-level Next.js marketing site (in pnpm-workspace)
+│
+├── vercode-diagrams/           # architecture diagram sources
+│
 ├── scripts/                    # (PRESERVE — owner infra)
 │   ├── auto_sync.sh
 │   ├── run_loop.sh
-│   └── auto_sync.log
+│   ├── auto_sync.log
+│   └── …
+│
+├── .github/                    # agents, hooks, ISSUE_TEMPLATE, skills, PR template
 │
 └── .agents/                    # (PRESERVE — installed skills)
 ```
@@ -81,7 +102,7 @@ VERCODE/
 - **`verbatimModuleSyntax` + `NodeNext`:** every relative import ends in `.js`. This is the #1 typecheck failure source; CI's `typecheck` catches it.
 - **No module imports another module's internals.** Cross-package communication is via `packages/contracts` types or a package's public export. A `lint` rule (import-boundary) enforces it.
 - **`scripts/` and `.agents/` are frozen.** New tooling goes elsewhere; the auto-sync daemon must keep working.
-- **`packages/contracts` is the single source of truth** for finding/job/plan/webhook shapes. Every other package imports *from* it, never re-declares.
+- **`packages/contracts` is the single source of truth** for finding/job/webhook shapes. Every other package imports *from* it, never re-declares.
 
 ## Package dependency graph
 
@@ -93,11 +114,11 @@ diff-engine (pure)
 static-analysis ─▶ contracts
 ai-providers ───▶ contracts, config
 review-engine ──▶ diff-engine, static-analysis, ai-providers, policy-engine, contracts
-billing ───────▶ contracts, config
 database ──────▶ contracts
-worker ────────▶ review-engine, github, database, config, observability
-api ───────────▶ database, github, billing, config, observability, contracts
-web ───────────▶ contracts (types only)
+worker ────────▶ review-engine, diff-engine, static-analysis, ai-providers, policy-engine, github, database, config, observability, contracts
+api ───────────▶ database, github, config, observability, contracts
+website ───────▶ contracts (types only)
+web (dashboard) ─▶ api only (no direct package deps)
 ```
 
 A cycle here is a defect; CI fails on it.

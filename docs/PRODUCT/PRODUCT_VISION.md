@@ -19,8 +19,8 @@ VERCODE positions at the intersection of:
 
 1. **Deterministic precision** — static analysis (ESLint, Semgrep, secret scanning) run before the LLM, so the findings the model adds are deltas on top of grounded, reproducible checks.
 2. **Evidence-backed reasoning** — every finding carries a severity, a category, a confidence score, a short reason, and a suggested fix, all published as GitHub inline comments a maintainer can accept/reject/dismiss.
-3. **Cost discipline** — tiered model routing (cheap model for boilerplate diffs, strong model for risky files), per-org token budgets, and explicit cost-per-review tracking.
-4. **A workspace, not just a bot** — the dashboard is a first-class product surface: review history, org-level analytics, custom rules, usage billing, audit trail. The GitHub review is one output of a system the team owns.
+3. **Cost discipline** — tiered model routing (cheap model for boilerplate diffs, strong model for risky files), a platform token-spend cap as the abuse backstop, and explicit cost-per-review tracking that any team can see in plain form.
+4. **A workspace, not just a bot** — the dashboard is a first-class product surface: review history, org-level analytics, custom rules, plain usage reporting, audit trail. The GitHub review is one output of a system the team owns.
 
 ## What we are not
 

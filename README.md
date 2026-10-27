@@ -2,12 +2,15 @@
 
 # VERCODE
 
-**AI-powered code review for GitHub pull requests — deterministic-first analysis, evidence-backed findings, and a first-class team dashboard.**
+**Ship better code. Catch bugs earlier.**
+
+AI code review for GitHub pull requests — deterministic-first analysis, evidence-backed findings, and a first-class team dashboard. No plans. No quotas. No billing.
 
 [![Node.js](https://img.shields.io/badge/Node.js-22+-3C873C?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![pnpm](https://img.shields.io/badge/pnpm-9-f69225?logo=pnpm&logoColor=white)](https://pnpm.io/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE.md)
+[![Plans · Quotas · Billing](https://img.shields.io/badge/plans·quotas·billing-none-111827)](docs/BUSINESS/SAAS_LAUNCH_PLAN.md)
 
 </div>
 
@@ -15,9 +18,11 @@
 
 ## What is VERCODE?
 
-VERCODE is an open-source AI code-review SaaS monorepo. It reads a GitHub pull request the way a careful senior engineer would: deterministic static analysis (ESLint + Semgrep + secret scanning) runs **first**, then task-routed LLM reasoning runs on the bounded, relevant slice of the diff. The result is published back to the PR as **inline findings** — each with a category, severity, confidence score, a reason, and a suggested fix — plus a **summary verdict**, backed by a multi-tenant org dashboard.
+VERCODE reads a GitHub pull request the way a careful senior engineer would, then posts an **evidence-backed review** — inline comments anchored to the diff, a summary verdict, and actionable fixes — inside a premium dashboard a team can actually live in.
 
-The value loop has no paywall in it: **connect your repository to GitHub** → VERCODE reviews the pull requests → findings land on the PR with a verdict → the dashboard shows what ran and what it found. Usage is reported plainly — a usage report, not a meter on a bill.
+Deterministic static analysis (ESLint + Semgrep + secret scanning) runs **first**, then task-routed LLM reasoning runs on the bounded, relevant slice of the diff. Every finding carries a category, severity, confidence score, a short reason, and a suggested fix. The result lands on the PR where it can be accepted, rejected, or dismissed.
+
+**The value loop has no paywall in it:** connect your repository to GitHub → VERCODE reviews the pull requests → findings land on the PR with a verdict → the dashboard shows what ran and what it found. Usage is reported plainly — a usage report, not a meter on a bill.
 
 **Target:** GitHub-using teams of 3–500 developers who want a second pair of AI eyes that doesn't flood the PR with noise.
 
@@ -25,10 +30,10 @@ The value loop has no paywall in it: **connect your repository to GitHub** → V
 | --- | --- |
 | **Deterministic precision** | Static analysis runs before the LLM. The model's findings are deltas on top of grounded, reproducible checks. |
 | **Evidence-backed reasoning** | Every finding carries a category, severity, confidence, a short reason, and a suggested fix — published as GitHub inline comments a maintainer can act on. |
-| **Connect, not configure** | A GitHub App connection: pick the repositories to review, disconnect when done; no plans, no tiers, no billing to manage. |
+| **Connect, not configure** | A GitHub App connection: pick the repositories to review, disconnect when done. Per-user GitHub OAuth for repo connect. No plans, no tiers, no billing to manage. |
 | **A workspace, not just a bot** | The dashboard is a first-class product surface: review history, security rollups, a plain usage report, audit trail. |
 
-> **Current state:** this repository is at the *scaffold + design* stage. The docs, shared contracts, and workspace layout are in place; the application code is being built phase by phase (see [Roadmap](#roadmap)). The [Known Limitations](#known-limitations) section is the honest, up-to-date status.
+> **Current state:** the full pipeline is built — webhook ingress, the durable queue, the worker's 12-stage review pipeline, the dashboard, plain usage reporting, GitHub connect, and the security test suite. The dev stack runs the entire pipeline on mocks with **zero external credentials**. What's still open: publishing through a live GitHub App + real AI providers (the Octokit publish seam), the `usage_daily` rollup tail, and the spend-cap alert. The [Known limitations](#known-limitations) section is the honest, up-to-date status.
 
 ### Dashboard preview
 
@@ -61,50 +66,19 @@ The value loop has no paywall in it: **connect your repository to GitHub** → V
 
 ---
 
-## Repository overview
-
-### Architecture
-
-![System architecture](docs/assets/architecture.png)
-
-The production deployment runs on AWS ECS Fargate inside a two-tier VPC. The
-public tier (NLB + 4 API tasks) verifies webhooks and enqueues jobs — it holds
-no model credentials. The private tier (worker tasks + RDS Postgres +
-ElastiCache Redis) runs the full review pipeline and is the only tier that can
-reach the LLM provider gateways. The Next.js dashboard is a static export on
-S3 fronted by CloudFront with WAF.
-
-<details>
-<summary><b>VPC &amp; subnet layout</b> (expandable)</summary>
-
-<br />
-
-![Cloud infrastructure — VPC and subnet topology](docs/assets/cloud-infrastructure.png)
-
-</details>
-
-Three stateless, independently deployable units sit in front of managed Postgres and Redis:
-
-| Unit | Role |
-| --- | --- |
-| `apps/web` | Next.js App Router dashboard (Tailwind, shadcn-style components, Recharts) |
-| `apps/api` | Fastify HTTP server: dashboard REST, GitHub App webhook receiver, and the `/api/v1/github/*` connect/disconnect/repository-selection routes — **verify + enqueue only; no LLM on the hot path** |
-| `apps/worker` | BullMQ consumer that runs the full review pipeline and publishes results to GitHub |
-
-### Review pipeline
+## How a review happens
 
 ![Review pipeline](docs/assets/pipeline.png)
 
-**How it works, step by step:**
+**Step by step:**
 
-1. **Webhook ingress** — GitHub's signed event arrives at the API. The API verifies the `HMAC-SHA256` signature plus a 5-minute timestamp window and 24 h delivery-id dedup, records an idempotency row, and enqueues a `review-queue` job. It returns `202 Accepted` in < 300 ms — no diff fetch, no LLM, no finding writes on this path.
-2. **Job dispatch** — the worker dequeues the job (payload is a pointer only; all durable state is re-read from Postgres), loads the org's settings, and applies pre-flight gates: commit-SHA idempotency (same head SHA → no re-run).
-3. **Context retrieval** — the worker fetches the PR diff plus a bounded context: changed files + their 1-hop import graph, capped at 60 files / 3,000 lines. **Never the whole repository.**
-4. **Static analysis (deterministic)** — ESLint/Semgrep-style rules run on the changed files first. These findings carry no confidence floor — they're rules, not guesses.
-5. **AI review (task-routed)** — schema-validated LLM calls: a risk-triage pass, a deep review on high-risk files, and a focused security pass on security-sensitive files. Bounded context only; outputs are Zod-validated and re-checked (a finding whose line doesn't exist in the diff is dropped or demoted to a body comment).
-6. **Merge → validate → dedup → policy** — findings are merged, deduplicated on `(file, line, category)`, and filtered by the org's confidence floor (default 0.6) and per-repo suppressions.
-7. **Publish** — a summary verdict + validated inline comments are posted to the PR (falling back to a PR-body comment when an anchor can't be verified); usage and prompt version are attributed to the org and surfaced in the usage report.
-8. **Resilience** — rate-limit responses (403/429) back off through a retry queue; a hard crash just re-delivers the durable job. A wall-clock budget (default 240 s) yields *partial* results rather than a hang.
+1. **Webhook ingress** — GitHub's signed event arrives at the API (`POST /webhooks/github`). The API verifies the `HMAC-SHA256` signature plus a 5-minute timestamp window and delivery-id dedup, records a receipt, and enqueues a `review-queue` job. It returns `202 Accepted` in < 300 ms — no diff fetch, no LLM on this path. A commit-SHA idempotency row means a re-push of the same head is a no-op.
+2. **Job dispatch** — the worker dequeues the job (the payload is a pointer only; all durable state is re-read from Postgres) and applies the pre-flight gates: same-SHA idempotency, then the bounded context — the PR diff plus a 1-hop import fetch, capped at 60 files / 3,000 lines. **Never the whole repository.**
+3. **Static analysis (deterministic)** — ESLint/Semgrep-style rules run on the changed files first. These findings carry no confidence floor — they're rules, not guesses.
+4. **AI review (task-routed)** — schema-validated LLM calls: a risk-triage pass, a deep review on high-risk files, and a focused security pass on security-sensitive files. Task → model routing keeps boilerplate on cheap models and security-critical files on strong ones; outputs are Zod-validated and re-checked (a finding whose line doesn't exist in the diff is dropped or demoted to a body comment).
+5. **Merge → validate → dedup → policy** — findings are merged, deduplicated on `(file, line, category)`, and filtered by the org's confidence floor (default 0.6) and per-repo suppressions.
+6. **Publish + record** — a summary verdict + validated inline comments are posted to the PR (falling back to a PR-body comment when an anchor can't be verified); usage and prompt version are attributed to the org in one transaction.
+7. **Resilience** — a transient provider failure degrades the job to *partial* (deterministic findings still publish); a hard crash just re-delivers the durable job; an in-flight lock (Redis `SET NX`) routes concurrent redeliveries to the dead-letter queue. A wall-clock budget (default 240 s) yields partial results rather than a hang.
 
 <details>
 <summary><b>Full 8-stage data flow &amp; lifecycle</b> (expandable)</summary>
@@ -124,6 +98,38 @@ Three stateless, independently deployable units sit in front of managed Postgres
 
 </details>
 
+### Connect, don't configure
+
+The onboarding flow is a **GitHub connection**, not a signup form:
+
+- **GitHub App (org-level)** — install the App, select the repositories to review. The API's `GET /orgs/:id/github/candidates → connect → repositories` flow tracks what's reviewable.
+- **Per-user OAuth (account-level)** — `GET /auth/github/start → callback → disconnect`: a user links their GitHub account, and the connected repos surface on the repositories page (the `RepoConnectCard`). No PATs — the user token is stored KMS-safe, and a user who isn't connected simply has nothing to connect.
+- **No plan to pick, no card to add.** The only bound is the platform-level `PLATFORM_TOKEN_SPEND_CAP_USD` — an operational backstop that alerts the platform, not a meter that gates customers.
+
+---
+
+## Architecture
+
+![System architecture](docs/assets/architecture.png)
+
+Production deploys to AWS ECS Fargate in a two-tier VPC: the public tier (NLB + API tasks) verifies webhooks and enqueues jobs — it holds no model credentials; the private tier (worker tasks + RDS Postgres + ElastiCache Redis) runs the pipeline and is the only tier that can reach provider gateways. The dashboard is a static export on S3 behind CloudFront + WAF.
+
+| Unit | Role |
+| --- | --- |
+| `apps/web` | Next.js 15 App Router dashboard (React 19, Tailwind 4, shadcn-style components, Recharts, TanStack Query) |
+| `apps/api` | Fastify 5 server: dashboard REST, GitHub App webhook receiver, GitHub connect routes, per-user OAuth — **verify + enqueue only; no LLM on the hot path** |
+| `apps/worker` | BullMQ consumer that runs the full 12-stage review pipeline and publishes results to GitHub; the `usage_events` capture and the retention queue live here |
+| `website/` | The marketing site (Next.js static export) — landing, docs, changelog, blog |
+
+<details>
+<summary><b>VPC &amp; subnet layout</b> (expandable)</summary>
+
+<br />
+
+![Cloud infrastructure — VPC and subnet topology](docs/assets/cloud-infrastructure.png)
+
+</details>
+
 ### Monorepo layout
 
 ![Monorepo structure](docs/diagrams/repository.png)
@@ -131,30 +137,30 @@ Three stateless, independently deployable units sit in front of managed Postgres
 ```
 VERCODE/
 ├── apps/
-│   ├── web/            Next.js dashboard
-│   ├── api/            Fastify — auth, REST, GitHub App + /api/v1/github/* connect routes
-│   └── worker/         BullMQ consumer + review pipeline
+│   ├── web/            Next.js dashboard (port 3000)
+│   ├── api/            Fastify — REST, GitHub webhooks, connect routes, per-user OAuth (port 4000)
+│   └── worker/         BullMQ consumer + the live review pipeline (queue + DLQ + retention)
 ├── packages/
-│   ├── contracts/      Zod schemas: findings, jobs, webhooks (single source of truth)
-│   ├── database/       Prisma schema + generated client + tenant-scoped repositories
+│   ├── contracts/      Zod schemas: findings, jobs, webhooks — the single source of truth
+│   ├── database/       Prisma schema (Postgres) + tenant-scoped repositories
 │   ├── github/         GitHub App auth, webhook verification, diff fetch, review publication
 │   ├── diff-engine/    Pure diff parser → structured change set + line map (no I/O)
 │   ├── static-analysis/ ESLint + Semgrep runner wrappers (deterministic findings)
-│   ├── ai-providers/   AIProvider interface + OpenAI/Anthropic/Ollama adapters + routing
-│   ├── review-engine/  Orchestration: classify → static → AI → merge → validate → dedup → policy → summary
+│   ├── ai-providers/   AIProvider interface + OpenAI/Anthropic/Ollama/mock adapters + routing
+│   ├── review-engine/  The pure 12-stage orchestrator (drives the benchmark + security harness)
 │   ├── policy-engine/  Confidence floors, suppression, severity gating, file-budget checks
-│   ├── observability/  Logging, tracing, redaction, error capture
-│   └── config/         Env parsing + typed config, model routing table, provider rate table
-├── infra/              Docker / compose / deployment manifests
-├── tests/              fixtures · integration · e2e · security suites
-├── docs/               The full documentation package (start here: docs/DOCUMENTATION_REVIEW.md)
-├── scripts/            Auto-sync tooling (frozen — new tooling goes elsewhere)
-└── .agents/            Installed design skills (frozen)
+│   ├── observability/  Structured logging, tracing, PII-scrubbed error capture, redaction gate
+│   └── config/         Env parsing (loadConfig, KNOWN_VARS) — the only env reader
+├── infra/docker/       Dev Compose stack: postgres, redis, web, api, worker, mock-github, mock-ai + smoke
+├── website/            Marketing site (static export; content/ docs, blog, changelog)
+├── tests/              benchmark harness · e2e (Playwright) · integration · security suite · fixtures
+├── vercode-diagrams/   SVG/PNG sources for the documentation diagrams
+├── docs/               The full documentation package (start at docs/README.md)
+├── Makefile            check · smoke · e2e · benchmark · env-drift · supabase-db
+└── scripts/            Auto-sync tooling + env-drift check (frozen — new tooling goes elsewhere)
 ```
 
-The `packages/contracts` package is the **single source of truth** for finding/job/webhook shapes — every other package imports *from* it, never re-declares.
-
-Key shared types already in `packages/contracts`:
+`packages/contracts` is the **single source of truth** for finding/job/webhook shapes — every other package imports *from* it, never re-declares. Key shared types:
 
 - `FindingSeverity` — `low | medium | high | critical`
 - `FindingCategory` — `logic-bug | security | performance | race-condition | resource-leak | api-contract | db-consistency | edge-case | assumption`
@@ -166,17 +172,17 @@ Key shared types already in `packages/contracts`:
 
 | Layer | Choice |
 | --- | --- |
-| Runtime | Node.js ≥ 22, ESM, pnpm 9 workspaces (lockfile v9) |
-| Language | TypeScript 5.x strict, ES2022, `NodeNext` + `verbatimModuleSyntax` |
-| Frontend | Next.js 15 App Router (`output: standalone`), React 19, Tailwind CSS 4, shadcn-style components, Zod, Recharts, TanStack Query |
-| Backend | Fastify 5, Prisma 5, PostgreSQL 16, Redis 7 + BullMQ 5 |
-| GitHub | Octokit, GitHub App strategy (App JWT → installation tokens) |
-| AI | OpenAI primary; provider abstraction supports Anthropic / Ollama (Phase 1) and BYOK (AES-256-GCM, KMS-wrapped) |
-| Auth | Argon2id + signed HTTP-only cookies, Redis-backed sessions, server-side revocation |
-| Observability | pino + OpenTelemetry + Sentry; secret redaction on every log record |
-| Lint / test | ESLint 9 + typescript-eslint (`--max-warnings 0`), Vitest 3 |
+| Runtime | Node.js ≥ 22, ESM, pnpm 9 workspaces |
+| Language | TypeScript strict, ES2022, `NodeNext` + `verbatimModuleSyntax` |
+| Frontend | Next.js 15 App Router, React 19, Tailwind CSS 4, shadcn-style components, Zod, Recharts, TanStack Query |
+| Backend | Fastify 5, Prisma 5 on PostgreSQL 16, Redis 7 + BullMQ 5 |
+| GitHub | GitHub App (App JWT → installation tokens) + per-user OAuth connect; Octokit |
+| AI | Provider abstraction: OpenAI / Anthropic / Ollama / deterministic mock — task-routed, schema-validated; BYOK is KMS-wrapped (AES-256-GCM) |
+| Auth | Argon2id + signed HTTP-only cookies, DB-backed sessions (hash-at-rest), lockout on 5 fails / 15 min |
+| Observability | Structured logging + in-memory tracing + PII-scrubbed error capture; the redaction gate runs on every record |
+| Lint / test | ESLint 9 + typescript-eslint (`--max-warnings 0`), Vitest 3, Playwright (e2e) |
 
-**Note for contributors:** `verbatimModuleSyntax` + `NodeNext` means **every relative import must end in `.js`** even in `.ts` files. This is the #1 typecheck failure source — CI catches it.
+**Note for contributors:** `verbatimModuleSyntax` + `NodeNext` means **every relative import must end in `.js`** even in `.ts` files — the #1 typecheck failure source.
 
 ---
 
@@ -184,46 +190,57 @@ Key shared types already in `packages/contracts`:
 
 ### Prerequisites
 
-- **Node.js ≥ 22** and **pnpm 9** (`corepack enable` works: the repo pins `packageManager: pnpm@9`)
-- **PostgreSQL 16** and **Redis 7** locally (or via the Compose dev stack — planned in `infra/docker/`)
-- No external credentials are required for local development: the provider layer supports an offline/mock AI adapter, and the dev stack wires a mock GitHub
+- **Node.js ≥ 22** and **pnpm 9** (`corepack enable` — the repo pins `packageManager: pnpm@9`)
+- **Docker** for the one-command dev stack (optional — you can point `DATABASE_URL`/`REDIS_URL` at local Postgres 16 + Redis 7 instead)
+- **Zero external credentials** — the dev stack wires a mock GitHub (8091) and a mock AI (8092); no API key needed
 
-### Install
+### Quick start
 
 ```bash
-git clone <this-repo>
-cd vercode
+git clone <this-repo> && cd vercode
+corepack enable
 pnpm install
+
+make check        # typecheck + lint + test + benchmark (the verified-state gate)
+
+cp .env.example .env   # sane defaults: mocks on, localhost Postgres/Redis
+
+make smoke        # Docker Compose: postgres + redis + web + api + worker + mocks,
+                  # then one mock PR through the whole pipeline (needs the Docker daemon)
+
+make e2e          # the same stack + the Playwright onboarding journey
 ```
 
-### Build & test
+Then open **http://localhost:3000** (dashboard) — the API is on 4000 (`/healthz`). Per-server development without Docker: `pnpm dev` runs the web, api, worker, and site servers in parallel.
 
-```bash
-pnpm install        # pnpm 9, Node >= 22
-pnpm typecheck      # pnpm -r typecheck
-pnpm lint           # eslint "packages/**/*.ts" "apps/**/*.ts" --max-warnings 0
-pnpm test           # vitest run
-pnpm test:watch     # vitest (watch mode)
-pnpm build          # pnpm -r build
-pnpm dev            # run all workspace dev servers
-```
+### Useful targets
 
-Development servers (once apps are wired): `web` on port 3000 (`next dev -p 3000`), `api` and `worker` via `tsx`. The target dev stack is a Docker Compose file (Postgres + Redis + web + api + worker + mock-github/mock-ai) so the full pipeline runs with **zero external credentials** — that compose file is part of the Phase 0 work, not yet committed.
+| Command | What it does |
+| --- | --- |
+| `make check` | `pnpm typecheck && pnpm lint && pnpm test && pnpm benchmark` |
+| `make smoke` | Compose boot + health check + one mock PR through the pipeline |
+| `make e2e` | Compose boot + Playwright onboarding spec |
+| `make benchmark` | Deterministic scoring harness (`tests/benchmark/harness.ts`); `make benchmark-baseline` freezes the reference |
+| `make env` | Drift check: `.env.example`'s variable set == `packages/config`'s `KNOWN_VARS` |
+| `make supabase-db` | Optional: push the Prisma schema to a Supabase Postgres (`.env`'s `DATABASE_URL`) |
+| `make check-website` | The marketing site's build + typecheck + test + anti-slop lint |
+| `make clean` | Remove build artifacts |
 
 ### Environment variables
 
-Real credentials live in a secret store; `.env.example` (coming with Phase 0) holds **placeholders only**. Key groups, per `docs/OPERATIONS/ENVIRONMENT_VARIABLES.md`:
+`.env.example` holds **placeholders only** and is drift-checked against the config package (an undocumented variable is a bug — `make env` catches it). Key groups, per [`docs/OPERATIONS/ENVIRONMENT_VARIABLES.md`](docs/OPERATIONS/ENVIRONMENT_VARIABLES.md):
 
 | Group | Variables |
 | --- | --- |
 | Core | `NODE_ENV`, `DATABASE_URL`, `REDIS_URL`, `SESSION_SIGNING_KEY`, `API_BASE_URL`, `WEB_BASE_URL` |
-| GitHub App | `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY` (KMS-wrapped), `GITHUB_WEBHOOK_SECRET`, `GITHUB_API_BASE` |
-| AI provider | `AI_DEFAULT_PROVIDER` (`openai`/`anthropic`/`ollama`/`mock`), `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `OLLAMA_BASE_URL`, `AI_FALLBACK_PROVIDER` |
-| Observability | `SENTRY_DSN_API`/`_WORKER`/`_WEB`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `LOG_LEVEL` |
+| GitHub App | `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY` (KMS-wrapped in prod), `GITHUB_WEBHOOK_SECRET`, `GITHUB_API_BASE` |
+| GitHub OAuth (connect) | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` — the per-user connect flow |
+| AI provider | `AI_DEFAULT_PROVIDER` (`mock` in dev / `openai` / `anthropic` / `ollama`), `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `OLLAMA_BASE_URL`, `AI_FALLBACK_PROVIDER` |
+| Spend guardrail | `PLATFORM_TOKEN_SPEND_CAP_USD` — the *single* cost bound in the no-paywall product (a platform backstop, not a per-org quota) |
 | Review defaults | `DEFAULT_CONFIDENCE_FLOOR` (0.6), `REVIEW_WALL_CLOCK_BUDGET_MS` (240000), `REVIEW_MAX_FILES` (60) / `REVIEW_MAX_LINES` (3000), `WORKER_CONCURRENCY` (4) |
-| Dev mocks | `USE_MOCK_GITHUB`, `USE_MOCK_AI` |
+| Dev mocks | `USE_MOCK_GITHUB`, `USE_MOCK_AI` (both default `true` in the Compose stack) |
 
-Per-org overrides (confidence floor, file budgets, suppressions) are **config rows in the DB**, not env vars — env holds platform defaults only.
+The billing variables were **removed** with the no-paywall decision (2026-10) — there is no `BILLING_PROVIDER`, no Stripe/Razorpay wiring. Per-org overrides (confidence floor, budgets, suppressions) are **config rows in the DB**, not env vars.
 
 ---
 
@@ -231,37 +248,42 @@ Per-org overrides (confidence floor, file budgets, suppressions) are **config ro
 
 ![VERCODE Trust Model and Security Boundaries](docs/assets/trust-model.png)
 
-VERCODE's core invariant: **repository content is *input*, never *authority*.** The design docs in `docs/SECURITY/` define a 16-threat STRIDE register (T-01…T-16), each mapped to a control layer and a named verification test.
+VERCODE's core invariant: **repository content is *input*, never *authority*.** The threat register in `docs/SECURITY/` maps each threat to a control layer and a named verification test, and the security suite (`tests/security/`) runs the P0 tests against real source.
 
 | Concern | Control |
 | --- | --- |
-| Webhook integrity | HMAC-SHA256 signature + 5-min timestamp window + 24 h delivery-id dedup; forged/replayed events rejected, no queue write |
-| Prompt-injection defense | Repo content is delimited as data in the review prompt; no tool access; outputs are schema-validated (Zod); injection attempts surface *as findings*, never as leaked prompts or scope changes |
+| Webhook integrity | HMAC-SHA256 signature + 5-min timestamp window + delivery-id dedup; forged/replayed events rejected, no queue write |
+| Prompt-injection defense | Repo content is delimited as data in the review prompt; no tool access; outputs are Zod-validated; injection attempts surface *as findings*, never as leaked prompts or scope changes |
 | Secret redaction | A redaction gate runs on every log record and stored finding; a secret that reaches a log is a *released* secret |
 | GitHub App scopes | Least-privilege: `contents:read`, `pull_requests:write`, `checks:write`, `metadata:read`, `issues:read` — no `admin:org`, no secrets scopes |
-| Tenant isolation | `org_id`-leading schema + org-scoped repository layer; cross-org requests return **404, never 403** (no existence oracle); Redis keys namespaced by `org:repo`; an integration suite re-runs on every schema change |
-| Secrets at rest | KMS-wrapped GitHub App key + BYOK keys (AES-256-GCM under a KMS master key); no secret in a DB column |
-| Code execution | **No untrusted code execution in MVP** — the highest-severity threat class is closed by *absence*; the gVisor/Firecracker sandbox is designed now and realized in Phase 2 |
+| Tenant isolation | `org_id`-leading schema + org-scoped repository layer; cross-org requests return **404, never 403** (no existence oracle); Redis keys namespaced by `org:repo`; the isolation suite re-runs on every schema change |
+| Secrets at rest | KMS-wrapped GitHub App key + BYOK keys (AES-256-GCM under a KMS master key); sessions stored as hashes, not tokens |
+| Cost abuse | No per-org quota — the `PLATFORM_TOKEN_SPEND_CAP_USD` platform cap + a volume-spike anomaly alert are the backstop |
+| Code execution | **No untrusted code execution in MVP** — the highest-severity threat class is closed by *absence*; the gVisor/Firecracker sandbox is designed now, realized in Phase 2 |
 | Baseline | OWASP ASVS L2; WCAG 2.1 AA + `prefers-reduced-motion` respected on the dashboard; append-only `audit_events` (180-day floor) |
 
-The full register, accepted residual risks, and the security test plan live in [`docs/SECURITY/`](docs/SECURITY/).
+The full register, accepted residual risks, and the security test plan live in [`docs/SECURITY/`](docs/SECURITY/). Vulnerabilities: [private security advisory](SECURITY.md) or `security@vercode.dev` — never a public issue.
 
 ---
 
-## Documentation map
+## Documentation
 
-| Directory | Contents |
+The docs package is deep — **start at [`docs/README.md`](docs/README.md)**, the index of every folder:
+
+| Folder | What's there |
 | --- | --- |
-| [`docs/PRODUCT/`](docs/PRODUCT/) | PRD, MVP scope, feature roadmap, user stories & journeys, acceptance criteria, success metrics |
-| [`docs/TECHNICAL/`](docs/TECHNICAL/) | System architecture, tech stack, repository structure, data flow, review-engine spec, AI system design, model routing, context retrieval, TRD, error handling |
-| [`docs/SECURITY/`](docs/SECURITY/) | Threat model (T-01…T-16), security architecture, prompt-injection defense, sandbox security, secrets management, security test plan |
+| [`docs/PRODUCT/`](docs/PRODUCT/) | PRD, vision, MVP scope, feature roadmap, user stories & journeys, acceptance criteria, success metrics |
+| [`docs/TECHNICAL/`](docs/TECHNICAL/) | System architecture, ADRs, data flow, review-engine spec, model routing, context retrieval, GitHub App setup, Supabase |
+| [`docs/SECURITY/`](docs/SECURITY/) | Threat model, security architecture, prompt-injection defense, sandbox security, secrets management, test plan |
 | [`docs/DATABASE/`](docs/DATABASE/) | Schema reference, ERD, tenant isolation, retention, indexing, migration strategy |
 | [`docs/API/`](docs/API/) | API specification, OpenAPI contract, webhook specification, auth/authz, error codes, rate limiting |
-| [`docs/OPERATIONS/`](docs/OPERATIONS/) | CI/CD, deployment, backup/restore, DR, incident response, observability, env-var inventory |
-| [`docs/TESTING/`](docs/TESTING/) | Test strategy, unit/integration/E2E plans, AI evaluation + benchmark dataset, release criteria |
-| [`docs/IMPLEMENTATION/`](docs/IMPLEMENTATION/) | Implementation plan, task breakdown, risk register, traceability matrix, definition of done, known limitations |
-| [`docs/BUSINESS/`](docs/BUSINESS/) | Launch plan (launched without paid tiers; usage-based gating removed) |
+| [`docs/OPERATIONS/`](docs/OPERATIONS/) | Deployment, CI/CD plan, backup/DR, incident response, observability, env-var inventory |
+| [`docs/TESTING/`](docs/TESTING/) | Test strategy, unit/integration/e2e plans, AI evaluation + benchmark dataset, release criteria |
+| [`docs/IMPLEMENTATION/`](docs/IMPLEMENTATION/) | Implementation plan, task breakdown, risk register, traceability matrix, definition of done |
+| [`docs/BUSINESS/`](docs/BUSINESS/) | The launch plan — the **no-paywall** direction and launch source of truth |
 | [`docs/DESIGN/`](docs/DESIGN/) | Design system, component catalog, page specifications, accessibility, responsive behavior |
+
+The [documentation review](docs/DOCUMENTATION_REVIEW_RESULTS.md) tracks the package's completeness verdicts, with the 2026-10 no-paywall supersession recorded at the top.
 
 ---
 
@@ -278,9 +300,10 @@ A feature that's deferred or not-present is *documented*, not silently absent. T
 | L-5 | No SSO (email + password only; OIDC is Phase 1, SAML/SCIM Phase 3) | Phase 1 / 3 |
 | L-6 | Content-hash dedup not in MVP — an identical re-push (rebase/reword) re-runs the AI stage; commit-SHA idempotency is the MVP key | Phase 1 |
 | L-7 | BYOK key *storage* (KMS-wrapped) is in the schema; the BYOK key-management UI is later | Phase 1 |
-| L-8 | Live external integration (real GitHub App + live provider) is blocked in this build environment — the dev stack runs on mocks | gate-13 release lane |
+| L-8 | Live external integration pending — the dev stack runs on mocks; the real GitHub App publish + live provider wiring is the next seam, and the spend-cap alert / `usage_daily` rollup are open M7 tail work | gate-13 release lane |
 | L-9 | No multi-region data residency | Phase 3 |
 | L-10 | No "run the PR's tests" finding | Phase 2 |
+| L-11 | No `.github/workflows` files yet — the CI lanes in `docs/OPERATIONS/CI_CD.md` are the plan; today the executable gates are `make check` / `make benchmark` / `make env` | gate-13 release lane |
 
 Quality caveats: finding `confidence` is a model-reported **heuristic**, not a calibrated probability; the AI can be steered but not fully controlled (the deterministic-first backstop is the mitigation); and the benchmark dataset is a snapshot, not a guarantee — a model/prompt swap is gated by a regression check.
 
@@ -288,12 +311,12 @@ Quality caveats: finding `confidence` is a model-reported **heuristic**, not a c
 
 ## Roadmap
 
-| Phase | Focus | Measurable exit |
+| Phase | Focus | Status |
 | --- | --- | --- |
-| **0 — MVP (~12–16 wks)** | All P0: contracts, auth/tenancy, GitHub App + webhooks + the /api/v1/github/* connect routes, review pipeline, publication, queue/worker, dashboard, usage report + audit, security suite, Docker/CI | End-to-end checklist passes with at least one real PR review published; dashboard live on real data; security suite green |
-| **1 — Trust & Scale (~8–12 wks)** | SSO (OIDC), passkeys, BYOK UX, multi-provider + provider fallback (FR-314), content-hash short-circuit, re-review endpoint (US-105), read replica + dashboard caching | SSO live on one org; BYOK on one org; content-hash dedup cuts re-push cost ≥ 40 %; zero cross-tenant regressions |
-| **2 — Depth (~12–16 wks)** | Sandboxed PR test execution (gVisor/Firecracker), pgvector retrieval, GitLab (first) / Bitbucket adapters, VS Code extension | Sandboxed test-execution live; ≥ 1 GitLab org live; IDE extension beta |
-| **3 — Enterprise (ongoing)** | SCIM + SAML, audit export (SIEM), data-residency regions, custom-rules engine v2, QA flywheel | ≥ 3 enterprise logos; SCIM live; zero PII in logs audited clean |
+| **0 — MVP** | Contracts, auth/tenancy, GitHub App + webhooks + connect routes, the 12-stage pipeline, publication, dashboard, usage report + audit, security suite, Docker dev stack | **Built** — tail open: `usage_daily` rollup, spend-cap alert, live publish seam (L-8) |
+| **1 — Trust & Scale** | SSO (OIDC), passkeys, BYOK UX, content-hash short-circuit, re-review endpoint, read replica + dashboard caching; CI workflow files (L-11) | In flight |
+| **2 — Depth** | Sandboxed PR test execution (gVisor/Firecracker), pgvector retrieval, GitLab (first) / Bitbucket adapters, VS Code extension | Planned |
+| **3 — Enterprise** | SCIM + SAML, audit export (SIEM), data-residency regions, custom-rules engine v2, QA flywheel; monetization, if ever, is a P3 commercial decision — **not a launch prerequisite** | Planned |
 
 **Cross-cutting gates (every phase):** security test plan green on every release candidate; tenant-isolation suite re-run on every schema change; AI benchmark regression gate (held-out precision must not drop > 5 %); docs kept in sync with code.
 
@@ -305,22 +328,23 @@ VERCODE is a pnpm monorepo. Before opening a PR:
 
 ```bash
 pnpm install
-pnpm typecheck   # pnpm -r typecheck — verbatimModuleSyntax: relative imports end in .js
-pnpm lint        # eslint "packages/**/*.ts" "apps/**/*.ts" --max-warnings 0
-pnpm test        # vitest run
+make check      # typecheck + lint + test + benchmark
+make env        # .env.example drift check
 ```
 
-Guides that every PR is held to (details in [`docs/IMPLEMENTATION/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION/IMPLEMENTATION_PLAN.md)):
+Guard rails that every PR is held to:
 
 - `packages/contracts` is the single source of truth — add new shapes there; no package re-declares one.
 - No package imports another package's internals; cross-package communication goes through `contracts` or a package's public export.
+- **Every relative import ends in `.js`** (`verbatimModuleSyntax` + `NodeNext`).
+- Tenant isolation is inviolable: `org_id`-leading queries, 404-not-403 across tenants.
 - `scripts/` and `.agents/` are frozen (owner infra) — new tooling goes elsewhere.
 - A security or docs-drift regression blocks the merge; a green checkmark is a claim, the measurement is the fact.
 
-The full doc package is the contributing manual: product intent in `docs/PRODUCT/`, architecture rules in `docs/TECHNICAL/`, and the verification discipline in `docs/TESTING/` + `docs/OPERATIONS/`.
+Conventions: branch off `main`, conventional commits, PR template with at least one maintainer review — details in [`CONTRIBUTING.md`](CONTRIBUTING.md). The full doc package is the contributing manual: product intent in `docs/PRODUCT/`, architecture rules in `docs/TECHNICAL/`, verification discipline in `docs/TESTING/` + `docs/OPERATIONS/`.
 
 ---
 
 ## License
 
-This project is released under the [MIT License](LICENSE.md). No credentials or secrets are included in the repository; `.env.example` (Phase 0) will contain placeholders only.
+This project is released under the [MIT License](LICENSE.md). No credentials or secrets are included in the repository; `.env.example` contains placeholders only. We follow the [Contributor Covenant v2.1](CODE_OF_CONDUCT.md) and coordinate vulnerability disclosure through the [security policy](SECURITY.md).

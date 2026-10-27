@@ -4,8 +4,8 @@ The Playwright suite drives the *actual* dev stack (the `docker-compose` with mo
 
 ## 1. The environment
 
-- **The dev stack:** the Compose stack (`infra/docker/compose.yaml`) — Postgres, Redis, `web`, `api`, `worker`, a **mock-github** HTTP stub, a **mock-ai** provider, a **mock-billing** (Stripe test-mode signature source). *No external credentials needed* — a full end-to-end run is local.
-- **The "live" lane:** a separate, credentialed run (`E2E_LIVE=true`, real GitHub App + real AI + Stripe test-mode or live) that runs on a *release* CI lane. In this build environment it's **explicitly marked "requires external credential — blocked"** (`MVP_SCOPE`, `PHASE 10`) — we do not claim a live integration that wasn't actually executed.
+- **The dev stack:** the Compose stack (`infra/docker/compose.yaml`) — Postgres, Redis, `web`, `api`, `worker`, a **mock-github** HTTP stub, a **mock-ai** provider. The `billing` package, webhooks, and **mock-billing** service are removed (the no-paywall decision, commit `78b51d9`) — there is no payment stack in the dev compose file. *No external credentials needed* — a full end-to-end run is local.
+- **The "live" lane:** a separate, credentialed run (`E2E_LIVE=true`, real GitHub App + real AI) that runs on a *release* CI lane. In this build environment it's **explicitly marked "requires external credential — blocked"** (`MVP_SCOPE`, `PHASE 10`) — we do not claim a live integration that wasn't actually executed.
 - **The test data:** each E2E test creates its own org + user (a fixture), uses the mock GitHub to drive a webhook, and asserts against the *real* API + DB (a Playwright test that asserts on the DOM *and* a DB row — the "data that tells the truth" check, the UI number matches the stored number).
 
 ## 2. The specs (the journeys)

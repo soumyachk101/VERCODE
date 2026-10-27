@@ -8,7 +8,7 @@ The pipeline. GitHub Actions (the brief's tool). The philosophy: *a merge is gat
 | --- | --- | --- |
 | **PR** | every push to a branch | `typecheck` + `lint` + `unit` + `integration` (reduced) + `security` (reduced) + a *reduced* E2E (the Compose stack, mock providers) + a docs-drift check. *No external creds; no benchmark gate on a PR (a reduced benchmark sample yes, the full gate is merge+release).* |
 | **merge** | on merge to `main` | the *full* integration + *full* security suite + the *full* E2E + the **benchmark gate** + the **design gate** + the **dependency/supply-chain gate**. A merge that can't pass the benchmark gate is *held* (a quality regression isn't merged, `RELEASE_CRITERIA` gate 7). |
-| **release** | a tagged release / a release-branch cut | the merge lane + the **live external suite** (`E2E_LIVE`, real GitHub + real AI + Stripe test-mode) in a credentied CI lane + a load/DoS soak + a secret-scanner. *Where the external creds are absent, the live suite is marked blocked, not claimed.* |
+| **release** | a tagged release / a release-branch cut | the merge lane + the **live external suite** (`E2E_LIVE`, real GitHub + real AI) in a credentied CI lane + a load/DoS soak + a secret-scanner. *Where the external creds are absent, the live suite is marked blocked, not claimed.* |
 | **scheduled** | nightly | a `ST-cost-abuse` soak + a repo-wide secret-scanner + a `pnpm audit` (the T-09/T-16 supply-chain sweep) + a *retention reconciliation* check (a data-present-past-its-window query returns zero, `DATA_RETENTION §7`). |
 
 ## 2. The PR job (the fast loop, no external creds)

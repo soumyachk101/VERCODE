@@ -61,4 +61,4 @@ The *role* and *capabilities* are resolved per-request against the *requested* o
 
 ## 8. Webhook & API split (why it's safe)
 
-The *human* path is cookie-session; the *machine* path (GitHub webhooks, billing webhooks) is HMAC/provider-signature. The two never mix: a webhook handler never reads the session cookie, and a session route never trusts a raw HMAC. This split is what makes "a forged webhook" and "a stolen session" *separate* threat classes with separate mitigations (`SECURITY/THREAT_MODEL.md`).
+The *human* path is cookie-session; the *machine* path (the GitHub webhook) is HMAC. The two never mix: a webhook handler never reads the session cookie, and a session route never trusts a raw HMAC. This split is what makes "a forged webhook" and "a stolen session" *separate* threat classes with separate mitigations (`SECURITY/THREAT_MODEL.md`).

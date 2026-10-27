@@ -1,6 +1,6 @@
 # VERCODE — OpenAPI Specification
 
-This is the *documented* OpenAPI 3.1 skeleton matching `API_SPECIFICATION.md` + `contracts`. The full generated file (`openapi.gen.yaml`, produced by the contracts package's codegen step and checked in) is the machine copy; this document is the reviewed source of intent. The CI gate: `contracts` codegen → `openapi.gen.yaml` → the Fastify routes are validated against it (a drift fails CI).
+This is the *documented* OpenAPI 3.1 skeleton matching `API_SPECIFICATION.md` + `contracts`. **This file is hand-maintained** — there is no CI codegen step and no machine-generated `openapi.gen.yaml` copy; keep it in sync with the Fastify routes by review.
 
 ```yaml
 openapi: 3.1.0
@@ -82,18 +82,23 @@ components:
         action:
           type: string
           enum: [accepted, dismissed_reasonable, dismissed_unreasonable, fixed, ignored]
-    Quota:
-      type: object
-      properties:
-        used: { type: integer }
-        limit: { type: integer }
-        percentUsed: { type: number, minimum: 0, maximum: 100 }
     UsageSeriesPoint:
       type: object
       properties:
         day: { type: string, format: date }
         reviews: { type: integer }
+        inputTokens: { type: integer }
+        outputTokens: { type: integer }
+        estUsdCost: { type: number }
+        findingCounts: { type: object, additionalProperties: true }
+    UsageTotals:
+      type: object
+      properties:
+        reviews: { type: integer }
+        inputTokens: { type: integer }
+        outputTokens: { type: integer }
         estUsd: { type: number }
+        bySeverity: { type: object, additionalProperties: { type: integer } }
     PaginationMeta:
       type: object
       properties:
@@ -183,12 +188,6 @@ paths:
       responses:
         "200": { description: Org detail }
         "404": { $ref: "#/components/responses/NotFound" }
-    patch:
-      operationId: orgsUpdate
-      description: "admin+"
-      responses:
-        "200": { description: Updated }
-        "403": { $ref: "#/components/responses/Forbidden" }
     delete:
       operationId: orgsDelete
       description: "owner only; soft-delete + grace window"
@@ -255,6 +254,97 @@ paths:
         - { name: since, in: query, schema: { type: string, format: date-time } }
       responses:
         "200": { description: "Security rollup" }
+  /auth/github/start:
+    get:
+      operationId: githubOauthStart
+      parameters:
+        - { name: redirect, in: query, schema: { type: string, format: uri } }
+      responses:
+        "200":
+          description: "GitHub authorize URL + anti-CSRF state token"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url: { type: string }
+                  state: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "503": { description: "GITHUB_OAUTH_NOT_CONFIGURED — no GITHUB_CLIENT_ID on this deploy" }
+  /auth/github/callback:
+    get:
+      operationId: githubOauthCallback
+      parameters:
+        - { name: code, in: query, schema: { type: string } }
+        - { name: state, in: query, schema: { type: string } }
+        - { name: error, in: query, schema: { type: string } }
+      responses:
+        "302": { description: "Redirects to /settings/account?github=connected (or ?github=error&reason=...) on denial/state-mismatch/exchange failure" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /auth/github/disconnect:
+    post:
+      operationId: githubOauthDisconnect
+      responses:
+        "200": { description: "The user's GitHub token + handle cleared" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /health/healthz:
+    get:
+      operationId: healthLiveness
+      security: []
+      responses:
+        "200": { description: "Liveness: { ok, ts }" }
+  /health/readyz:
+    get:
+      operationId: healthReadiness
+      security: []
+      responses:
+        "200": { description: "Readiness: DB up ({ ok, db: up })" }
+        "503": { description: "DB down ({ ok: false, db: down })" }
+  /orgs/{id}/github/candidates:
+    get:
+      operationId: githubCandidates
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: "The ACTIVE install's connectable repo rows + account metadata; { connected: false, candidates: [] } when no ACTIVE install exists"
+  /orgs/{id}/github/connect:
+    post:
+      operationId: githubConnect
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName: { type: string }
+      responses:
+        "200": { description: "Bare: intent audit line + install URL. Pinned repo: the row re-enabled. 404 NOT_FOUND when the row is unknown; 422 when already connected" }
+  /orgs/{id}/github/repositories:
+    get:
+      operationId: githubRepositories
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: "All known repos, including disabled rows (the settings page's accessible-repos list)" }
+  /orgs/{id}/github-repos:
+    put:
+      operationId: githubActiveRepos
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                repoIds: { type: array, items: { type: string } }
+      responses:
+        "200": { description: "Active-for-review set stored on org_settings; stale/foreign ids are dropped; { ok, activeRepoIds }" }
+        "403": { $ref: "#/components/responses/Forbidden" }
   /orgs/{id}/usage:
     get:
       operationId: usageRead
@@ -262,14 +352,14 @@ paths:
         - { name: range, in: query, schema: { type: string, enum: [30d, 90d, 12mo] } }
       responses:
         "200":
-          description: "Usage from the usage_daily rollup + quota state"
+          description: "Usage from the usage_daily rollup + the current month's usage_events totals (plain reporting — no quota/limit)"
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   series: { type: array, items: { $ref: "#/components/schemas/UsageSeriesPoint" } }
-                  quota: { $ref: "#/components/schemas/Quota" }
+                  totals: { $ref: "#/components/schemas/UsageTotals" }
   /orgs/{id}/github/review:
     post:
       operationId: githubReReview
@@ -281,7 +371,7 @@ paths:
             schema: { $ref: "#/components/schemas/ReviewRequestPayload" }
       responses:
         "202": { description: "Job enqueued (same-SHA is an idempotent no-op)" }
-        "409": { description: "ALREADY_REVIEWED / QUOTA_EXCEEDED — the existing/skip state is in details" }
+        "409": { description: "An in-flight identical job (same commit SHA) already exists — the existing job id is returned, no new work" }
   /webhooks/github:
     post:
       operationId: githubWebhook
@@ -297,19 +387,11 @@ paths:
         "202": { description: "Verified + enqueued (or state transitioned)" }
         "401": { description: "WEBHOOK_REJECTED — bad signature / timestamp / replay; audited" }
         "422": { description: "WEBHOOK_MALFORMED — verified but schema-invalid; not enqueued" }
-        "404": { description: "Verified but the install is unknown to us" }
-  /webhooks/billing:
-    post:
-      operationId: billingWebhook
-      security: []
-      description: "Public; provider-signature verified; idempotent on event id."
-      responses:
-        "200": { description: "Verified; plan state moved (or idempotent no-op)" }
-        "401": { description: "BILLING_REJECTED — signature failure; audited" }
+        "404": { description: "WEBHOOK_UNKNOWN_INSTALL — verified but the install is unknown to us; audited" }
 ```
 
 ## Notes
 
-- **Two public routes** (`/webhooks/*`) have `security: []` — they're authorized by signature, not cookie. The OpenAPI keeps them in the doc for completeness; the actual authz is the HMAC/provider-signature layer.
-- **The `contracts` package is the source of truth.** This YAML is a *projection* of the Zod schemas (the same types). CI regenerates it; a hand-edit to the YAML that diverges from `contracts` is reverted by the codegen gate.
-- **`ReviewRequestPayload` and `ReviewFinding` match `packages/contracts/src/index.ts` exactly** (id/file/line/severity/category/title/description/suggestedFix/confidence/promptVersion) — the existing scaffold's schemas are the seed for `contracts`'s final form.
+- **The one public route** (`/webhooks/github`) has `security: []` — it's authorized by HMAC, not cookie.
+- **This YAML is hand-maintained.** There is no codegen gate; keep it in sync with the Fastify routes (`apps/api/src/routes/`) by review.
+- **`ReviewRequestPayload` and `ReviewFinding` match `packages/contracts/src/index.ts` exactly** (id/file/line/severity/category/title/description/suggestedFix/confidence/promptVersion).

@@ -57,7 +57,7 @@ The FR → component → test → doc link map. This is the *drift gate* (`RELEA
 | **FR-506** (a the usage analytics, a Recharts, a real data) | a `web` (a the Usage) + a `api` (a the usage endpoint, a the `usage_daily` rollup) | a `cost.spec.ts` | a `PAGE_SPECIFICATIONS.md §5` + a `NFR-03` |
 | **FR-507** (a the org management) | a `web` (a the Team) + a `api` | a `auth.spec.ts` | a `PAGE_SPECIFICATIONS.md §7` |
 | **FR-508** (a the AI provider settings) | a `web` (a the Providers) + a `api` (a the providers endpoint) | a `settings.spec.ts` | a `PAGE_SPECIFICATIONS.md §6` |
-| **FR-509** (a the billing) | a `web` (a the Billing) + a `billing` + a the `webhooks/billing` | a `cost.spec.ts` + a `IT-payment-*` | a `PAGE_SPECIFICATIONS.md §5` + a `BILLING_SPECIFICATION.md` |
+| **FR-509** (a the usage reporting) | a `web` (a the Usage page, a `apps/web/src/app/usage/`) + a `api` (a `GET /orgs/:id/usage`, a `apps/api/src/routes/usage.ts`) + a `usage_events`/`usage_daily` | a the "Usage API" tests in `apps/api/src/routes.test.ts` + a the platform-cap gate (a `PLATFORM_TOKEN_SPEND_CAP_USD`, a `packages/config/src/index.ts`) | a `PAGE_SPECIFICATIONS.md §5` + a `INTEGRATION_DESIGN.md §2.3` |
 | **FR-510** (a the audit log) | a `web` (a the Audit) + a the `audit_events` (a the append-only) | a `audit.spec.ts` + a `IT-audit-01` | a `PAGE_SPECIFICATIONS.md §7` + a `DATABASE_DESIGN.md §3 "audit_events"` |
 | **FR-511** (a the account settings) | a `web` (a the Account) + a `api` | a `auth.spec.ts` (a the sessions + the sign-out-everywhere) | a `PAGE_SPECIFICATIONS.md §7` + a `AUTHENTICATION.md §2` |
 
@@ -82,7 +82,7 @@ The FR → component → test → doc link map. This is the *drift gate* (`RELEA
 | **NFR-15** (a the graceful shutdown) | a *the worker SIGTERM drain* (a a integration test, a `IT-queue-*` the drain) | a `ERROR_HANDLING.md §8` |
 | **NFR-16** (a the zero-downtime migration) | a *the `MIGRATION_STRATEGY` the expand/backfill/contract* | a `MIGRATION_STRATEGY.md §2 "the zero-downtime rule"` |
 | **NFR-17** (a the horizontal scaling) | a *the worker concurrency + a the queue autoscale* (a a config, a not a PR test) | a `PERFORMANCE_SCALABILITY.md §4 "the scaling model"` |
-| **NFR-18** (a the cost guardrails + a the skip-with-notice) | a `ST-quota-skip` + a `ST-cost-abuse` | a `RATE_LIMITING.md §5/§6` + a `BILLING_SPECIFICATION.md §8` |
+| **NFR-18** (a the cost backstop: a platform token-spend cap) | a the platform-cap config gate (a `PLATFORM_TOKEN_SPEND_CAP_USD`, a over-cap = a platform alert, a not a customer-visible skip) | a `RATE_LIMITING.md §2` + a `ENVIRONMENT_VARIABLES.md §6 "PLATFORM_TOKEN_SPEND_CAP_USD"` |
 | **NFR-19** (a the per-review input budget) | a `UT-budget-degrade` | a `REVIEW_ENGINE_SPEC.md §2 stage [2]` + a `CONTEXT_RETRIEVAL.md §1` |
 | **NFR-20..22** (a the structured logs + a the OTel + a the Sentry) | a `OBSERVABILITY` the trace-per-pipeline (a a integration test) | a `OBSERVABILITY.md §1/§2/§4` |
 | **NFR-23** (a the health endpoints) | a *the `/healthz` + a `/readyz`* (a a smoke test) | a `OBSERVABILITY.md §6` + a `DEPLOYMENT.md §6` |

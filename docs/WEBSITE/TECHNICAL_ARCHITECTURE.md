@@ -2,7 +2,7 @@
 
 The deployable + data-flow architecture of the VERCODE website (`docs/WEBSITE/PRD.md` `WFR-*`). Every decision here either **pins** the existing stack (`docs/TECHNICAL/TECH_STACK.md`) or **records a new ADR** (`docs/TECHNICAL/ARCHITECTURE_DECISIONS.md` — the next ADR number, `ADR-0xx`). The *honest* rule applies: anything not in this file is a deviation (`TECH_STACK.md`'s own rule).
 
-> **Boundary:** the dashboard app (`apps/web`) is *not* this doc's concern. This doc covers the new `apps/website` app + its content pipeline + its CI lane. The **two surfaces share one typeface + palette** (`DESIGN_SYSTEM.md §7`), but have **decoupled perf budgets** (dashboard NFRs, `docs/PRODUCT/NON_FUNCTIONAL_REQUIREMENTS.md` vs. website WNFRs, `docs/WEBSITE/PERFORMANCE_AND_ACCESSIBILITY.md`), **decoupled deployable units** (`OPERATIONS/DEPLOYMENT.md`'s `web`/`api`/`worker` + a new `website` unit), and a **separate content store** (`apps/website/content/`).
+> **Boundary:** the dashboard app (`apps/web`) is *not* this doc's concern. This doc covers the new `website` app + its content pipeline + its CI lane. The **two surfaces share one typeface + palette** (`DESIGN_SYSTEM.md §7`), but have **decoupled perf budgets** (dashboard NFRs, `docs/PRODUCT/NON_FUNCTIONAL_REQUIREMENTS.md` vs. website WNFRs, `docs/WEBSITE/PERFORMANCE_AND_ACCESSIBILITY.md`), **decoupled deployable units** (`OPERATIONS/DEPLOYMENT.md`'s `web`/`api`/`worker` + a new `website` unit), and a **separate content store** (`website/content/`).
 
 ## 1. The deployable
 
@@ -53,7 +53,7 @@ apps/
 | OG images | `@vercel/og` (a static generation at build time; the 1200×630 default + a per-blog-slug one) | new |
 | Search (P2) | a plain `client-side` search index (lunr or a static JSON) on `/docs/search` — **P3**; P2 is the *first-cut* docs hub, `PRD.md WFR-301` | new (P3) |
 
-**The *token bridge* (`DESIGN_SYSTEM.md §4` → `apps/website/src/styles/tokens.ts`):** the **shared** values — the ground/surface/ink/severity palette (`DESIGN_SYSTEM.md §4.2`), the radii, the spacing — are *imported* (a single `tokens.ts` that both `apps/web` and `apps/website` import from `packages/contracts` or a `packages/design-tokens` new package, **ADR-0xx**). The **site's own** values — the hero type scale, the "a dealt direction" motion, the `DESIGN_SYSTEM §7`'s "the *page* rules" — live *only* in `apps/website`.
+**The *token bridge* (`DESIGN_SYSTEM.md §4` → `website/src/styles/tokens.ts`):** the **shared** values — the ground/surface/ink/severity palette (`DESIGN_SYSTEM.md §4.2`), the radii, the spacing — are *imported* (a single `tokens.ts` that both `apps/web` and `website` import from `packages/contracts` or a `packages/design-tokens` new package, **ADR-0xx**). The **site's own** values — the hero type scale, the "a dealt direction" motion, the `DESIGN_SYSTEM §7`'s "the *page* rules" — live *only* in `website`.
 
 ## 4. Data & content flows
 
@@ -114,7 +114,7 @@ The **`.env.example`** gets 3 new placeholder rows (the docs-drift check, `CI_CD
 
 | ADR | The decision | Status |
 | --- | --- | --- |
-| `ADR-0xx-1` | a *separate* `apps/website` (NOT a route inside `apps/web`) | open, `PRD.md §8 U1`, leaning **yes** |
+| `ADR-0xx-1` | a *separate* `website` (NOT a route inside `apps/web`) | open, `PRD.md §8 U1`, leaning **yes** |
 | `ADR-0xx-2` | `content/` in-repo + `next-mdx-remote` + `zod` (a `CONTENT_SCHEMAS.md` contract) | open, `U2`, leaning **yes** |
 | `ADR-0xx-3` | the `/api/answer` on the *existing* `apps/api` (not a new service) | decided **yes** (the minimal surface) |
 | `ADR-0xx-4` | a `packages/design-tokens` new package (the shared palette, `DESIGN_SYSTEM.md §4`) | open, leaning **yes** |
@@ -130,7 +130,7 @@ The **`.env.example`** gets 3 new placeholder rows (the docs-drift check, `CI_CD
 
 ## 9. The GitHub connection surface (design-level; the heads own the implementation)
 
-The product's value loop — *connect your repo → get reviews → findings → a plain usage report* — means the connection lifecycle is first-class product, not a billing feature. This doc records its *shape* so the website package (the `/docs/github-app` page, the `HowTo` JSON-LD, the FAQ group-4 answers, `PRD.md WFR-602`) and the app package stay consistent; the routes themselves live in `apps/api` (an existing file the other heads own), not in this doc's `apps/website` scope.
+The product's value loop — *connect your repo → get reviews → findings → a plain usage report* — means the connection lifecycle is first-class product, not a billing feature. This doc records its *shape* so the website package (the `/docs/github-app` page, the `HowTo` JSON-LD, the FAQ group-4 answers, `PRD.md WFR-602`) and the app package stay consistent; the routes themselves live in `apps/api` (an existing file the other heads own), not in this doc's `website` scope.
 
 - **The API surface** (`/api/v1/github/*`, additive on the existing Fastify app):
   - **connect** — returns the GitHub App install URL (pre-scoped to the least-privilege list, `FR-210`) + records the pending install; the `installation.created` webhook confirms it (the existing `installation.created` handling in `apps/api/src/routes/github.ts`, which the heads extend, not replace).

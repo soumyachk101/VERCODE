@@ -12,7 +12,7 @@ Where every secret in the system lives, how it's protected, and the invariant th
 | `GITHUB_APP_PRIVATE_KEY` (PEM) | App JWT signing | **KMS-wrapped** (decrypted in-process, TTL) | api/worker, never persisted plaintext to disk beyond the KMS envelope |
 | `GITHUB_WEBHOOK_SECRET` | Webhook HMAC | Deploy env | api (webhook route) |
 | `OPENAI_API_KEY` (platform default) | AI calls | Deploy env / KMS | worker (ai-providers) |
-| `STRIPE_SECRET_KEY` / `RAZORPAY_KEY_SECRET` | Billing | Deploy env | api (billing webhook verify) |
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | Per-user GitHub OAuth ("Connect GitHub"; a separate GitHub *OAuth App* from the GitHub App above) | Deploy env (secret store; `.env.example` holds placeholders only) | api (OAuth token exchange), never sent to the browser or persisted plaintext beyond the per-user `users.github_provider_token` |
 | `SESSION_SIGNING_KEY` | Session cookie signing | Deploy env | api |
 | `SENTRY_DSN` / OTLP endpoint | Observability | Deploy env | all |
 | **BYOK provider keys (per org)** | Org's own AI calls | **Postgres `byok_keys.wrapped_key` (KMS-wrapped ciphertext)** | worker only, decrypted in KMS scope, KMS-scoped to the org |

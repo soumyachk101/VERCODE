@@ -30,7 +30,7 @@ pnpm `resolve.alias` map so the specs run without a hoisted root install.
 | `security-webhook.test.ts` | **ST-webhook-forged** (§1.1) — wrong-key / no signature → 401 `WEBHOOK_REJECTED`, NO queue write, an audit row; **ST-webhook-replay** — a seen delivery id → 200 no-op, the pipeline does NOT re-run; **IT-idempotency-01** — a SUCCEEDED same-SHA re-push → 200 dedup no-op | **T-01** (forged / replayed GitHub webhook; ingress integrity) | P0 — a forged event reaching the queue is an integrity loss (High) |
 | `security-tenant.test.ts` | **ST-isolation-oracle** / **ST-tenant-cross** (§1.2) — a cross-tenant access → **404, not 403** (no existence oracle, AC-902); an in-tenant capability denial → **403**; the split holds for every role × capability cell | **T-02** (cross-tenant data access — Critical, the #1 SaaS failure) | P0, automatic block, no "known issue" (a tenant leak is Critical) |
 | `security-injection.test.ts` | **ST-injection-01..04** (§1.4) — a PR body / a file comment / a README / a PR title each carrying an injection payload; assert (a) no system-prompt leak, (b) no tool call possible, (c) deterministic findings still publish, (d) at most a finding about the injection | **T-06** (prompt injection from repository content) | P0, individually gated (the highest-frequency, highest-trust-damage class) |
-| `security-quota.test.ts` | **ST-quota-skip** (AC-402) — a org at 100% of its monthly review quota + a new PR → the job is `skipped:quota_exceeded`, ZERO AI tokens consumed, a notice posted; a under-quota org still runs (the gate is NOT over-blocking); `checkQuotaPlan` is the single enforcement point | **T-11** (API / AI cost abuse — the "over-cap job consumes zero tokens" rule) | P0 (an over-cap job that consumes tokens is a cost-abuse hole) |
+| ~~`security-quota.test.ts`~~ | **REMOVED (2026-10)** — the no-paywall decision (commit 78b51d9) deleted the plan/quota layer (`checkQuotaPlan`, `FREE_QUOTA`), so the ST-quota-skip spec no longer applies. Cost abuse is now bounded by the platform-level `PLATFORM_TOKEN_SPEND_CAP_USD` (an operational backstop, not a per-org gate); see `INTEGRATION_DESIGN.md §2.3`. | **T-11** (cost abuse — re-scoped to the platform cap) | P0 (a runaway org is bounded by the platform cap + an anomaly alert) |
 
 ### The 404-vs-403 split (ST-isolation-oracle, T-02)
 
@@ -62,9 +62,7 @@ tenant cell yields a 403.
   (`runReview`) with the `MockAdapter` in the `"steered"` output mode over
   the 4 injection vectors; asserts no system-prompt leak, no tool path,
   statics publish, at most a finding about the injection.
-- **quota** — drives the real `@vercode/worker` job handler
-  (`runReviewJob`) + `checkQuotaPlan` with a mocked DB + a mocked provider;
-  asserts the skip, zero provider calls, zero tokens, a notice posted.
+- **quota** — REMOVED (2026-10, the no-paywall decision 78b51d9 dropped `checkQuotaPlan`/`FREE_QUOTA`). Cost abuse is bounded by the platform-level `PLATFORM_TOKEN_SPEND_CAP_USD` backstop + an anomaly alert (`INTEGRATION_DESIGN.md §2.3`), not a per-org quota gate.
 
 ## What is NOT covered here (M8's job)
 

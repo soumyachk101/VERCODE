@@ -37,9 +37,9 @@ A **modular monolith** in one repo, split into deployable units and libraries:
 | Review engine | `packages/review-engine` | Orchestration: classify → analyze → AI → validate → dedup → policy → summary |
 | AI providers | `packages/ai-providers` | Provider interface + OpenAI/Anthropic/Ollama adapters, routing, cost |
 | Static analysis | `packages/static-analysis` | ESLint + Semgrep wrappers, deterministic findings |
-| Policy engine | `packages/policy-engine` | Confidence floors, suppression, severity gating, quota checks |
-| Billing | `packages/billing` | Plan state machine, provider webhook handling, usage accounting |
-| Contracts | `packages/contracts` | Zod schemas (shared source of truth for findings/jobs/plans) |
+| Policy engine | `packages/policy-engine` | Confidence floors, suppression, severity gating, file-budget checks |
+| Usage reporting | `packages/contracts` (usage event schemas) + `apps/api` (usage routes) | Plain usage visibility: `usage_events` capture + dashboard reads; no plan or quota gating |
+| Contracts | `packages/contracts` | Zod schemas (shared source of truth for findings/jobs/webhooks) |
 | Database | `packages/database` | Prisma schema + client + migration tooling |
 | Observability | `packages/observability` | Structured logging, OTel, Sentry, redaction |
 
@@ -84,7 +84,7 @@ See `TECH_STACK.md` for the full table + deviations. Summary:
 
 - REST for the dashboard API (`/api/v1/...`), JSON, bearer-session cookie auth.
 - Webhook ingress: a single dedicated route (`POST /webhooks/github`) that *only* verifies + enqueues — no LLM, no DB writes beyond idempotency bookkeeping (NFR-04).
-- Queue: BullMQ `review-queue` (per-review work), `retention-queue` (purge jobs), `billing-queue` (usage rollups). Payload = `job_id` only; the worker re-reads durable state (never trusts the payload for authz).
+- Queue: BullMQ `review-queue` (per-review work), `retention-queue` (purge jobs), `review-dead-letter` (DLQ). Payload = `job_id` only; the worker re-reads durable state (never trusts the payload for authz).
 - All inter-service payloads are the `contracts` Zod types; a contract change is a *breaking* change requiring a version bump.
 
 ## 7. Background Processing
@@ -159,7 +159,7 @@ Full detail in `SECURITY/*`. The architectural controls that the TRD owns:
 
 ## 17. External Dependencies
 
-GitHub (App + webhooks + REST), Postgres, Redis, an AI provider (OpenAI default; Anthropic/Ollama optional), Stripe (billing), Sentry + OTel collector (observability). Each has a failure mode documented in `ERROR_HANDLING.md`.
+GitHub (App + webhooks + REST + user OAuth), Postgres, Redis, an AI provider (OpenAI default; Anthropic/Ollama optional), Sentry + OTel collector (observability). Each has a failure mode documented in `ERROR_HANDLING.md`.
 
 ## 18. Deployment Topology
 

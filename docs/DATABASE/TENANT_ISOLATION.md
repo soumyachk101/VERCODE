@@ -25,7 +25,7 @@ The Redis diff cache key is `org:{orgId}:repo:{repoId}:diff:{sha}` (`CONTEXT_RET
 
 ## 4. The worker re-reads, never trusts
 
-A job payload carries only a `jobId` (`SERVICE_BOUNDARIES` must-never-cross #5). The worker's first act is to load the durable state (org, quota, settings, repo connection) from Postgres *by the stored `org_id`* — it does not re-derive tenancy from the payload. A corrupted or forged payload cannot point the worker at another org's data, because the pointer (`jobId`) resolves to a row whose `org_id` is authoritative.
+A job payload carries only a `jobId` (`SERVICE_BOUNDARIES` must-never-cross #5). The worker's first act is to load the durable state (org, settings, usage caps, repo connection) from Postgres *by the stored `org_id`* — it does not re-derive tenancy from the payload. A corrupted or forged payload cannot point the worker at another org's data, because the pointer (`jobId`) resolves to a row whose `org_id` is authoritative.
 
 ## 5. Verification (the suite that must pass every release)
 

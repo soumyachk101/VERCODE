@@ -14,16 +14,16 @@ Every page follows the shell: the sidebar (with the org switcher + attention cou
 
 1. **The verdict-lead figure (the answer, biggest thing):** the *current* risk posture of the org — a single large figure: **"4 high, 2 critical"** (open findings above the floor, unactioned), set 30–36px, with the org's **verdict** word ("Needs attention" / "Clear") beside it and the severity-marks counted (the product's signature, `DESIGN_SYSTEM §3`). This is the *only* largest number on the screen.
    - *Data:* `GET /orgs/:id/security?since=now-24h` (open high/critical).
-2. **The attention queues (the things to do):** two capped lists side by side (or stacked on a narrow canvas): **"Security"** (top unactioned high/critical, each a severity-mark + title + repo + a "View" that pushes the finding) and **"Failed reviews"** (skipped/failed jobs with their `skip_reason` — "quota reached", "GitHub rate-limited", the *word of the trade + reason*, app-screens §7). Each list ≤ 5 rows + "View all" + the total ("3 tracks").
+2. **The attention queues (the things to do):** two capped lists side by side (or stacked on a narrow canvas): **"Security"** (top unactioned high/critical, each a severity-mark + title + repo + a "View" that pushes the finding) and **"Failed reviews"** (skipped/failed jobs with their `skip_reason` — "same SHA already reviewed", "install removed", "PR closed", the *word of the trade + reason*, app-screens §7). Each list ≤ 5 rows + "View all" + the total ("3 tracks").
    - *Data:* `GET /orgs/:id/security`, `GET /orgs/:id/reviews?status=skipped|failed`.
-3. **The plan's quota strip (the "will I hit my cap" answer, the app-screens plan pattern):** a `Charts.plan`-style track — the plan length (the quota), the **spent part filled**, the **already-committed** part (queued reviews) as a lighter segment, an **overrun past the track's end** in the negative colour. Both ends labelled ("1,240 of 5,000 reviews"). This is where J4's "quota warning" lives (80% → a quiet `--pill-warning` strip above it, "Quota 80% — you've used 4,000 of 5,000 reviews this month").
-   - *Data:* `GET /orgs/:id/usage?range=month` → `quota { used, limit, percentUsed }`.
+3. **The usage strip (the "how much did I use" answer, plain reporting):** a small split strip — reviews this month, tokens, est. cost (a `KpiStrip`, each value tabular, cost 2 decimals) with a range control (30d / 90d / 12mo). No cap, no percent — usage is reporting, not gating.
+   - *Data:* `GET /orgs/:id/usage?range=30d` → `{ series, totals }` (reviews, inputTokens, outputTokens, estUsd per day + the month's totals).
 4. **The cost/usage mini (the "am I getting value" answer):** one small line chart of **reviews/day** over the last 30 days (a `Charts.line`, the data hue on the line; a flat period drawn flat, a spike annotated with the PR that caused it — "PR #412: 200-file migration"). ⅔ width (a flat line doesn't earn the full width, app-screens §6.1); the **cost/PR blended** figure sits beside it (the KPI-in-its-card pattern, not a KPI tile).
    - *Data:* `GET /orgs/:id/usage?range=30d`.
 
 **States:** first-run = "Connect GitHub to start reviewing PRs" (the install action, where the data will appear). In-scope-empty (no activity today) = "All clear today" with the verdict-lead figure a zero ("0 open findings above the floor") and the queues their designed zeros.
 
-**The finding (the one line under the title, the thing that most needs attention):** e.g., "The last failed review was a quota skip — 4 reviews are queued behind your cap." (the screen's *finding*, not the interface, app-screens §2.2).
+**The finding (the one line under the title, the thing that most needs attention):** e.g., "The last failed review was a publish failure on PR #412 — its findings are already saved, re-publish from the review detail." (the screen's *finding*, not the interface, app-screens §2.2).
 
 ---
 
@@ -56,7 +56,7 @@ Every page follows the shell: the sidebar (with the org switcher + attention cou
 3. **The static-vs-AI split (the deterministic-first story):** the findings are grouped or tagged by `source` (a quiet "from static analysis" / "from AI" mark — *not* a coloured chip, a 12px grey note). This shows *why* the review is trustworthy (ADR-005's product story): the deterministic findings are there even if the AI stage degraded (a `partial` job shows "AI stage degraded — static findings still published", the error state *inside the block*, app-screens §11).
 4. **The summary narrative:** the AI's top-risks list + verdict narrative (a `<p>` at statement size, ≤36px, ~25 words, app-screens §8 "statements are paragraphs").
 
-**States:** a `skipped` job shows its **reason** prominently (the quota notice, "Quota reached this month — this review was skipped. Upgrade or reduce review volume." + a "View usage" link) — a skip is *never silent* (NFR-18, the "failures are observable" rule, DEFINITION OF DONE #12). A `partial` job shows which stages degraded. A "Loading" state = the final layout with each value a flat grey bar at its real size (no shimmer, no layout shift).
+**States:** a `skipped` job shows its **reason** prominently ("Skipped — same SHA already reviewed" / "Skipped — install removed" / "Skipped — PR closed") — a skip is *never silent* (NFR-18, the "failures are observable" rule, DEFINITION OF DONE #12). A `partial` job shows which stages degraded. A "Loading" state = the final layout with each value a flat grey bar at its real size (no shimmer, no layout shift).
 
 ---
 
@@ -73,22 +73,34 @@ Every page follows the shell: the sidebar (with the org switcher + attention cou
 
 ---
 
-## 5. Usage & billing — `orgs/[org]/usage` + `/billing`
+## 5. Usage — `orgs/[org]/usage`
 
-**Question:** "Am I getting value, and will I hit my cap?" (Aisha/Dana)
+**Question:** "Am I getting value, and where did the reviews come from?" (Aisha/Dana)
 
-**Usage screen:**
+**Usage screen (plain reporting — there is no plan, no invoices, no cap state):**
 1. **The cost/PR blended (the answer, the lead figure):** a big tabular "$0.14 / review" + a delta-in-words ("down 8¢ vs prior 30 days", cost falling = *good* → `--positive`/grey; the app-screens "colour says good-or-bad, not up-or-down" rule).
 2. **The reviews/day + cost/day dual view:** one line chart (reviews) with a *secondary* tone for cost (or a toggle to switch the metric, app-screens §6.1 "to show another metric, switch it with a control" — don't overlay two hues for one subject). A spike is annotated with the PR ("200-file migration, +40 reviews").
-3. **The by-provider breakdown (a `Charts.barList`):** reviews by model/provider, thin grey bars, the top in the data hue.
-4. **The quota track (the cap):** the `Charts.plan` track (the Overview's, repeated here in full), both ends labelled.
+3. **The by-severity breakdown (a `Charts.barList`):** findings by severity (critical/high/medium/low), thin grey bars, the top in the data hue.
+4. **The month's totals strip:** reviews, input tokens, output tokens, est. cost (a split strip, tabular figures, cost 2 decimals) — the numbers the `usage_events` aggregate reports, with no limit or percent attached.
 
-**Billing screen:**
-1. **The plan state (the answer):** the current plan + status (a pale pill: `active` / `past_due` / `canceled`), the renewal date, the "effective" note (a "Upgrading to Team — confirmed at next invoice" state persists until the verified webhook confirms it — the AC-403 rule surfaced in the UI).
-2. **The invoices list:** a table (date, amount, a right-aligned tabular amount, a status pill, a "Download" text action).
-3. **The upgrade/downgrade/cancel controls:** a segmented plan selector + an "Upgrade" primary + a "Cancel at period end" (a destructive action, *last*, in its own section, the consequence in words + a confirmation that names the object — app-screens §8.2). **A client request initiates the provider flow; the plan change only lands on the verified webhook** (the "Upgrading…" state is honest, never claimed complete from a client claim, AC-403).
+**States:** a zero-spend month shows a **$0.00** and **0 reviews** (a real zero, app-screens §11), not a dash. A "Couldn't load usage. Last updated 09:14." error sits inside the failed block + a Retry text button.
 
-**States:** a zero-spend month shows a **$0.00** (a real zero, app-screens §11), not a dash. A `past_due` state is a quiet notice strip (a pale amber *border*, never an amber ground — app-screens §11 "a notice tint is never a ground").
+## 5b. Settings > GitHub connection — `settings/github`
+
+**Question:** "What is connected, and which repos review?" — the GitHub connection settings section (`apps/web/src/app/settings/github/`), rendered as one `GitHubConnectCard` in a labelled settings panel (settings layout: a label column + a panel, `app-screens §8.2`).
+
+Three independent blocks in the card (`components/github-connect-card.tsx`):
+1. **Personal GitHub account (OAuth):** a `ProviderConnectionRow` — "Connected as `<handle>`" + a Connect (opens the `/auth/github/start` authorize URL in the user's session; the callback redirects back with `?github=connected`) + a Disconnect (a named confirm dialog; clears the token + handle). An unconfigured deploy shows the 503 `GITHUB_OAUTH_NOT_CONFIGURED` message inline, not a broken redirect.
+2. **Organization GitHub App install:** when connected — a `Connected` pill + the account login + the install id (8-char mono) + "since <date>" + the repo count + a Disconnect (marks the install REMOVED, disables the repos, schedules a content purge — the consequences named in the confirm dialog). When not installed — a "Not installed" grey line + a "Connect GitHub" button that opens the install URL in a new tab (the install itself is recorded by GitHub's webhook, not by a server-side connect call).
+3. **Repositories active for review:** a checkbox list of the org's known repos (mono `owner/repo` names, one row each, `aria-label` "Active for review: <name>"); "Save selection" persists the set to `org_settings.activeReposForReview` (via `PUT /orgs/:id/github-repos`) with a quiet "Saved" stamp + the error line on failure. Empty: "No repositories yet — install the GitHub App to pull in your repos."
+
+## 5c. Repository connect — the repositories page's `RepoConnectCard`
+
+The repositories list page ends with the connect card (`components/RepoConnectCard.tsx`, rendered after the repo table, `repositories-client.tsx`). Two shapes:
+1. **No ACTIVE install yet** → an install-CTA panel: "Connect GitHub" + a `not connected` warning pill + a 4-step list (open the install page → choose the account → select the repos → confirm) + an "Install the GitHub App" button (opens the install URL in a new tab, with the raw URL as a fallback link) + an inline `role="alert"` line when the URL fetch fails.
+2. **An ACTIVE install exists** → a "Connect another repository" panel: a search input over the install's disconnected repo rows (candidates, `GET /orgs/:id/github/candidates`), a `Connected` positive pill when a connect just landed, an inline result box (success / "Connecting…" / the error message, all `aria-live`), one "Connect" button per candidate row (disabled while a connect is in flight), and two quiet end lines: "No repositories match this filter." / "Every repository on this install is connected. To connect more, add them on the GitHub App install page." The connection result is also announced through the shell's global `LiveRegion`.
+
+**States:** a card mid-fetch shows the *correct* shape only after the candidates query settles (a loading card never flashes the install-CTA shape); a connect failure keeps the candidate list, not an error-empty state.
 
 ---
 
@@ -103,11 +115,11 @@ Every page follows the shell: the sidebar (with the org switcher + attention cou
 4. **The save model:** one "Saved" stamp per control that autosaves (quiet, not a toast storm), or one Save per panel — *one model per view* (app-screens §8.2).
 
 **Providers screen:**
-1. **The provider + task routing** (a table: task | provider | model | max-tokens; a "routing" that's admin-set within the plan tier — a team-plan org *can't* pin `security-review` to an Enterprise-only model, the tier gate surfaced as a disabled row + a "Upgrade to use" note).
+1. **The provider + task routing** (a table: task | provider | model | max-tokens; admin-set routing, the provider list fixed to openai / anthropic / ollama per the settings route).
 2. **The BYOK key** (a masked field "sk-…abcd", active/inactive, a "Rotate" + a "Revoke" — the raw key is *never* shown, FR-313; the "set a new key" flow is a single-entry field that's KMS-wrapped on save).
 3. **The "fallback" state** (a quiet note naming the configured fallback provider).
 
-**States:** a tier-gated control is *legibly* disabled + says why (the app-screens "a disabled control says why it's disabled" rule — a 30%-opacity locked panel is a flagged tell; VERCODE's is readable + named).
+**States:** a disabled control is *legibly* disabled + says why (the app-screens "a disabled control says why it's disabled" rule — a 30%-opacity locked panel is a flagged tell; VERCODE's is readable + named, e.g. the "Save selection" button disabled until a repo is checked).
 
 ---
 
@@ -119,7 +131,7 @@ Every page follows the shell: the sidebar (with the org switcher + attention cou
 
 **Audit screen:** a table (the timestamp, the actor, the **action verb** ("review.published", "role.changed", "byok.rotated"), the target, the source IP (a monospace, 8-char truncated + copy)). Filters: action-type, actor, a date range. **Append-only, no delete path** (the integrity rule, `DATABASE_DESIGN §7` — the UI reflects it: there's no delete on an audit row).
 
-**Account screen:** the profile (name, email), the **sessions list** (device, IP, last-active, a "Sign out" per row + a "Sign out everywhere"), the **theme** (light/dark/system, a segmented control), the **password** (a change that revokes sessions, `AUTHENTICATION §4`), the **deactivate** (a destructive, last, consequence-named).
+**Account screen:** the profile (name, email), the **GitHub** block (the personal OAuth connect/disconnect — "Connected as `<handle>`" or a Connect link + an inline error when OAuth isn't configured on the deploy; the `?github=connected` flag from the callback triggers a refetch + the announcement), the **sessions list** (device, IP, last-active, a "Sign out" per row + a "Sign out everywhere"), the **theme** (light/dark/system, a segmented control), the **password** (a change that requires the current password — 400 `PASSWORD_REQUIRED` when missing), the **deactivate** (a destructive, last, consequence-named).
 
 ---
 

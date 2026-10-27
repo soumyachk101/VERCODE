@@ -1,15 +1,15 @@
 # VERCODE Website — Content Schemas
 
-The Zod contract for the website's content store. Every item under `apps/website/content/` is a Markdown file with a front-matter block, validated at **build time** by a Zod schema in `packages/contracts` (the `CONTENT_STRATEGY.md`'s "no CMS, content changes are PRs" rule — an item that is malformed fails the `content/`-schema gate, `TECHNICAL_ARCHITECTURE.md §5`'s "a blog post that's malformed fails the build" line). The schemas here feed **two** consumers: the **MDX renderer** (the page's visible content) and the **JSON-LD + `llms.txt` + `/api/answer` generator** (`STRUCTURED_DATA.md §2`'s `schema-generator.ts`, the "single source of truth" — a fact changes in one file and propagates to the visible page, the JSON-LD, `llms.txt`, and the `/api/answer` route in one build).
+The Zod contract for the website's content store. Every item under `website/content/` is a Markdown file with a front-matter block, validated at **build time** by a Zod schema in `packages/contracts` (the `CONTENT_STRATEGY.md`'s "no CMS, content changes are PRs" rule — an item that is malformed fails the `content/`-schema gate, `TECHNICAL_ARCHITECTURE.md §5`'s "a blog post that's malformed fails the build" line). The schemas here feed **two** consumers: the **MDX renderer** (the page's visible content) and the **JSON-LD + `llms.txt` + `/api/answer` generator** (`STRUCTURED_DATA.md §2`'s `schema-generator.ts`, the "single source of truth" — a fact changes in one file and propagates to the visible page, the JSON-LD, `llms.txt`, and the `/api/answer` route in one build).
 
 > **The house rule:** the site's type, spacing, and layout are *not* content (`DESIGN_SYSTEM_AND_TYPOGRAPHY.md` owns those). This doc owns the *content directory model*, the *front-matter shapes*, the *content-type contracts*, the *machine-readable `ProductFact`* JSON records, the *publishing workflow*, and the *CI validation rules*.
 
-## 1. The content model: `apps/website/content/`
+## 1. The content model: `website/content/`
 
-The content store is a **repo directory**, not a service: `apps/website/content/` holds **Markdown + YAML front-matter**, organized **by the route group the content renders to** (`INFORMATION_ARCHITECTURE_AND_PAGES.md §1`'s route tree, 1:1). This is the `TECHNICAL_ARCHITECTURE.md §2`'s "a repo dir, not a separate service (U2)" decision; a *live* CMS is P3 (`PRD.md §8 U2`'s "a live CMS is P3 (a decision, `PRD.md §8 U6`, not an implementation)" line), and `WFR-304`'s "No CMS in MVP" scope line is enforced by the directory + the build-time schema gate below.
+The content store is a **repo directory**, not a service: `website/content/` holds **Markdown + YAML front-matter**, organized **by the route group the content renders to** (`INFORMATION_ARCHITECTURE_AND_PAGES.md §1`'s route tree, 1:1). This is the `TECHNICAL_ARCHITECTURE.md §2`'s "a repo dir, not a separate service (U2)" decision; a *live* CMS is P3 (`PRD.md §8 U2`'s "a live CMS is P3 (a decision, `PRD.md §8 U6`, not an implementation)" line), and `WFR-304`'s "No CMS in MVP" scope line is enforced by the directory + the build-time schema gate below.
 
 ```
-apps/website/content/
+website/content/
   blog/            ← BlogPost front-matter + Markdown   → /blog/<slug>        (WFR-303)
   changelog/       ← ChangelogEntry front-matter + Markdown → /changelog/<date> (WFR-302)
   docs/            ← DocPage front-matter + Markdown     → /docs/<topic>       (WFR-301, the 9 P2 topics)
@@ -37,7 +37,7 @@ packages/contracts/src/content/
 
 The conventions:
 
-- **One module, one import surface.** The website's build (`apps/website`'s `schema-generator.ts` + the `content/` loader), the `apps/api`'s `/api/answer` route, and the build-time `content/` schema gate **all import from `@vercode/contracts`** — the monorepo's "single source of truth" rule (`REPOSITORY_STRUCTURE.md`, `CONTRIBUTING.md`) applied to content shapes. No app re-declares a front-matter field; a website build + a `/api/answer` route + a CI gate that each hand-rolls a `title`/`description`/`status` type is a *duplicate*, a defect.
+- **One module, one import surface.** The website's build (`website`'s `schema-generator.ts` + the `content/` loader), the `apps/api`'s `/api/answer` route, and the build-time `content/` schema gate **all import from `@vercode/contracts`** — the monorepo's "single source of truth" rule (`REPOSITORY_STRUCTURE.md`, `CONTRIBUTING.md`) applied to content shapes. No app re-declares a front-matter field; a website build + a `/api/answer` route + a CI gate that each hand-rolls a `title`/`description`/`status` type is a *duplicate*, a defect.
 - **`.strict()` on every object schema.** A front-matter key that is *not* in the schema is a *failure*, not a silent pass-through (a "an unknown key is a typo" rule — a `draft` item with a `status` value of `drat` fails the build, not the deploy).
 - **`url`-shaped fields are `z.string().url()`** — a canonical URL must be absolute (a `VERCODE_WEBSITE_BASE_URL`-prefixed, `TECHNICAL_ARCHITECTURE.md §6`).
 - **Every exported type is a `z.infer<typeof X>`** — no `interface` re-declares the fields a Zod schema already validates (a validated *shape* gets a `z.infer`; an `interface` is used only for a *record* with doc-comment semantics).
@@ -150,13 +150,13 @@ export type ChangelogEntryFrontMatter = z.infer<typeof ChangelogEntryFrontMatter
 
 ### CS-04 — The docs (`/docs/<topic>`) — the `DocPage` contract
 
-`content/docs/<topic>.md` (one of the 9 P2 topics, `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.5`'s "9 P2 topics": quickstart, github-app, api, rules, security, providers, quotas, privacy):
+`content/docs/<topic>.md` (one of the 9 P2 topics, `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.4`'s "9 P2 topics": quickstart, github-app, api, rules, security, providers, usage, connect, privacy):
 
 ```ts
 export const DocsGroup = z.enum([
-  "get-started",     // quickstart, github-app
+  "get-started",     // quickstart, github-app, connect
   "configure",       // rules, security, providers
-  "reference",       // api, quotas
+  "reference",       // api, usage
   "legal-security",  // privacy
 ]);
 export type DocsGroup = z.infer<typeof DocsGroup>;
@@ -166,7 +166,7 @@ export const DocPageFrontMatter = BaseFrontMatter.extend({
   docsAuthor: z.string().min(1),
   /** The FR ID(s) the doc explains (a `PRODUCT/FUNCTIONAL_REQUIREMENTS.md` reference; a `FR-201`..`FR-210` / `FR-504` / `FR-505` / `FR-506` / `FR-510` / `NFR-*` / `L-*` string) — the `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.2`'s "every feature carries its FR ID" traceability rule, applied to the *docs* surface (a doc page that teaches a procedure with no FR/NFR/L traceable source fails `CONTENT_STRATEGY.md §2.1`'s "every number is traceable to a doc in `docs/`" review gate). */
   frIds: z.array(z.string()).default([]),
-  /** The doc's group, for the `/docs` hub's topic-index grouping (`INFORMATION_ARCHITECTURE_AND_PAGES.md §3.5`'s "grouped: Get started / Configure / Reference / Legal & security" line). */
+  /** The doc's group, for the `/docs` hub's topic-index grouping (`INFORMATION_ARCHITECTURE_AND_PAGES.md §3.4`'s "grouped: Get started / Configure / Reference / Legal & security" line). */
   group: DocsGroup.default("reference"),
 }).strict();
 export type DocPageFrontMatter = z.infer<typeof DocPageFrontMatter>;
@@ -320,7 +320,7 @@ The gate is `RELEASE_CRITERIA.md`'s **docs-drift** gate, **extended to the `cont
 | --- | --- | --- | --- |
 | 1 | **Zod parse** (every `content/**/*.{md,json}` front-matter + JSON body against the §2/§3 schemas, `CS-01`..`CS-08`) | a malformed front-matter key, a `status: "drat"` typo, a missing `title`/`description`/`status` on a `BlogPost`, a `product-facts.json` with a fact id not in the `AnswerIntent` enum | a "a blog post that's malformed fails the build" defect (`TECHNICAL_ARCHITECTURE.md §2`'s "a blog post that's malformed fails the build" line, `WFR-304`'s "validated against a `Contract` schema" line) — the `.strict()` rule (§2's conventions) makes this a *hard* parse failure, not a lint warning |
 | 2 | **No orphans** (a `content/` item with no *reachable* route: a published item whose route isn't in the `sitemap.xml` route set, or a `sitemap.xml` URL with no matching `content/` item) | a "published" item that the site can't actually render (a missing route template), or a `sitemap.xml` URL that points at nothing | the `INFORMATION_ARCHITECTURE_AND_PAGES.md §5`'s "No orphan public page" rule + `SEO_AEO_GEO.md §5.2`'s weekly crawl job's step 4 "The reverse check (no orphan)" — a build-time version of the same rule (the *weekly* job catches a *production*-only orphan; the *build*-time check here catches the *authored*-item half) + a **`keywords.json`/intent-coverage sub-check** (a §5.2's `keywords.json` that names an intent not in the `AnswerIntent` enum, or an `AnswerIntent` with no `keywords.json` keyword, is an orphan/dead intent — the same "no orphan" rule, applied to the *intent* table, not just the *route* table; a dedicated "intent-coverage" sub-check under the `content/`-schema gate, §5.2's "a dedicated 'intent-coverage' sub-check" line) |
-| 3 | **FAQ byte-equivalence** (`CS-07`'s `WFR-204` rule, §3's "The `WFR-204` byte-equivalence, made structural" block) | a visible FAQ answer that drifts from the `FAQPage` `acceptedAnswer.text` (e.g. an editor "tweaks" the visible text without editing `content/faq/`, or vice versa — the two are *supposed* to be the same string, so a drift is only ever an *introduction* of a second hand-typed copy, which is the exact "a two-source quota is a drift vector" defect, `USAGE_QUOTAS.md §6`'s rule, applied to FAQ text) | the `triple-source` check, `STRUCTURED_DATA.md §5.1`'s "a custom `triple-source` check… Greps the built HTML for the `FAQPage` `acceptedAnswer.text`… asserts each is a *substring* of the HTML" line |
+| 3 | **FAQ byte-equivalence** (`CS-07`'s `WFR-204` rule, §3's "The `WFR-204` byte-equivalence, made structural" block) | a visible FAQ answer that drifts from the `FAQPage` `acceptedAnswer.text` (e.g. an editor "tweaks" the visible text without editing `content/faq/`, or vice versa — the two are *supposed* to be the same string, so a drift is only ever an *introduction* of a second hand-typed copy, which is the "a two-source fact is a drift vector" defect the `triple-source` rule exists to catch, applied to FAQ text) | the `triple-source` check, `STRUCTURED_DATA.md §5.1`'s "a custom `triple-source` check… Greps the built HTML for the `FAQPage` `acceptedAnswer.text`… asserts each is a *substring* of the HTML" line |
 | 4 | **Fact-drift check** (`CS-06`'s §3 "a `ProductFact` feed" cross-check) | a `ProductFact` (a `content/facts/product-facts.json` record, or a hand-typed number anywhere on `/faq`/`/docs`/`llms.txt`) that **doesn't equal** the figure in the visible answer it corresponds to | the `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.3`'s "a fact change in *one* file updates *everywhere* — a drift is structurally impossible, not just policed" line + `ROADMAP_AND_ACCEPTANCE_CRITERIA.md`'s `W-AC-03`/`WT2.2`'s "a fact-drift test (the page number == the `content/facts/` source, byte-equal… a structural drift-impossibility)" line |
 
 **The gate is a *separate* merge gate** (the `website` deployable's own gate, `OPERATIONS/CI_CD.md`'s lane convention — the *app* lanes + the *website* lanes are **independent** CI runs, a `make check-website` target, `TECHNICAL_ARCHITECTURE.md §5`): a red `content/`-schema gate holds the *website* deploy, not the *app* deploy (the two surfaces are decoupled deployables, `TECHNICAL_ARCHITECTURE.md §1`'s "a separate app lets the website **fail independently**" line).

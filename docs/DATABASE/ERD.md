@@ -5,13 +5,14 @@ Mermaid ERD of the core schema. Field-level detail is in `SCHEMA_REFERENCE.md`; 
 ```mermaid
 erDiagram
   users ||--o{ sessions : "has"
+  users ||--o{ github_oauth_states : "pending OAuth states"
   users ||--o{ memberships : "member of"
   organizations ||--o{ memberships : "has"
   organizations ||--o{ invitations : "invites"
   organizations ||--o{ github_installs : "installs"
   organizations ||--o{ org_settings : "configures"
   organizations ||--o{ byok_keys : "stores"
-  organizations ||--o| org_billing : "billed via"
+  organizations ||--o| org_billing : "billed via (DORMANT)"
   organizations ||--o{ usage_events : "accumulates"
   organizations ||--o{ audit_events : "audited by"
   organizations ||--o{ retention_jobs : "purged by"
@@ -29,14 +30,35 @@ erDiagram
     string email UK "verified"
     string password_hash "argon2id"
     bool email_verified
+    string github_provider_token "per-user OAuth token (nullable)"
+    string github_handle "connected login (nullable)"
     datetime created_at
   }
+
+  sessions {
+    string id PK
+    string user_id FK
+    string token_hash UK "hashed session token"
+    inet source_ip
+    string user_agent
+    datetime expires_at
+    datetime revoked_at
+  } "idx (user_id)"
+
+  github_oauth_states {
+    string id PK
+    string token UK "anti-CSRF state, 10-min TTL"
+    string user_id FK
+    string redirect_to
+    datetime expires_at
+    datetime used_at "set once consumed"
+  } "idx (user_id)"
 
   organizations {
     string id PK
     string slug UK
     string name
-    string plan "free|developer|team|enterprise"
+    string plan "legacy classification, inert (no-paywall)"
     string status "active|suspended|deleted"
     datetime created_at
   }
@@ -126,7 +148,7 @@ erDiagram
     string status "trialing|active|past_due|canceled|paused"
     datetime current_period_end
     datetime cancelled_at
-  }
+  } "DORMANT — retained in schema; no live code path (billing removed, no-paywall)"
 
   audit_events {
     string id PK
@@ -146,5 +168,5 @@ erDiagram
 - **Every tenant-owned entity** (`github_*`, `review_*`, `usage_events`, `audit_events`, `org_*` config) hangs off `organizations` — the tenancy root. No orphan tenant row.
 - **`review_jobs`'s composite unique key** `(org_id, repo_id, pr_number, commit_sha)` *is* the idempotency design (ADR-007); a redelivery cannot create a second completed job for the same commit.
 - **`usage_events` / `audit_events` are leaves with no update edge** — append-only by shape.
-- **`org_billing`** is the authoritative plan/subscription state; `organizations.plan` is the *effective* plan (they're reconciled, with billing authoritative — see `DATABASE_DESIGN.md` §3).
+- **`org_billing` / `billing_events` are DORMANT** — retained in the schema after the billing feature was removed; `organizations.plan` is inert under the no-paywall state, and usage reporting (`usage_events`) is the live cost path (see `DATABASE_DESIGN.md` §3).
 - **`memberships` partial-unique on `role='owner'`** enforces exactly one owner per org.

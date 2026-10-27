@@ -12,7 +12,6 @@ export interface ModelRoute {
   model: string;          // concrete model id
   maxTokens: number;
   timeoutMs: number;
-  minPlanTier?: Plan;     // a task can be gated to a plan tier
 }
 
 export const DEFAULT_ROUTES: ModelRoute[] = [
@@ -38,27 +37,20 @@ export const DEFAULT_ROUTES: ModelRoute[] = [
 | `security-review` | strong (top tier) | Security findings carry the highest downstream cost (a miss is an incident). Always the strongest available to the org's tier; Enterprise may pin a frontier model. | Never downgrade security-review for cost. |
 | `summary` | cheap | A narrative over *already-validated* findings; low stakes. | — |
 
-**The evidence-based rule (from the brief):** "Use cheaper models for routine reviews and stronger models for complex cases *when evaluation justifies the choice*." The benchmark dataset (`TESTING/BENCHMARK_DATASET.md`) provides that justification: for each plan tier, we measure precision/recall/cost at each model choice and pin the routing table to the choice that maximizes the *actioned-finding* metric under the plan's cost ceiling (SUCCESS_METRICS).
+**The evidence-based rule (from the brief):** "Use cheaper models for routine reviews and stronger models for complex cases *when evaluation justifies the choice.*" The benchmark dataset (`TESTING/BENCHMARK_DATASET.md`) provides that justification: we measure precision/recall/cost at each model choice and pin the routing table to the choice that maximizes the *actioned-finding* metric under the org's cost budget (SUCCESS_METRICS).
 
 ## 3. Org-level routing config (admin surface, FR-508)
 
 An org admin can:
-- **Pin a task to a specific model** (within the org's plan tier's allowed set). The pin is validated against the tier's `minPlanTier` gate — a Free org cannot pin `security-review` to an Enterprise-only model.
+- **Pin a task to a specific model** via the org's routing overrides. The security-review floor gate applies: a pin that would lower `security-review` to a model whose `inputPer1M` is below the floor (the gpt-4o / claude-3-5-sonnet floor, `SECURITY_FLOOR_RATES`) is rejected and the default strong route is kept.
 - **Set the provider** (when multi-provider is enabled, Phase 1): OpenAI / Anthropic / Ollama.
 - **BYOK** (P1): supply their own API key for the chosen provider; the platform default is used otherwise.
 
 A routing change is versioned (it's a config row with a version + timestamp, audit-logged). It does *not* invalidate in-flight reviews; it applies to the next review.
 
-## 4. Model tier access by plan
+## 4. Model floor (no plan tiers)
 
-| Plan | risk-triage | deep-review | security-review | summary |
-| --- | --- | --- | --- | --- |
-| Free | standard | standard (capped files/review) | standard (security-only on security-sensitive files, capped) | standard |
-| Developer | standard | standard | standard | standard |
-| Team | standard | standard+strong | strong | standard |
-| Enterprise | any | any (frontier) | any (frontier) | any |
-
-`standard` / `strong` are *tiers*, not model names; the routing table resolves tier→concrete model. This decouples the plan contract from the model market (a model swap is a config change, not a plan change).
+There are no plan tiers in the no-paywall product — every org gets the same routing table. The only access constraint is the **security-review floor**: `security-review` resolves to the default strong route unless an org override pins a model at or above the rate floor (the `gpt-4o` / `claude-3-5-sonnet` floor, `inputPer1M >= 3.0`). All other tasks can be pinned to any model in the routing table; cost is visible, not gated.
 
 ## 5. Fallback and fail-over (FR-314)
 
@@ -79,7 +71,7 @@ task → primary route (provider A, model M)
 - Per-task `maxTokens` + provider rate table (`config/rates.ts`: `{ model: { inputPer1M, outputPer1M } }`).
 - `estUsdCost(task) = (inputTokens/1e6)*inputPer1M + (outputTokens/1e6)*outputPer1M`.
 - A review's total cost = sum over its tasks. Ollama (self-hosted) → `estUsdCost = 0` (the org's compute cost is out of scope of VERCODE's accounting).
-- The **cost/review** metric (SUCCESS_METRICS) is computed from this; the plan's cost ceiling is enforced by the quota gate (AC-401) using the *token-spend* cap, which is derived from the plan's USD ceiling via the rate table.
+- The **cost/review** metric (SUCCESS_METRICS) is computed from this; spend is visible as a plain usage report (`usage_events`), and the only hard bound is the platform-level `PLATFORM_TOKEN_SPEND_CAP_USD` safety cap — an operational guardrail, not a per-org gate.
 
 ## 7. Routing invariants (what a code review gate checks)
 

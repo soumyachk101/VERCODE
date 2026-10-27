@@ -16,7 +16,7 @@ Format: context → decision → consequences. Decisions are recorded so the *wh
 
 ### ADR-002 — Fastify for the dedicated API service
 
-**Context.** The web app is Next.js, but a *dedicated* backend is justified (webhook ingress, queue, billing webhooks, GitHub App auth are not frontend concerns). The brief allows a dedicated backend.
+**Context.** The web app is Next.js, but a *dedicated* backend is justified (webhook ingress, queue, GitHub App auth and the GitHub connect OAuth flow are not frontend concerns). The brief allows a dedicated backend.
 
 **Decision.** Fastify + TypeScript. JSON-native, schema-based validation that pairs with the shared Zod contracts, first-class hooks for auth/tenant/rate-limit/audit, and a small dependency surface.
 
@@ -38,7 +38,7 @@ Format: context → decision → consequences. Decisions are recorded so the *wh
 
 **Context.** NFR-12/13/14 require durability, bounded retries, DLQ, and independent scaling of the pipeline.
 
-**Decision.** Redis + BullMQ. One queue per concern (`review-queue`, `retention-queue`, `billing-queue`); per-queue concurrency, backoff, and DLQ.
+**Decision.** Redis + BullMQ. One queue per concern (`review-queue`, `retention-queue`, `review-dead-letter`); per-queue concurrency, backoff, and DLQ.
 
 **Consequences.** Redis becomes a hard dependency (sessions too — single cache/queue/session store). Job payloads carry only a `jobId`; the worker re-reads durable state (never trusts the payload for authz), which makes redelivery safe.
 
@@ -84,7 +84,9 @@ Format: context → decision → consequences. Decisions are recorded so the *wh
 
 ---
 
-### ADR-009 — Stripe as the billing provider, with a Rajatko/Razorpay evaluation for INR
+### ADR-009 — ~~Stripe as the billing provider, with a Rajatko/Razorpay evaluation for INR~~
+
+**SUPERSEDED (2026-10).** The no-paywall decision removed all commercial billing: the `packages/billing` package, billing webhooks, plan/quota gating, and `packages/contracts/src/plans.ts` were deleted. Usage is now a plain visibility report (`usage_events` table); a hard cap (`PLATFORM_TOKEN_SPEND_CAP_USD`) is the only guardrail. The original decision is retained for history.
 
 **Context.** The brief names the Indian market explicitly. Stripe does *not* support INR-issued cards for Indian businesses directly (Stripe supports INR *pricing* and international cards, but not UPI/Indian domestic card acquiring as a native provider for India-incorporated entities).
 

@@ -8,7 +8,7 @@ The *build* sequence for the VERCODE public website (`PRD.md`) and the *measured
 
 ### A.0 Where the website sits in the launch sequence
 
-The website builds **in P2** and is a P2 *launch prerequisite* (`SAAS_LAUNCH_PLAN §5 P2`'s "a marketing site + a pricing page + a docs site"). It can *start* after P1 (the live integration is verified — gate-13 green on a credentialed lane), and it *finishes* before the P2 public-launch checklist closes. The mapping:
+The website builds **in P2** and is a P2 *launch prerequisite* (`SAAS_LAUNCH_PLAN §5 P2`'s "a marketing site + a docs site" — the pricing page was dropped with the no-paywall direction; there is no `/pricing` route, `INFORMATION_ARCHITECTURE_AND_PAGES.md §6`). It can *start* after P1 (the live integration is verified — gate-13 green on a credentialed lane), and it *finishes* before the P2 public-launch checklist closes. The mapping:
 
 | Launch phase (`SAAS_LAUNCH_PLAN §5`) | The website's state | The measured gate |
 | --- | --- | --- |
@@ -23,7 +23,7 @@ Each phase: scope (the WFR groups), an **entry gate** (what must be *true* to st
 
 ---
 
-#### WP1 — foundations (`apps/website` scaffold + the design-tokens bridge + the `content/` store + the schema generator)
+#### WP1 — foundations (`website` scaffold + the design-tokens bridge + the `content/` store + the schema generator)
 
 **Scope:** `WFR-101` (the route set), `WFR-102` (on-page meta), `WFR-103` (sitemap + robots), the `content/` store + `CONTENT_SCHEMAS.md` contracts (`WFR-304/305`), the `schema-generator.ts` single source (`WFR-402`'s generator half). No *content surfaces* yet (no `/docs` topics, no `/blog`); the skeleton + the generator + the token bridge are what ship.
 
@@ -34,13 +34,13 @@ Each phase: scope (the WFR groups), an **entry gate** (what must be *true* to st
 
 **Exit gate (measured):**
 - The `make check-website` target (`TECHNICAL_ARCHITECTURE.md §5`) green: a `pnpm --filter @vercode/website build` static-export + a `content/` schema gate + `sitemap.xml`/`robots.txt`/`llms.txt` generation + a **`sitemap.xml` count == `WFR-101` page-set count + published-content count** (a build-time assertion, not a hope).
-- The design-tokens bridge is *imported* from a `packages/design-tokens` (a new package, `ADR-0xx-4`), not hand-replicated in `apps/website/src/styles/`.
+- The design-tokens bridge is *imported* from a `packages/design-tokens` (a new package, `ADR-0xx-4`), not hand-replicated in `website/src/styles/`.
 - A Lighthouse CI dry-run on a placeholder `/` + `/docs/quickstart` reports a *measurable* mobile number (the ≥90 gate is enforced from WP2 onward; WP1 just proves the harness runs).
 
 **Tasks (`WT1.#`):**
 
-- **WT1.1 — Scaffold `apps/website`** (a `Next.js 15` + `output: "export"` + `App Router`, the `WFR-101` route set as empty SSG shells; a `Makefile` target `check-website`; a `next.config.ts` with a static image loader + the sitemap/robots/`llms.txt` generators, `TECHNICAL_ARCHITECTURE.md §1–§2`). *Verified:* `pnpm --filter @vercode/website build` emits a static `out/` with the `WFR-101` routes + `/robots.txt` + `/sitemap.xml`.
-- **WT1.2 — The `packages/design-tokens` bridge** (the shared palette + radii + spacing, `DESIGN_SYSTEM.md §4`; a single `tokens.ts` both `apps/web` + `apps/website` import, `ADR-0xx-4`; a *new* package, a deviation noted in `TECHNICAL_ARCHITECTURE.md §3`). *Verified:* a grep-level test that no color/radius literal is hand-written in either app (the tokens are the source).
+- **WT1.1 — Scaffold `website`** (a `Next.js 15` + `output: "export"` + `App Router`, the `WFR-101` route set as empty SSG shells; a `Makefile` target `check-website`; a `next.config.ts` with a static image loader + the sitemap/robots/`llms.txt` generators, `TECHNICAL_ARCHITECTURE.md §1–§2`). *Verified:* `pnpm --filter @vercode/website build` emits a static `out/` with the `WFR-101` routes + `/robots.txt` + `/sitemap.xml`.
+- **WT1.2 — The `packages/design-tokens` bridge** (the shared palette + radii + spacing, `DESIGN_SYSTEM.md §4`; a single `tokens.ts` both `apps/web` + `website` import, `ADR-0xx-4`; a *new* package, a deviation noted in `TECHNICAL_ARCHITECTURE.md §3`). *Verified:* a grep-level test that no color/radius literal is hand-written in either app (the tokens are the source).
 - **WT1.3 — The `content/` store + `CONTENT_SCHEMAS.md` contracts** (a `content/` repo dir: `blog/`, `docs/`, `changelog/`, `faq/`, `facts/`; a `zod` `ProductFact`/`Article`/`ChangelogEntry`/`FAQ`/`FrontMatter` contract in `packages/contracts`; a build-time schema gate, `WFR-304/305`). *Verified:* a `content/` PR that's malformed fails the build (the `RELEASE_CRITERIA gate-12` docs-drift gate extended to `content/`).
 - **WT1.4 — The `schema-generator.ts` single source** (`generateSchemaFor(page: PageDef): JsonLd[]`; the *only* JSON-LD emitter, `TECHNICAL_ARCHITECTURE.md §4.1`; a `content/facts/` source that feeds `FAQPage`+`/api/answer`+`llms.txt` in one build, `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.3`'s consistency rule). *Verified:* a `UT`-style assertion that a fact edit in `content/facts/` flows to *all three* consumers (no hand-typed numbers).
 - **WT1.5 — The sitemap + robots + `llms.txt` generators** (`WFR-103` + `WFR-401`'s fact-list half; a `sitemap.xml` count assertion; a `robots.txt` that allows-all + points at `/sitemap.xml` + disallows `/docs/source`). *Verified:* the build-time count == `WFR-101` + content count; a `ld-lint`/`schema-dts` check reports 0 errors on every emitted block.
@@ -78,7 +78,7 @@ Each phase: scope (the WFR groups), an **entry gate** (what must be *true* to st
 
 **Entry gate:**
 - WP2 exit gate green (the core pages + the Lighthouse/axe gates pass; the content pipeline from WP1 is live).
-- The 9 first-cut docs topics drafted in `content/docs/` (the `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.5` list: quickstart, github-app, api, rules, security, providers, quotas, privacy), each `Article`+`BreadcrumbList`-ready (`WFR-104`).
+- The 9 first-cut docs topics drafted in `content/docs/` (the `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.4` list: quickstart, github-app, api, rules, security, providers, usage, connect, privacy), each `Article`+`BreadcrumbList`-ready (`WFR-104`).
 - A status service (an external link, `U3` + `SAAS_LAUNCH_PLAN §5`'s launch prereq) is chosen — `/legal/status` has a target.
 
 **Exit gate (measured):**
@@ -163,7 +163,7 @@ Each phase: scope (the WFR groups), an **entry gate** (what must be *true* to st
 ### B.3 The WFR-3xx group (docs & content, P0)
 
 **W-AC-06 (`WFR-301/304/305`)**
-- Given `content/docs/` with the 9 first-cut topics (a quickstart, github-app, api, rules, security, providers, quotas, privacy — the `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.5` list), When the site builds, Then each `/docs/<topic>` is a static SSG page + `Article`+`BreadcrumbList` JSON-LD; content is authored as Markdown in `content/` (a `next-mdx`/plain-MD loader, *no CMS*, `WFR-304`) with the `CONTENT_SCHEMAS.md` front-matter shape (`WFR-305`), and a `draft` item is *neither rendered nor in `sitemap.xml`*.
+- Given `content/docs/` with the 9 first-cut topics (a quickstart, github-app, api, rules, security, providers, usage, connect, privacy — the `INFORMATION_ARCHITECTURE_AND_PAGES.md §3.4` list), When the site builds, Then each `/docs/<topic>` is a static SSG page + `Article`+`BreadcrumbList` JSON-LD; content is authored as Markdown in `content/` (a `next-mdx`/plain-MD loader, *no CMS*, `WFR-304`) with the `CONTENT_SCHEMAS.md` front-matter shape (`WFR-305`), and a `draft` item is *neither rendered nor in `sitemap.xml`*.
 - Verification: a `content/` schema gate (a `RELEASE_CRITERIA gate-12` docs-drift extended to `content/`, `UT-web-content-schema`); a `sitemap.xml` + `ld-lint` green on 9 topics (`UT-web-docs-9`); a draft-never-rendered test (`UT-web-draft-excluded`).
 
 **W-AC-07 (`WFR-302`)**
@@ -216,7 +216,7 @@ The seven open decisions from `PRD.md §8`, carried into a formal table. The str
 
 | ID | Decision (the question) | Options | Leaning (the recommended answer) | Owner | Due gate |
 | --- | --- | --- | --- | --- | --- |
-| **U1** | Hosting topology: a *separate* `apps/website` vs. a *route inside* `apps/web` | (a) a separate `Next.js 15` static-export app; (b) a `marketing` segment inside the dashboard `apps/web` | **(a) a separate `apps/website`** (decouples the two surfaces' perf budgets — the dashboard NFR ≠ the website WNFR — + lets the website fail independently, `TECHNICAL_ARCHITECTURE.md §1`) | infra | before P2 build start (WP1 entry gate) |
+| **U1** | Hosting topology: a *separate* `website` vs. a *route inside* `apps/web` | (a) a separate `Next.js 15` static-export app; (b) a `marketing` segment inside the dashboard `apps/web` | **(a) a separate `website`** (decouples the two surfaces' perf budgets — the dashboard NFR ≠ the website WNFR — + lets the website fail independently, `TECHNICAL_ARCHITECTURE.md §1`) | infra | before P2 build start (WP1 entry gate) |
 | **U2** | Content store: `content/` + `next-mdx` vs. a static `Astro` collection | (a) `content/` repo dir + `next-mdx-remote` + a `zod` contract; (b) an `Astro` content collection | **(a) `content/` + `next-mdx`** (pins the stack to `TECHNICAL_ARCHITECTURE.md §3`, `WFR-304`'s default; a *live* CMS is P3, `PRD.md §6`) | frontend | before P2 build (WP1 entry gate) |
 | **U3** | Status page: an *external* link vs. a *self-hosted* `/status` | (a) an external service (a Statuspage-style, a launch prereq, `SAAS_LAUNCH_PLAN §5`) + a thin `/legal/status` link; (b) a self-hosted `/status` page | **(a) an external link + a thin `/legal/status` that embeds the external dashboard** (`WFR-406`) | infra | before P2 (WP3 entry gate) |
 | **U4** | Analytics: a first-party cookieless beacon only vs. a self-hosted Plausible/Matomo | (a) a cookieless first-party beacon only (`WFR-504`); (b) a self-hosted Plausible/Matomo | **(a) a cookieless first-party only** for P2 (the DPDP posture, `SECURITY/PRIVACY.md`); a self-hosted Plausible is a P3 option | data | P2 (WP4 entry gate) |
@@ -229,7 +229,7 @@ The seven open decisions from `PRD.md §8`, carried into a formal table. The str
 ## D. Status + next concrete task
 
 **The state:** WP1, WP2, and WP3 are **built + verified** — `make check-website` is green (the `@vercode/website` build + typecheck + the 11 `UT-web-*` tests + the anti-slop lint, the `TECHNICAL_ARCHITECTURE.md §5` build-time sub-gates). That landed:
-- **WP1 (WT1.1–WT1.5):** the `apps/website` scaffold (a `Next.js 15` static export, `apps/website/next.config.mjs`'s `output: "export"`), the `content/` store + the `CONTENT_SCHEMAS.md` contracts, the `schema-generator.ts` single source (`apps/website/src/lib/schema-generator.ts`), and the `sitemap.xml`/`robots.txt`/`llms.txt`/`llms-full.txt` generators (`apps/website/src/lib/llms.ts`).
+- **WP1 (WT1.1–WT1.5):** the `website` scaffold (a `Next.js 15` static export, `website/next.config.mjs`'s `output: "export"`), the `content/` store + the `CONTENT_SCHEMAS.md` contracts, the `schema-generator.ts` single source (`website/src/lib/schema-generator.ts`), and the `sitemap.xml`/`robots.txt`/`llms.txt`/`llms-full.txt` generators (`website/src/lib/llms.ts`).
 - **WP2 (WT2.1–WT2.4):** the core pages — `/` + the section order, `/features` + the FR traceability, `/docs/providers` + the usage table from `content/facts/product-facts.json`, `/faq` + the 16-question byte-equivalence.
 - **WP3 (WT3.1–WT3.5):** the 9 `content/docs/` topics, the 2-entry changelog feed, the 2-post blog, the 5 `/legal` pages, and the draft-never-rendered rule.
 

@@ -33,9 +33,9 @@ describe("loadConfig", () => {
     expect(() => loadConfig(missing)).toThrowError(/DATABASE_URL/);
   });
 
-  it("rejects a non-enum value (a bad BILLING_PROVIDER)", () => {
-    const bad: NodeJS.ProcessEnv = { ...validEnv, BILLING_PROVIDER: "paypal" };
-    expect(() => loadConfig(bad)).toThrowError(/BILLING_PROVIDER/);
+  it("rejects a non-enum value (a bad AI_DEFAULT_PROVIDER)", () => {
+    const bad: NodeJS.ProcessEnv = { ...validEnv, AI_DEFAULT_PROVIDER: "paypal" };
+    expect(() => loadConfig(bad)).toThrowError(/AI_DEFAULT_PROVIDER/);
   });
 
   it("KNOWN_VARS is the exact documented set (the 'not in the doc' gate)", () => {

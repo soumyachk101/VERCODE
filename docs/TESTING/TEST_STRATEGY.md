@@ -94,7 +94,7 @@ The `ST-*` suite is the security release gate: a P0 security regression (a forge
 | **Local dev** | Compose (Postgres, Redis, web, api, worker, mock-github, mock-ai) + `pnpm test` (unit + integration against the containers) | none (the mocks) |
 | **CI (PR)** | unit + a reduced integration + a reduced security + `typecheck` + `lint` | none (mocks); the E2E against a compose stack, no external |
 | **CI (merge)** | the full integration + full security + the full E2E + the **benchmark gate** + the **design gate** | none (mocks) |
-| **CI (release lane)** | + the **live external suite** (`E2E_LIVE`) + a load/DoS soak + a secret-scanner + a dependency audit | real GitHub App + AI provider + Stripe test-mode (or blocked, marked) |
+| **CI (release lane)** | + the **live external suite** (`E2E_LIVE`) + a load/DoS soak + a secret-scanner + a dependency audit | real GitHub App + AI provider (the *billing* lane is *gone*: no Stripe test-mode, no payment provider — usage is plain visibility, the no-paywall decision) |
 
 ## 9. What we do NOT test (stated, `SECURITY_TEST_PLAN §6` + the mock boundary)
 

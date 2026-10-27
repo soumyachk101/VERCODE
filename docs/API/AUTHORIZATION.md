@@ -6,7 +6,7 @@ The capability model and enforcement. RBAC with 4 roles; every mutating route de
 
 | Capability | Owner | Admin | Developer | Viewer |
 | --- | :-: | :-: | :-: | :-: |
-| `org.manage` (members, billing, plan) | ✓ | ✓ | — | — |
+| `org.manage` (members, roles, invitations, org settings, the active-for-review repo set) | ✓ | ✓ | — | — |
 | `integrations.manage` (GitHub App, providers, BYOK) | ✓ | ✓ | — | — |
 | `rules.manage` (custom rules) | ✓ | ✓ | ✓ | — |
 | `reviews.run` (run/re-run reviews) | ✓ | ✓ | ✓ | — |
@@ -32,10 +32,9 @@ The capability model and enforcement. RBAC with 4 roles; every mutating route de
 
 A user's capabilities are **per-org**: the same human is resolved independently in each org they belong to. A request to org B's route uses the user's role *in B*, never their role in A. The capability set is computed from the `memberships` row for the *requested* org only (a join bug that leaks capabilities across orgs is a tenancy-class defect the `IT-tenant-*` suite catches).
 
-## 5. Webhooks and billing have their own "authorization"
+## 5. The GitHub webhook has its own "authorization"
 
-- **GitHub webhook:** authorized by *HMAC + delivery dedup*, not a session (a machine path). The events it can trigger are limited by the App's *install scope* (the installer chose all-repos or specific-repos) — VERCODE only reviews repos in scope.
-- **Billing webhook:** authorized by the *provider's signature*. It can only move `org_billing.status` for the customer id in the event; a foreign-customer event for an unknown customer → rejected + audited (it can't create or move an org's plan state for a customer the provider doesn't recognize as ours).
+- **GitHub webhook:** authorized by *HMAC + delivery dedup*, not a session (a machine path). The events it can trigger are limited by the App's *install scope* (the installer chose all-repos or specific-repos) — VERCODE only reviews repos in scope. An unknown-but-verified install → 404 `WEBHOOK_UNKNOWN_INSTALL` + audit; a verified event in no known schema (`pull_request_review`, `pull_request_target`, …) → a receipt-only 202 ack.
 - **A webhook is never "user-authorized."** It's *event-authorized*: the signature proves the event's origin; the event's payload scopes *which org* it affects; the tenancy layer then enforces *which rows* that org may touch.
 
 ## 6. BYOK and secret handling (authorization for secrets)

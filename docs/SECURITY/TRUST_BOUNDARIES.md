@@ -7,7 +7,7 @@ A map of every trust boundary in the system, what crosses it, and how each cross
 ```
 ┌────────────────────────────────────────────────────────────────────┐
 │ EXTERNAL / UNTRUSTED                                               │
-│  GitHub (App + webhooks) · AI providers · Billing provider        │
+│  GitHub (App + webhooks + per-user OAuth) · AI providers           │
 │  PR content (diffs, bodies, forks) · the browser (client JS)       │
 └───────────────┬───────────────────────────────┬────────────────────┘
    [B1]         │                               │ [B4]
@@ -34,7 +34,12 @@ A map of every trust boundary in the system, what crosses it, and how each cross
 ### B1 — GitHub ingress (external → platform)
 - **What crosses:** webhook events; the PR diff + bounded context *fetched* by the worker.
 - **Controls:** HMAC + timestamp window + delivery dedup (reject forges/replays); the event is a *trigger*, re-derived state is authoritative (a forged-but-plausible body is inert — the signature is the gate, the reconciliation is the backstop).
-- **What must NOT cross:** installation credentials to the browser; a whole repo to a provider; a client-trusted plan state.
+- **What must NOT cross:** installation credentials to the browser; a whole repo to a provider; a client-trusted entitlement claim (there is no plan/payment state to move — usage_events is informational only).
+
+### B6 — GitHub OAuth (per-user "Connect GitHub"; external → platform)
+- **What crosses:** the user's OAuth authorization code (single-use, server-side exchange); the resulting per-user access token (stored, not sent to the browser).
+- **Controls:** state token anti-CSRF in `github_oauth_states` (random + unguessable, 10-min TTL, single-use via `used_at`); the exchanged per-user access token is persisted server-side in `users.github_provider_token` with the handle in `users.github_handle`; repo access for review is gated by `org_settings.active_repos_for_review`; disconnect clears the token + handle.
+- **What must NOT cross:** the token to the browser or into logs; a token broader than the requested repo scopes; another user's token across orgs (the token is per-user; tenancy still comes from `org_id`).
 
 ### B2 — Tenancy (platform → tenant)
 - **What crosses:** org-scoped data reads/writes.
@@ -61,7 +66,7 @@ A map of every trust boundary in the system, what crosses it, and how each cross
 1. **Secrets** never cross B4 (into a prompt) or any log line or finding.
 2. **A tenant's data** never crosses B2 into another tenant.
 3. **Repo source** never crosses B4 beyond the bounded context; it's never *stored* (ephemeral, NFR-28).
-4. **Client plan/payment state** never crosses into authoritative decisions (B1/B4 analog: only a verified provider webhook moves plan state).
+4. **A client-trusted entitlement claim** never crosses into authoritative decisions (there is no plan/payment state to move — usage reporting (`usage_events`) and the platform token-spend cap are the only cost controls, and they are server-side, not client-set).
 5. **A job payload's authz** never crosses into the worker's decisions (the payload is a pointer; durable state is authoritative).
 6. **A PR's code** never executes in the trusted core (MVP: analysis only; Phase 2: only across B5).
 
@@ -74,5 +79,6 @@ A map of every trust boundary in the system, what crosses it, and how each cross
 | B3 | `IT-authz-*` |
 | B4 | `ST-context-bound` / `ST-injection-01..04` / `ST-secret-leak` |
 | B5 | `ST-sandbox-*` (Phase 2) |
+| B6 | GitHub-OAuth state check (single-use `used_at`, 10-min expiry); token never in logs/browser |
 
 A *boundary violation* is the highest-severity class in the register — a test that proves a "never-cross" invariant holds is a **release gate**, not a regular test (it can't regress silently).

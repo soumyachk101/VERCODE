@@ -14,11 +14,11 @@ The MVP is the vertical slice that makes the end-to-end workflow in `IMPLEMENTAT
 - Per-review cost + token accounting attributed to org
 
 ### Dashboard
-- Overview, Repositories, PR review detail, Security rollup, Custom rules, Usage analytics, Org management, AI provider settings, Billing (Stripe integration stub + plan management), Audit log, Account settings
+- Overview, Repositories, PR review detail, Security rollup, Custom rules, Usage analytics, Org management, AI provider settings, GitHub connect settings, Audit log, Account settings
 
-### Plans & quotas
-- Free / Developer / Team / Enterprise with configurable quotas enforced server-side
-- Quota-exceeded → skip with posted notice (never silent)
+### Usage & spend backstop
+- Plain usage reporting: per-review tokens + estimated cost, attributed to org, visible on dashboard
+- Platform token-spend cap (`PLATFORM_TOKEN_SPEND_CAP_USD`) as an abuse backstop only — over-cap jobs skip with a posted notice, never silently; there are no plan tiers or quota gates
 
 ### Security baseline
 - Webhook signature + replay protection
@@ -38,8 +38,9 @@ The MVP is the vertical slice that makes the end-to-end workflow in `IMPLEMENTAT
 These P1 items are small, high-leverage, and block real-world use — they ship with MVP:
 
 - **FR-314** Provider fallback (bounded, one retry) — otherwise a single-provider outage is a total review outage
-- **FR-509 (partial)** Billing *page* with plan state + upgrade flow wired to Stripe; **live webhook-driven payment capture** may ship as a stub that trusts a verified Stripe webhook, not client state
-- **US-105** Re-review request (single endpoint; enforces the same idempotency + quota rules)
+- **FR-509** Usage reporting page — plain per-org token/cost visibility from `usage_events`, no plan state; the platform token-spend cap is the only backstop
+- **FR-601/602** GitHub connect settings + repo-connect card (install App, re-enable disconnected repos)
+- **US-105** Re-review request (single endpoint; enforces the same idempotency + skip rules)
 
 ## Out of MVP (tracked, not built)
 
@@ -54,4 +55,4 @@ These P1 items are small, high-leverage, and block real-world use — they ship 
 
 The 15-step end-to-end checklist in the brief (`PHASE 10 — DEFINITION OF DONE`) is the gate. A user must be able to: sign in → create org → install the GitHub App on a test repo → open a real PR → receive a verified webhook → get a processed review job (idempotent) → see the diff+context fetched → see static analysis + AI run → see validated findings → see the summary + inline comments published on GitHub → see results in the dashboard → see usage attributed to the org → see a failure retry in observability → pass tenant isolation + security tests → have docs match code.
 
-Any step that depends on external credentials (real GitHub App, real OpenAI key, real Stripe account) is **explicitly marked "requires external credential — blocked in this environment"** in the implementation status, not claimed complete.
+Any step that depends on external credentials (real GitHub App, real OpenAI key) is **explicitly marked "requires external credential — blocked in this environment"** in the implementation status, not claimed complete.

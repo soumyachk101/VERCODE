@@ -6,7 +6,7 @@ The data-protection story for the two stateful deps (Postgres, Redis) + the *eph
 
 | Data | Backed up? | How | RPO | RTO |
 | --- | --- | --- | --- | --- |
-| **Postgres** (orgs, reviews, findings, usage, audit, billing) | **Yes** | Managed PITR (point-in-time restore, continuous WAL archiving) + a daily logical dump (a `pg_dump`, a 24-h retention minimum, a 7-d daily-rotation) | **Continuous** (PITR) / 24 h (the logical dump) | **≤ 1 h** (PITR to a timestamp) |
+| **Postgres** (orgs, reviews, findings, usage, audit) | **Yes** | Managed PITR (point-in-time restore, continuous WAL archiving) + a daily logical dump (a `pg_dump`, a 24-h retention minimum, a 7-d daily-rotation) | **Continuous** (PITR) / 24 h (the logical dump) | **≤ 1 h** (PITR to a timestamp) |
 | **The audit trail** (`audit_events`, 180 d floor) | **Yes** (the PITR *is* the audit's storage) | The PITR retains the audit rows for the 180 d floor (the *retention* of the audit is the PITR's *window*, `NFR-27`) | continuous | ≤ 1 h |
 | **Redis** (sessions, the BullMQ queues, the diff cache) | **Partially — only the queues** | Redis *persistence is NOT the backup*: the queues are *durable* by design (BullMQ's jobs survive a Redis restart via the queue's own persistence), so a Redis loss means a *requeue* of in-flight jobs (a bounded, re-runnable loss, the idempotency key makes a re-run safe, NFR-13) — a sessions loss means a *re-login* (a low-impact loss). The **diff cache** is *not* backed up (it's ephemeral, 24 h, re-fetchable from GitHub, NFR-28) | n/a (re-runnable) | the queues re-drain |
 | **The KMS keys** (the App private key, the BYOK master) | **No — the KMS *is* the backup** | The KMS is a managed, replicated service (its own durability); the *ciphertexts* in Postgres are backed up by the Postgres PITR (the wrapped key + the KMS key id + the last-4). A KMS region loss is a *KMS* DR event (the platform's control, `DISASTER_RECOVERY.md`), not a VERCODE backup | n/a (managed) | the KMS's RTO |
@@ -59,7 +59,7 @@ The data-protection story for the two stateful deps (Postgres, Redis) + the *eph
 Because VERCODE *stores the analysis, not the code* (`DATA_RETENTION §3`), the backup story is *dramatically* simpler than a code-hosting SaaS:
 
 - **No customer-repo replica** to keep in sync (a code host's "back up the whole repo" is a *continuous* replication problem; VERCODE has *no* such surface — the code is re-fetchable from the customer's GitHub, `DATA_FLOW.md`'s "raw content is ephemeral" invariant).
-- **The backup surface is the relational DB** (the reviews, findings, usage, audit, billing, config) — a *bounded*, *daily-dump-able*, *PITR-able* surface.
+- **The backup surface is the relational DB** (the reviews, findings, usage, audit, config) — a *bounded*, *daily-dump-able*, *PITR-able* surface.
 - **The Redis surface is *re-runnable*, not *restorable*** (the queues + the cache + the sessions all *rebuild* from a loss, the idempotency key + the GitHub re-fetch + the re-login — a Redis loss is a *degradation*, not a *data loss*).
 
 This is the *privacy* design's *operational* payoff: the "we don't store your code" posture (`PRIVACY.md`) is what makes the backup small, bounded, and provable.

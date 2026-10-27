@@ -16,9 +16,8 @@ flowchart LR
     RD[(Redis: sessions, queues, diff-cache)]
   end
   subgraph External
-    GH[GitHub App + REST]
+    GH[GitHub App + REST + user OAuth]
     AI[AI providers: OpenAI / Anthropic / Ollama]
-    BILL[Stripe]
     OBS[Sentry + OTel collector]
   end
   subgraph Analysis
@@ -26,11 +25,11 @@ flowchart LR
   end
 
   UI -->|REST + session cookie| API
+  UI -->|GitHub OAuth (user connect)| GH
   GH -->|signed webhooks| API
   API -->|verify + enqueue| RD
   API --> PG
-  API --> BILL|webhook: billing|
-  BILL -->|payment webhooks| API
+  API -->|GitHub OAuth callback (token exchange)| GH
   RD -->|review-queue| WORKER
   WORKER --> PG
   WORKER --> ST
@@ -62,7 +61,7 @@ sequenceDiagram
   API->>RD: enqueue review-queue job {jobId, orgId, repoId, pr, sha}
   API-->>GH: 202 Accepted (< 300 ms, no LLM on this path)
   RD->>W: dequeue job
-  W->>PG: load durable state (org, quota, settings) — never trust payload for authz
+  W->>PG: load durable state (org, settings) — never trust payload for authz
   W->>GH: fetch PR diff + bounded context
   par deterministic stage
     W->>ST: ESLint + Semgrep on changed files
@@ -94,18 +93,18 @@ sequenceDiagram
     API->>PG: read usage_daily rollup (org-scoped, indexed)
     API->>RD: write cache (TTL 5 min)
   end
-  API-->>UI: JSON (usage charts + quota)
+  API-->>UI: JSON (usage charts)
 ```
 
 ## 3. Process Boundaries
 
-- **`api`** — owns: auth, dashboard REST, webhook ingress (verify+enqueue), billing webhooks, config endpoints. *Never* runs the review pipeline.
+- **`api`** — owns: auth, dashboard REST, webhook ingress (verify+enqueue), GitHub OAuth routes (user connect + callback + disconnect), config endpoints. *Never* runs the review pipeline.
 - **`worker`** — owns: dequeue → fetch → analyze (static + AI) → validate → publish → account. May scale to N instances; each enforces its own concurrency limit (default 4) and org-shard awareness.
 - **`web`** — stateless frontend; all data via `api`. No direct DB or GitHub access.
 
 ## 4. Data Flow
 
-See `DATA_FLOW.md` for field-level flow (what crosses each boundary, and what must never cross it — e.g., secrets, raw diffs to AI providers beyond bounded context, client payment state).
+See `DATA_FLOW.md` for field-level flow (what crosses each boundary, and what must never cross it — e.g., secrets, raw diffs to AI providers beyond bounded context, client-supplied usage state).
 
 ## 5. Deployment Boundaries
 

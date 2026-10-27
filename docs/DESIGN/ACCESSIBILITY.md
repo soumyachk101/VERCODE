@@ -23,8 +23,8 @@ WCAG 2.1 AA as a hard requirement (NFR-24). Accessibility is not a late pass —
 - **Real HTML semantics:** a `<nav>` for the sidebar, a `<main>` for the canvas, a `<table>` with `<caption>` + `scope` for data tables, a real `<form>` for settings, a `<button>` (not a styled `<div>`) for every action. A *styled* control that isn't a `<button>`/`<a>` in the DOM is an axe failure.
 - **Announcements:**
   - The **actioned-finding** toggle ("Accept · Dismiss · Mark fixed") announces the state change ("Finding 'Unvalidated SQL input' marked fixed" via `aria-live`).
-  - A **quota change** (the 80% banner appearing) is a polite live region ("Usage is now 80% of this month's quota").
-  - A **skip/skipped-review notice** is announced (a "review skipped — quota reached" row is not a silent absence; the screen reader gets the reason).
+  - A **usage change** (a usage figure refreshing, e.g. "Usage is now 80% of the 30-day total") is a polite live region — plain reporting; there is no cap or quota state to announce.
+  - A **skip/skipped-review notice** is announced (a "review skipped — same SHA already reviewed" row is not a silent absence; the screen reader gets the reason).
 - **Labels:** every input has a `<label>` (the "label above the field, 14px/500" rule, `COMPONENT_CATALOG §1`). An icon-only control (the kebab, the copy) has an `aria-label` ("Copy commit SHA").
 - **Chart access:** Recharts exposes a data table alternative — a chart that says "reviews/day, rising then flat" has an equivalent text/table for a screen reader (a "View data as a table" toggle, or a `<figure>` with a `figcaption` + an adjacent visually-hidden data table). **A number that's only in a chart is not accessible** — the KPI/figure is always in the DOM text (it *is* the text, the chart is the visualization).
 - **The severity word** is in the DOM (the SeverityMark square is decorative + aria-hidden; the "critical"/"high" text carries the meaning).
@@ -39,8 +39,8 @@ WCAG 2.1 AA as a hard requirement (NFR-24). Accessibility is not a late pass —
 
 - **Error messages name the field + the fix** ("Password must be at least 8 characters", associated via `aria-describedby`, not a colour-only red border — a red border *with* the message). A form that only shows a red border is inaccessible.
 - **The save model is announced:** an autosave control's "Saved" stamp is a polite live region (a screen reader user hears the save, not just sees a stamp). The "one save model per view" rule (`COMPONENT_CATALOG §2`) keeps the announcement consistent (either every control autosaves-and-stamps, or one Save per panel — not both, which would confuse the announcement timing).
-- **A disabled control says *why*** (the tier-gated "Upgrade to use" row: `aria-disabled` + a visible "Upgrade to use" text, not a 30%-opacity wash that a screen reader reads as "disabled, no reason"). The app-screens "a disabled control says why it's disabled" rule is also an a11y rule.
-- **The destructive-action confirmation** (delete org, cancel, revoke BYOK) is a *named* confirmation ("Confirm you want to cancel your subscription — your plan ends at period end") in a real dialog (a `role="alertdialog"`, focus-trapped, a confirm button labelled with the action).
+- **A disabled control says *why*** (the "Save selection" button on the GitHub-connect card stays disabled until a repo is checked: `aria-disabled` + a visible reason, not a 30%-opacity wash that a screen reader reads as "disabled, no reason"). The app-screens "a disabled control says why it's disabled" rule is also an a11y rule.
+- **The destructive-action confirmation** (delete org, disconnect GitHub, revoke BYOK) is a *named* confirmation ("Confirm you want to disconnect GitHub? The org's App install is marked removed and a content-purge job is scheduled") in a real dialog (a `role="alertdialog"`, focus-trapped, a confirm button labelled with the action).
 
 ## 6. The CI gates (accessibility is *checked, not hoped*)
 
@@ -49,7 +49,7 @@ WCAG 2.1 AA as a hard requirement (NFR-24). Accessibility is not a late pass —
 | **Static a11y** | axe-core (Playwright `@axe-core/playwright` or the `jest-axe`/vitest-axe) on every page + component | 0 critical/serious violations on the rendered dashboard (contrast, labels, roles, focus) |
 | **Keyboard-only** | A Playwright spec that navigates + acts on the top 5 journeys (J1–J5) using *only* keyboard + a screen-reader-equivalent (focus order + `aria-live` announcements asserted) | A journey that's unreachable by keyboard fails |
 | **Reduced motion** | A Playwright run with `prefers-reduced-motion: reduce` emulated | Content still appears (no blank/hidden-on-reduced-motion state); a motion-gated interaction has its alternative |
-| **Screen-reader data** | An axe + a manual `aria-live` assertion on the key announcements (findings-loaded, actioned, quota-change) | A data change the screen reader can't perceive fails |
+| **Screen-reader data** | An axe + a manual `aria-live` assertion on the key announcements (findings-loaded, actioned, usage-change) | A data change the screen reader can't perceive fails |
 
 ## 7. The "what we don't do" list (the a11y anti-patterns)
 

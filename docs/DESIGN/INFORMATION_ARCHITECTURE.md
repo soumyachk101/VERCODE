@@ -6,11 +6,11 @@ The dashboard's navigation and page topology, organized around the five persona 
 
 | Destination (sidebar) | The one question | Persona home |
 | --- | --- | --- |
-| **Overview** | "What needs my attention *today*?" | Dana (cost/usage), Aisha (quota) |
+| **Overview** | "What needs my attention *today*?" | Dana (cost/usage), Aisha (usage) |
 | **Repositories** | "What's connected, and where's the risk concentrated?" | Marcus (trends) |
 | **Reviews** (PR list → detail) | "What did VERCODE find on *this* PR, and is it current?" | Priya (the daily loop) |
 | **Security** | "What's the most serious risk in my org right now?" | Marcus (triage) |
-| **Usage & billing** | "Am I getting value, and will I hit my cap?" | Aisha / Dana |
+| **Usage** | "Am I getting value, and where did the reviews come from?" | Aisha / Dana |
 | **Rules & AI** | "How is the review tuned for my team?" | Rahul (config) |
 | **Team & audit** | "Who did what, and who has access?" | Aisha / Rahul |
 
@@ -20,7 +20,7 @@ The sidebar order is the frequency order (Priya's daily path first, the config/a
 
 - **Sidebar (labelled, on the page ground):** the product mark + **org switcher** at the top; the 7 destinations above (each a *screen*, never an anchor into one long page); utilities (Settings) pushed to the bottom; the **user row** (avatar + name + a "sign out" action) at the very bottom.
 - **No global top bar** on most screens (9 of 23 in the study have one, but VERCODE's screens recede the chrome). Where a screen has a control row (search, date range, a primary action), it's in the *title row*, not a chrome bar.
-- **Org switcher:** switching org re-scopes every screen (the tenancy layer, `TENANT_ISOLATION.md`); the switcher shows the org name + plan badge ("Team"), and a "switch to another org" only when the user has >1.
+- **Org switcher:** switching org re-scopes every screen (the tenancy layer, `TENANT_ISOLATION.md`); the switcher shows the org name, and a "switch to another org" only when the user has >1.
 - **Breadcrumbs:** only on detail pages (Reviews → a PR → a commit's review). The last crumb is the h1.
 
 ## 3. Page topology
@@ -35,9 +35,9 @@ The sidebar order is the frequency order (Priya's daily path first, the config/a
     /reviews/[repo]/[pr]  (a PR: its review job history by commit)
       /reviews/[repo]/[pr]/[commit]   (one review job: findings, summary, cost)
   /security               (org-wide rollup, severity-filtered)
-  /usage
-  /billing                (plan, invoices, upgrade)
+  /usage                  (plain reporting: reviews/tokens/cost, no cap)
   /settings
+    /settings/github      (personal OAuth + org App install + active-for-review repos)
     /settings/rules       (org + per-repo custom rules)
     /settings/providers   (AI provider + routing + BYOK)
     /settings/members     (members, roles, invitations)
@@ -51,8 +51,8 @@ The sidebar order is the frequency order (Priya's daily path first, the config/a
 
 - **Priya (J2):** sign-in → default to **Overview** (her open PRs with their review status) → **Reviews** → the PR's latest commit → **review detail** (read the verdict, open a finding, apply the fix) → a "Re-review" action (US-105) enqueues a new job. Her most-frequent job (act on a finding) is one click from the detail screen (the app-screens "most frequent job is one click away" rule).
 - **Marcus (J3):** **Security** → filter high/critical → open a finding (→ the PR + diff context) → mark "actioned" (a `finding_action`, feeds the north-star metric) → **Repositories** → a repo's finding-trend chart (category drill) → **Settings → Rules** → suppress a noisy category *for that repo*.
-- **Dana/Aisha (J4):** **Usage & billing** → cost/PR + reviews/day trend (the "spike" is annotated with the PR that caused it) → the **quota strip** (a `Charts.plan`-style track: the plan length, the spent part filled, the committed part lighter, an overrun past the end in the negative colour) → an 80% banner → **Billing** → upgrade (a provider flow; the plan shows "Upgrading…" until the verified webhook confirms it).
-- **Rahul (J5):** **Team & audit** → audit log (filter "permission changed") → a webhook-health indicator → **Settings → Providers** → rotate a BYOK key (masked display; the old key deactivates). He validates against `SECURITY_TEST_PLAN.md`.
+- **Dana/Aisha (J4):** **Usage** → cost/PR + reviews/day trend (the "spike" is annotated with the PR that caused it) → the month's totals strip (reviews, tokens, est. cost — plain reporting, no cap or percent) → a zero-spend month prints $0.00 + 0, not a dash.
+- **Rahul (J5):** **Team & audit** → audit log (filter "permission changed") → **Settings → GitHub connection** (the install state + the active-for-review set) → **Settings → Providers** → rotate a BYOK key (masked display; the old key deactivates). He validates against `SECURITY_TEST_PLAN.md`.
 - **New org (J1):** sign-in → **create org** → **Overview**'s empty state: "Connect GitHub to start reviewing PRs" (the first action, where the data will appear — the app-screens first-run rule) → the GitHub install flow → **Repositories** populates → a PR → the first review detail.
 
 ## 5. Empty-state IA (a screen with no data is still a designed screen)
@@ -65,7 +65,7 @@ Every destination has a **first-run** state (the whole screen empty) and an **in
 | Repositories | "No repositories connected yet" + "Install the App" | "No repos match this filter" (the filter, not the frame, is emptied) |
 | Reviews | "No pull requests reviewed yet — open a PR on a connected repo" | "No reviews for this repo this period" |
 | Security | "No high or critical findings yet" (a designed zero, not an absence of the screen) | "Nothing above *high* this week" (the filter names itself) |
-| Usage | A zeroed usage strip + the plan's quota track (the quota is visible even with 0 spend — it's the *plan*, not the data) | "No usage in this range" |
+| Usage | A zeroed usage strip + the month's totals (the totals print as real zeros even with no data — "$0.00", "0 reviews") | "No usage in this range" |
 
 The rule (app-screens §11): **an empty section keeps its frame and its header** + one sentence spanning the block (a 1px dashed box, ~38px tall). A *real zero* prints as a zero ("0 reviews", "$0.00"), never as a dash that reads as loading; a *missing* value is a grey dash.
 
@@ -78,4 +78,4 @@ The rule (app-screens §11): **an empty section keeps its frame and its header**
 
 ## 7. Naming & "words of the trade"
 
-Labels use the product's own vocabulary (app-screens §2.3): **"review"**, **"finding"**, **"verdict"**, **"severity"**, **"actioned"**, **"quota"**, **"install"** — never the template nouns "items/records/status". A status is named for its *meaning*: a skipped review shows **"Skipped — quota reached"** (the word of the trade + the reason), not "error"/"skipped". The audit log's actions are verbs of the product ("review.published", "role.changed", "byok.rotated").
+Labels use the product's own vocabulary (app-screens §2.3): **"review"**, **"finding"**, **"verdict"**, **"severity"**, **"actioned"**, **"install"** — never the template nouns "items/records/status". A status is named for its *meaning*: a skipped review shows **"Skipped — same SHA already reviewed"** (the word of the trade + the reason), not "error"/"skipped". The audit log's actions are verbs of the product ("review.published", "role.changed", "byok.rotated").

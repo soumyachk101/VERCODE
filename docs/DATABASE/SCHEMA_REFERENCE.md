@@ -21,11 +21,34 @@ model User {
   passwordHash  String    @map("password_hash")
   name          String?
   createdAt     DateTime  @default(now()) @map("created_at")
+
+  // Per-user GitHub OAuth ("Connect GitHub" on the account page).
+  // Null = not connected.
+  githubProviderToken String? @map("github_provider_token")
+  githubHandle        String? @map("github_handle")
+
   memberships   Membership[]
   sessions      Session[]
   auditEvents   AuditEvent[]
-  findByOk      BYOKKey[]
+  byokKeys      BYOKKey[]
+  oauthStates   GithubOAuthState[]
   @@map("users")
+}
+
+// Pending GitHub OAuth `state` tokens (anti-CSRF, 10-min TTL).
+// The token is random + unguessable; `usedAt` marks it consumed.
+model GithubOAuthState {
+  id         String   @id @default(cuid())
+  token      String   @unique
+  userId     String   @map("user_id")
+  redirectTo String?  @map("redirect_to")
+  expiresAt  DateTime @map("expires_at")
+  usedAt     DateTime? @map("used_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@map("github_oauth_states")
 }
 
 model Session {
@@ -56,7 +79,7 @@ model Organization {
   repos        GithubRepo[]
   settings     OrgSettings[]
   byokKeys     BYOKKey[]
-  billing      OrgBilling?
+  billing      OrgBilling? // DORMANT — see usage / billing note
   usage        UsageEvent[]
   audit        AuditEvent[]
   retention    RetentionJob[]
@@ -308,6 +331,7 @@ model OrgSettings {
   maxLines       Int      @default(3000) @map("max_lines")
   provider       String   @default("openai")
   tokenSpendCapMonthly Decimal @default(0) @map("token_spend_cap_monthly") @db.Decimal(12, 6)
+  activeReposForReview Json?  @map("active_repos_for_review")
   updatedBy      String   @map("updated_by")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
@@ -366,6 +390,14 @@ model BYOKKey {
 }
 
 // ---------------------------------------------------------------- usage / billing
+
+// DORMANT: `org_billing` / `billing_events` were the billing-feature models.
+// The billing package, webhooks, and plan/quota gating were removed in the
+// no-paywall change (usage reporting is now the live path: usage_events +
+// PLATFORM_TOKEN_SPEND_CAP_USD). These models remain in the Prisma schema
+// but have no live code path; they are retained pending a separate decision.
+// (tests/fixtures/webhook-events/ still carries the stripe-*.json fixtures,
+// likewise dormant.)
 
 model UsageEvent {
   id          String   @id @default(cuid())
@@ -477,5 +509,5 @@ enum RetStatus {
 
 - **`owner` uniqueness:** Prisma can't express a conditional unique index directly; the "exactly one owner" invariant is a *service-layer* check (on create/role-change) plus a migration-created partial unique index (`CREATE UNIQUE INDEX ... WHERE role='owner'`). The service check is the primary enforcement; the index is the backstop.
 - **BigInt FK for `githubRepoId`:** GitHub repo ids exceed int32; Prisma `BigInt` maps to `bigint`.
-- **Decimal precision:** `est_usd_cost` uses `DECIMAL(12,6)` (sub-cent resolution across a month), `confidence` `DECIMAL(3,2)`.
+- **Decimal precision:** `review_jobs.est_usd_cost` is `DECIMAL(10,6)`; `usage_events`/`usage_daily`/`org_settings` cost fields are `DECIMAL(12,6)` (sub-cent resolution across a month); `confidence` is `DECIMAL(3,2)`.
 - **`onDelete: Cascade`** on tenant children of `Organization` — deleting an org cascades its tenant rows (the hard-purge path, NFR-27); `usage_events.jobId` and `audit_events.*` are `SetNull` so the *records* survive the rows they reference being purged (audit integrity, `DATABASE_DESIGN.md` §6).

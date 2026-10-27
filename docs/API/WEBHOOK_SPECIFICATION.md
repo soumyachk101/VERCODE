@@ -1,6 +1,6 @@
 # VERCODE — Webhook Specification
 
-The two public, non-session ingress routes: **GitHub** and **billing**. Both follow the same shape: *public endpoint, signature-verified, idempotent, verify-then-handoff* (no heavy work on the ingress path).
+The single public, non-session ingress route: **GitHub**. It follows the *public endpoint, signature-verified, idempotent, verify-then-handoff* shape (no heavy work on the ingress path).
 
 ## 1. GitHub webhook (`POST /webhooks/github`)
 
@@ -20,9 +20,8 @@ The three layers are *defense in depth*: an attacker who guesses the delivery id
 | `installation` (deleted) | Deactivate install + repos → `disconnected`; schedule content purge (AC-204) |
 | `installation_repositories` (added/removed) | Upsert / disable `github_repos` |
 | `pull_request` opened/reopened/synchronize | Resolve the install→org; enqueue `review-queue` job `{ jobId, orgId, repoId, prNumber, commitSha }` (commit-SHA idempotency downstream, ADR-007) |
-| `pull_request` closed | Mark any in-flight job for this PR terminal; stop publishing |
-| `pull_request_review` submitted | Optional re-review trigger (US-105) — enqueues a fresh job for the head SHA if it changed |
-| `pull_request_target` | Fork PR: review in sandboxed context; publish to the *base* repo only |
+| `pull_request` closed/edited | Receipt-only ack (202, no enqueue; terminal-marking in-flight jobs is the later path) |
+| `pull_request_review` / `pull_request_target` | **Receipt-only acks** — a verified event in no known schema is acknowledged (202 `{ ok, event, receipt: true }`), not routed |
 
 **Ingress-time rules:**
 - The route *only* does verify + receipt + enqueue. It does **not** fetch diffs, run analysis, or call the AI (NFR-04 — the webhook's latency is constant regardless of review cost).
@@ -33,40 +32,16 @@ The three layers are *defense in depth*: an attacker who guesses the delivery id
 
 The event body is validated against per-event Zod schemas (e.g., `PullRequestEventSchema` → `action ∈ {opened, reopened, synchronize, closed}`, `number`, `pull_request.head.sha`, `repository.full_name`, `installation.id`). A verified-but-malformed body (signature OK, schema fail) → **422** + audit `webhook.malformed` + **not** enqueued. The signature proves *origin*; the schema proves *shape* — both are required.
 
-## 2. Billing webhook (`POST /webhooks/billing`)
-
-### 2.1 Verification
-
-- **Provider signature** (Stripe: `Stripe-Signature` header = `t=timestamp,v1=hmac`; Razorpay: `x-razorpay-signature` over the raw body). Computed with the per-provider webhook secret. Mismatch → **401** + audit `billing.rejected`.
-- **Timestamp tolerance** (provider-specific window, e.g., 5 min for Stripe) — a stale event is rejected (replay protection).
-- **Event idempotency** — `billing_events (provider, provider_event_id)` UK: a re-delivered event → **200 no-op** (AC-403, NFR-13).
-
-### 2.2 Event routing
-
-| Event (Stripe naming) | Hand-off |
-| --- | --- |
-| `checkout.session.completed` / `invoice.paid` | Move `org_billing.status` to `ACTIVE` (or `TRIALING`), set `plan` + `current_period_end` |
-| `customer.subscription.updated` | Update plan/period; on a downgrade, the new quota applies at period end |
-| `customer.subscription.deleted` | Move to `CANCELED` (at-period-end) or `PAST_DUE`→`CANCELED` |
-| `invoice.payment_failed` | Move to `PAST_DUE` (grace: reviews still run, a warning is surfaced) |
-| `invoice.finalized` | Fetch + store the invoice row (the billing page's invoice list) |
-
-**The authoritative-state rule (AC-403):** *only* these verified events move an org's plan/subscription state. A client claim of "I'm on Team" has **no** effect on `org_billing` — the dashboard shows the *provider-confirmed* state, and an "Upgrading…" state persists until the webhook confirms it.
-
-### 2.3 Grace behavior (PAST_DUE)
-
-On `invoice.payment_failed` → `PAST_DUE`: the org keeps its plan through the provider's grace period; the dashboard surfaces a warning banner. After grace, the provider moves it to `CANCELED`; from that point the org's *effective* plan is the canceled one, quota freezes, and new reviews are **skipped with a posted notice** (NFR-18 — never a silent stop, never a silent over-bill).
-
-## 3. Shared ingress guarantees
+## 2. Shared ingress guarantees
 
 | Guarantee | How |
 | --- | --- |
 | Public, no session | The route skips the session middleware; auth is signature-only |
 | Idempotent | delivery-id / event-id UK (a replay is a 200 no-op, not a double side-effect) |
 | No heavy work on ingress | verify + receipt + enqueue/state-transition only; everything else is queued or a bounded state write |
-| Every rejection is audited | 401/422/404 on either ingress writes an `audit_events` row with reason + source IP (a forged-webhook attempt is *investigable*, AC-901 area) |
+| Every rejection is audited | 401/422/404 on the ingress writes an `audit_events` row with reason + source IP (a forged-webhook attempt is *investigable*, AC-901 area) |
 | Constant latency | A slow provider or a large diff cannot slow the ingress (NFR-04, NFR-06) |
 
-## 4. The "never trust the sender's claim" rule
+## 3. The "never trust the sender's claim" rule
 
-A GitHub event says "this PR exists" — we *re-fetch* the PR before reviewing (the event is a trigger, not the source of truth). A billing event says "this customer is on Team" — we *reconcile* against the provider's customer id and only accept it if that customer id is one *we created* for a known org. A webhook is a *signal*, and the authoritative state is always re-derived server-side. This is what makes a forged-but-plausible payload inert: even a perfect forgery of the *body* fails the *signature*, and a signature-passing body is still reconciled against durable state.
+A GitHub event says "this PR exists" — we *re-fetch* the PR before reviewing (the event is a trigger, not the source of truth). A webhook is a *signal*, and the authoritative state is always re-derived server-side (the install→org resolution + the durable `review_jobs` row). This is what makes a forged-but-plausible payload inert: even a perfect forgery of the *body* fails the *signature*, and a signature-passing body is still reconciled against durable state.

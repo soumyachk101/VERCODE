@@ -5,9 +5,9 @@ Prisma migrations, versioned and forward-only, with documented rollback notes.
 ## 1. Conventions
 
 - One migration per logical schema change; **never** a squashed "everything" migration.
-- Migration files live in `packages/database/prisma/migrations/` (Prisma-managed); each has a `migration.sql` + a rollback note in a sibling `.rollback.md` (where a plain `DROP`/inverse isn't safe).
+- Migration files live in `packages/database/prisma/migrations/` (Prisma-managed); each has a `migration.sql` + a rollback note in a sibling `.rollback.md` (where a plain `DROP`/inverse isn't safe). *Status: the migrations directory has not been created yet — it is generated on the first `prisma migrate dev` / `prisma migrate deploy`; the `schema.prisma` is the source of truth until then.*
 - Migrations are **run in CI before deploy** against a disposable Postgres; a deploy that has not migrated is blocked.
-- **Zero-downtime rule (NFR-16):** any change to a *hot* table (`review_jobs`, `usage_events`, `review_findings`, `org_billing`) uses the **expand → backfill → contract** pattern:
+- **Zero-downtime rule (NFR-16):** any change to a *hot* table (`review_jobs`, `usage_events`, `review_findings`; `org_billing` is dormant — no live queries touch it) uses the **expand → backfill → contract** pattern:
   - *expand*: add the new column/index in a non-locks DDL,
   - *backfill*: a one-shot job or `UPDATE` backfills,
   - *contract*: drop the old shape in a *later* migration (never the same one).

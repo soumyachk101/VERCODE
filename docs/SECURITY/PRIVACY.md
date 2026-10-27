@@ -12,7 +12,7 @@ The privacy posture: what data VERCODE collects, why, who it's shared with, and 
 | GitHub install + connected repos (metadata: name, default branch, id) | Yes | The integration | Life of install; purged on removal (retention) |
 | **PR diff + bounded file context** | **Ephemeral** | The review input | **Not stored** (Redis 24 h cache only; NFR-28) |
 | **Findings + summary** (bounded code snippets) | Yes | The product output | Plan retention (NFR-27) |
-| Usage (tokens, cost, review count) | Yes | Billing + analytics | 24 mo |
+| Usage (tokens, cost, review count) | Yes | Usage reporting + abuse backstop (`usage_events`) | 24 mo |
 | Audit events | Yes | Compliance | 180 d min |
 | BYOK key | KMS-wrapped ciphertext | Org's own AI calls | Life of key; hard-purged on rotation/org-delete |
 | IP address | Yes (audit source_ip) | Security + compliance | Audit retention |
@@ -32,10 +32,10 @@ The privacy posture: what data VERCODE collects, why, who it's shared with, and 
 | --- | --- | --- |
 | **AI provider** (OpenAI/Anthropic/Ollama) | Bounded review context (changed files + 1-hop, token-capped) + the assembled prompt | The integration uses the provider's **no-training / zero-retention** classification where available (a data-processing addendum or the provider's business-tier "data is not used for training" setting); a BYOK/Ollama path lets an org keep the data on *their own* provider key / self-hosted model (the strongest control, for data-residency orgs) |
 | **GitHub** | The review (summary + inline comments) on the PR | The review is *posted content* the org asked for; the App's least-privilege scopes mean VERCODE reads only what it needs (FR-210) |
-| **Billing provider** (Stripe/Razorpay) | The org's subscription + payment metadata (card data is **tokenized by the provider — VERCODE never sees the PAN**) | PCI-DSS scope stays with the provider; VERCODE stores only the provider's customer/subscription id + plan state |
+| **GitHub (per-user OAuth)** | The user's repo access via their own OAuth token (`users.github_provider_token`); VERCODE stores the token + handle, the token is never sent to the browser or logs | The token is per-user and tenancy still comes from `org_id`; repo access is gated by `org_settings.active_repos_for_review`; disconnect clears the token + handle |
 | **Sentry / OTel collector** | Error + trace data | PII/secret scrubbed (no user email, no code content, no secrets in breadcrumbs/captures) |
 
-**The PCI point matters:** VERCODE is *not* in PCI cardholder-data scope — the provider tokenizes the card; VERCODE stores the tokenized customer id. This is a scope-reduction that's part of the billing design (INTEGRATION_DESIGN §2).
+**The OAuth point matters:** GitHub is now the primary third-party credential integrator (there is no billing processor). The per-user OAuth token is the customer's own GitHub access, scoped by `active_repos_for_review` and revocable on disconnect; VERCODE never exposes it beyond the server-side store, and no card/payment data touches VERCODE at all (no PCI scope).
 
 ## 4. Data-subject rights (the "erasable + exportable" posture)
 
@@ -54,12 +54,12 @@ A finding is an **analysis of a specific commit** — it's a record, not a mutab
 ## 6. Compliance posture (see COMPLIANCE_CONSIDERATIONS.md for the deep dive)
 
 - **Data residency:** the MVP is single-region (the Postgres/Redis region). Enterprise data-residency commitments (per-region deployment) are a Phase-3 capability (the architecture is region-portable — state lives in Postgres + Redis, no region-coupled logic).
-- **Sub-processors:** the AI provider, the billing provider, and the observability stack are *sub-processors*; the DPA/sub-processor list is maintained (compliance doc). A BYOK/Ollama path *reduces* the AI sub-processor exposure for sensitive orgs.
+- **Sub-processors:** the AI provider, the per-user GitHub OAuth, and the observability stack are *sub-processors*; the DPA/sub-processor list is maintained (compliance doc). A BYOK/Ollama path *reduces* the AI sub-processor exposure for sensitive orgs.
 - **The "no training on your code" commitment is structural + contractual:** structurally (bounded context, ephemeral content, no code telemetry) *and* contractually (the provider's no-training classification / DPA). A customer can verify the structural side (we can show what's in a provider call — it's bounded and scoped); the contractual side is the provider's DPA.
 
 ## 7. What we deliberately do not collect
 
 - **No IDE/keystroke telemetry, no code-completion data, no editor state** — VERCODE is PR-scoped, not IDE-scoped.
 - **No code-content analytics** shared with a third party (usage analytics are about the *review*, not the *code*).
-- **No card data** (PCI scope reduction, §3).
+- **No card/payment data** (no billing processor, §3 — VERCODE has no PCI cardholder-data scope at all).
 - **No whole-repo copies** (ephemeral content, §2.1).

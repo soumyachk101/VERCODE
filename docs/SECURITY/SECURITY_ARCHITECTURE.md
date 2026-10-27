@@ -22,7 +22,7 @@ The core invariant: **repository content is *input*, never *authority*.** The un
 
 ### 2.1 Ingress (the two machine paths)
 - **GitHub webhook:** HMAC-SHA256 + 5-min timestamp window + 24 h delivery-id dedup (`WEBHOOK_SPECIFICATION.md`). A forged event fails the signature; a captured event fails the window/dedup.
-- **Billing webhook:** provider signature + event-id idempotency. Only verified events move plan state (AC-403).
+- **GitHub OAuth (per-user connect):** state-token anti-CSRF (single-use, 10-min TTL, `github_oauth_states`); the exchanged token is stored server-side per user, never sent to the browser or logged.
 - **Human path:** cookie session, Argon2id, server-side revocation, no user enumeration (`AUTHENTICATION.md`).
 
 ### 2.2 Authorization (tenant + capability)
@@ -50,7 +50,7 @@ The core invariant: **repository content is *input*, never *authority*.** The un
 
 ## 3. The threat-to-control-to-test matrix (summary)
 
-The full STRIDE analysis is in `THREAT_MODEL.md` (T-01…T-16); the test plan that proves each mitigation is in `SECURITY_TEST_PLAN.md`. This table is the *architecture* view:
+The full STRIDE analysis is in `THREAT_MODEL.md` (T-01…T-13, T-15, T-16); the test plan that proves each mitigation is in `SECURITY_TEST_PLAN.md`. This table is the *architecture* view:
 
 | Threat (id) | Control layer | Verification |
 | --- | --- | --- |
@@ -64,10 +64,9 @@ The full STRIDE analysis is in `THREAT_MODEL.md` (T-01…T-16); the test plan th
 | Unsafe code execution (T-08) | Absent in MVP (ADR-008); Phase-2 sandbox boundary designed | `ST-sandbox-*` (Phase 2) |
 | Dependency vulnerability (T-09) | Dependency audit in CI; minimal dependency surface; pinned versions | CI `pnpm audit` gate |
 | Denial of service (T-10) | Per-org/user RPS limits; webhook constant-latency; queue backpressure | `IT-rate-01/02` |
-| API cost abuse (T-11) | Plan quotas + platform cap + anomaly alert + skip-with-notice | `ST-cost-abuse`, `IT-quota-skip` |
+| API cost abuse (T-11) | Platform token-spend cap + re-review rate limit + usage reporting + skip-with-notice | `ST-cost-abuse` |
 | Source-code leakage (T-12) | Ephemeral content; no whole-repo to providers; tenant isolation | `ST-context-bound`, `IT-tenant-*` |
 | Data retention violation (T-13) | Scheduled hard-purge; ephemeral content; export-before-delete | `IT-retention-01..03` |
-| Billing manipulation (T-14) | Provider-signature-only plan state; event-idempotency | `IT-payment-01..03` |
 | Admin privilege escalation (T-15) | Capability matrix + one-owner invariant + owner-transfer atomicity + audit | `IT-authz-*` |
 | Supply chain (T-16) | pnpm lockfile; no arbitrary build scripts (the `allowBuilds` policy is explicit); dependency audit | CI supply-chain gate |
 
@@ -75,6 +74,6 @@ The full STRIDE analysis is in `THREAT_MODEL.md` (T-01…T-16); the test plan th
 
 1. **The repository is the only place a query touches tenant data**, and it is `org_id`-scoped by construction (no "return all" method exists).
 2. **The webhook path does no LLM work** — an attacker who floods webhooks fills the queue, they can't burn the provider budget or the dashboard's latency (the ingress is constant-latency).
-3. **The plan state moves only on a verified provider webhook** — a client claim is inert (a billing-manipulation threat is structurally closed, not filtered).
-4. **A skip is never silent** — every quota/rate/budget stoppage leaves a user-visible record, which is simultaneously the UX rule and the abuse-detection signal (T-11).
+3. **Cost controls are server-side only** — usage reporting (`usage_events`) and the platform token-spend cap (`PLATFORM_TOKEN_SPEND_CAP_USD`) are authoritative; a client-supplied claim about spend or entitlement moves nothing (T-11).
+4. **A skip is never silent** — every cap/rate stoppage leaves a user-visible record, which is simultaneously the UX rule and the abuse-detection signal (T-11).
 5. **The redactor runs on every log record and every stored finding** — a secret that reaches a log or a finding is a *released* secret, so the redaction is a *gate*, not a best-effort (T-05, T-12).

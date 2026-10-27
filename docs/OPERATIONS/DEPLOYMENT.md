@@ -7,7 +7,7 @@ The three independently-deployable units + their managed dependencies + the dev/
 | Unit | What it is | Stateful? | Scales on |
 | --- | --- | --- | --- |
 | **`web`** | Next.js standalone build (`output: standalone`) | no | CPU / RPS |
-| **`api`** | Fastify (auth, dashboard REST, webhook ingress, billing webhooks) | no | CPU / RPS |
+| **`api`** | Fastify (auth, dashboard REST, webhook ingress) | no | CPU / RPS |
 | **`worker`** | the BullMQ consumer + the review pipeline | no | **queue depth** (KEDA-style autoscale on `review-queue` lag) |
 | **PostgreSQL 16** | the single source of truth (reviews, findings, orgs, usage, audit) | yes (managed, PITR) | the read-replica + the PgBouncer pool |
 | **Redis 7** | sessions + queues (BullMQ) + the org-scoped diff cache | yes (managed) | a sharded node if single-node is the bottleneck |
@@ -16,14 +16,14 @@ The three independently-deployable units + their managed dependencies + the dev/
 
 ## 2. Dev topology (Docker Compose)
 
-`infra/docker/compose.yaml` brings up the whole system **with no external credentials** (the mock-GitHub + mock-AI + mock-billing services stand in for the real integrations, so a full end-to-end pipeline run is local):
+`infra/docker/compose.yaml` brings up the whole system **with no external credentials** (the mock-GitHub + mock-AI services stand in for the real integrations, so a full end-to-end pipeline run is local):
 
 ```
-postgres (16)   redis (7)   web   api   worker   mock-github   mock-ai   mock-billing
+postgres (16)   redis (7)   web   api   worker   mock-github   mock-ai
 ```
 
 - `web`/`api`/`worker` are built from their Dockerfiles (a multi-stage: install → build → the standalone/runtime image).
-- `mock-github` is an HTTP stub (serves a canned PR diff + the install-token exchange + a review-publication recorder). `mock-ai` is the `mock` adapter (deterministic fixture outputs). `mock-billing` produces a Stripe test-mode signature.
+- `mock-github` is an HTTP stub (serves a canned PR diff + the install-token exchange + a review-publication recorder). `mock-ai` is the `mock` adapter (deterministic fixture outputs).
 - A `smoke` target (`compose run smoke`) boots the stack + hits the health endpoints + runs one mock PR through the pipeline → the "setup + deployment instructions are verified" step (DEFINITION OF DONE #15).
 - The Compose stack is *the* test-environment matrix row for CI's E2E + the local dev (a developer runs `docker compose up` and the whole pipeline works, no keys needed).
 
@@ -53,7 +53,6 @@ postgres (16)   redis (7)   web   api   worker   mock-github   mock-ai   mock-bi
 | `web`/`api`/`worker` | a container host (K8s/ECS) + a service mesh / load balancer |
 | GitHub | a GitHub App (the `GITHUB_APP_ID` + the KMS-wrapped `GITHUB_APP_PRIVATE_KEY` + the `GITHUB_WEBHOOK_SECRET`) + the App registered with the *minimum* scopes (`INTEGRATION_DESIGN §1.2`) |
 | AI provider | the provider's API key (the platform default) + the BYOK KMS key (per-org) |
-| Billing | the provider's secret key + the webhook secret (Stripe or Razorpay, `ADR-009`) |
 | Observability | the Sentry DSN + the OTel collector endpoint |
 | Secrets | the platform secret store + KMS (the App key, the BYOK master, the signing key) |
 

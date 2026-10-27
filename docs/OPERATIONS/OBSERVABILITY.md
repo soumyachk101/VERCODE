@@ -6,7 +6,7 @@ The "failures and retries are observable" requirement (DEFINITION OF DONE #12) i
 
 - **One JSON record per stage** of the review pipeline: `webhook.ingest`, `job.enqueue`, `diff.fetch`, `static.analyze`, `ai.review`, `findings.validate`, `github.publish`, `usage.record`. Every record carries the **correlation id** (= the `job_id`), the `org_id`, the stage, the outcome, and the duration.
 - **The redactor runs on *every* record before it's written** (`SECRETS_MANAGEMENT §3`, `ST-redaction-*`): a secret-shaped value in a log line is masked (`OPENAI_API_KEY=***`), not emitted. A log line is *not* a place a secret may reach.
-- **A skip is a log record, not an absence:** a `skipped: quota_exceeded` / `skipped: install_removed` / `skipped: same_sha` job writes a structured record with the `skip_reason` (the "never silent" rule, NFR-18) — an operator can query "why did this job not run?" from the log, and the dashboard's failed/skipped view reads the same rows.
+- **A skip is a log record, not an absence:** a `skipped: install_removed` / `skipped: same_sha` job writes a structured record with the `skip_reason` (the "never silent" rule, NFR-18) — an operator can query "why did this job not run?" from the log, and the dashboard's failed/skipped view reads the same rows.
 - **Levels + the PII scrub:** `debug` (dev only), `info` (the stage records), `warn` (a degraded stage, a retried publish), `error` (a terminal failure, a DLQ write). No PII (a user email, a name) in a log record beyond the `org_id`/`user_id` (the ids are the PII-safe join, not the PII itself).
 
 ## 2. Tracing (OpenTelemetry, one trace per pipeline)
@@ -27,7 +27,7 @@ The metrics are the *leading indicators* a canary + an on-call watch (`RELEASE_C
 | **provider error rate + fallback rate** | a provider degradation | a sustained fallback spike (a provider is degrading *before* review quality drops) |
 | **GitHub 4xx/5xx rate** | a GitHub-side issue (a rate-limit storm, an App-permission problem) | a sustained 4xx (the `GITHUB_RATE_LIMITED` partial states) |
 | **review-latency p95** | the NFR-02 budget (300 s) | a p95 breach |
-| **cost/review + the platform token-spend** | the cost-abuse backstop (`RATE_LIMITING §6`, `THREAT_MODEL T-11`) | a spend trend toward the `PLATFORM_TOKEN_SPEND_CAP_USD` |
+| **cost/review + the platform token-spend** | the cost-abuse backstop (`RATE_LIMITING §2`, `THREAT_MODEL T-11`) | a spend trend toward the `PLATFORM_TOKEN_SPEND_CAP_USD` |
 | **the web/worker/api error rates** | an unexpected exception (a 500, an unhandled worker crash) | a non-trivial rate (the Sentry captures are the detail) |
 | **the tenant-isolation audit rate** (`access.denied_cross_tenant`) | a cross-org access attempt | a non-zero rate (a 404 cross-tenant is *expected* for a user hitting the wrong org, but a *sustained* rate from one source is a probe — it's audited + alertable, `TENANT_ISOLATION §2`) |
 

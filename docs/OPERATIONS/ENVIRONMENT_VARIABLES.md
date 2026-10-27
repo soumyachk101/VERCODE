@@ -42,15 +42,7 @@ The full env-var inventory. `.env.example` (at the repo root) holds **placeholde
 
 **The model routing table + the rate table live in `packages/config`** (not env) — the concrete model ids are a *config* decision, versioned + auditable (`MODEL_ROUTING §1`), not a per-deploy env value. Env sets the *provider*; config sets the *model within the provider*.
 
-## 4. Billing (`billing`)
-
-| Var | Description | Placeholder |
-| --- | --- | --- |
-| `BILLING_PROVIDER` | `stripe` / `razorpay` (the adapter selection, ADR-009) | `stripe` |
-| `STRIPE_SECRET_KEY` | the Stripe secret key (env / secret store, *never* a DB column) | `<sk_test_...>` |
-| `STRIPE_WEBHOOK_SECRET` | the Stripe webhook-verification secret | `<whsec_...>` |
-| `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | the Razorpay credentials (the INR-market adapter) | `<rzp_test_...>` |
-| `BILLING_CURRENCY` | the billing currency (the INR path is a `INR` deploy, ADR-009) | `USD` / `INR` |
+> **The *billing* *vars* (a former `§4`: `BILLING_PROVIDER`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `RAZORPAY_KEY_ID`/`RAZORPAY_KEY_SECRET`, `BILLING_CURRENCY`) are *removed* with the no-paywall decision (ADR-009, SUPERSEDED): the `billing` *package*, the *billing* *routes* + *webhooks*, and the *mock-billing* *dev-stack* service are *gone*, and the `config` *package* no *longer* reads *any* *billing* *var* (the `.env.example` *regenerated* on a *config* *change* has *no* *billing* *section*).
 
 ## 5. Observability (`observability`)
 
@@ -61,11 +53,11 @@ The full env-var inventory. `.env.example` (at the repo root) holds **placeholde
 | `OTEL_SERVICE_NAME` | the per-process service name (`vercode-api`, `vercode-worker`, `vercode-web`) | `vercode-api` |
 | `LOG_LEVEL` | `debug`/`info`/`warn`/`error` (the redactor runs at *every* level, `SECRETS_MANAGEMENT §3`) | `info` |
 
-## 6. Quota + limits (`policy-engine` + `config`)
+## 6. Spend + limits (`config`)
 
 | Var | Description |
 | --- | --- |
-| `PLATFORM_TOKEN_SPEND_CAP_USD` | the **platform-level** monthly provider-spend ceiling (the cost-abuse backstop, `RATE_LIMITING §6` — an org's plan cap is *on top of* this, not instead of it) |
+| `PLATFORM_TOKEN_SPEND_CAP_USD` | the **platform-level** monthly provider-spend ceiling (the cost-abuse backstop, `RATE_LIMITING §2` — the *single* spend guardrail in the no-paywall product; an org-level cap does not exist) |
 | `DEFAULT_CONFIDENCE_FLOOR` | the default floor (0.6; an org's override is in `org_settings`, not env) |
 | `REVIEW_WALL_CLOCK_BUDGET_MS` | the pipeline's wall-clock cap (default 240 s, `REVIEW_ENGINE_SPEC §4`) |
 | `REVIEW_MAX_FILES` / `REVIEW_MAX_LINES` | the per-review budget defaults (60 files / 3000 lines, NFR-19; an org override is in `org_settings`) |
@@ -80,7 +72,6 @@ These are **defaults** — an org-level override is in the DB (`org_settings`), 
 | --- | --- |
 | `USE_MOCK_GITHUB=true` | the api/worker use the mock-GitHub stub (the Compose default; a live deploy is `false`) |
 | `USE_MOCK_AI=true` | the pipeline uses the deterministic mock provider (the Compose default; a live deploy is `false` + the real key) |
-| `USE_MOCK_BILLING=true` | the billing webhook is the Stripe test-mode signature source (the Compose default) |
 
 **A live deploy flips these to `false` + provides the real keys.** A deploy that's `true` is a *dev/mock* deploy (the live pipeline is *blocked*, the unverified-integration rule, `PHASE 10`) — a live-pipeline claim requires the `false` + the real keys + a verified run.
 

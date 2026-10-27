@@ -38,7 +38,7 @@ Stable IDs `NFR-##`. These are contractual; CI asserts where measurable.
 | ID | Requirement |
 | --- | --- |
 | NFR-17 | Modular monolith scales horizontally: API stateless (Redis-backed sessions/queues), workers horizontally scalable, Postgres connection-pooled |
-| NFR-18 | Cost guardrails: per-org hard caps on monthly tokens and review counts; over-quota jobs are *skipped with notice*, never silently dropped or silently billed beyond cap |
+| NFR-18 | Cost backstop: a platform-wide token-spend cap (`PLATFORM_TOKEN_SPEND_CAP_USD`); when hit, new review jobs are *skipped with a posted notice*, never silently dropped. The cap is an abuse backstop, not a plan quota — no per-plan or per-org tier gating exists |
 | NFR-19 | Per-review input budget capped (default 60 files / 3,000 lines); over-budget reviews degrade to a *review of the highest-risk files* with a note, not an error |
 
 ## Observability
@@ -62,7 +62,7 @@ Stable IDs `NFR-##`. These are contractual; CI asserts where measurable.
 
 | ID | Requirement |
 | --- | --- |
-| NFR-27 | Retention by plan: finding history Free 30 d / Developer 90 d / Team 1 y / Enterprise custom; audit log 180 d; usage events 24 months |
+| NFR-27 | Per-org retention: finding history retained per org; audit log 180 d; usage events 24 months |
 | NFR-28 | Repository content is ephemeral: raw diffs are not stored beyond the review lifetime (findings + summary stored, source text purged per FR-404 on disconnect) |
 | NFR-29 | No codebase embedding sent to AI providers beyond the bounded context of the changed files + 1-hop imports; provider contracts prohibit training on payload (verified against provider ToS at integration) |
 

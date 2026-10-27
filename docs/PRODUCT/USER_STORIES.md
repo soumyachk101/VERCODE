@@ -51,14 +51,14 @@ Each story: `US-<n>` — *As a* role, *I want* capability, *so that* value. Prio
 | US-304 | As an Admin, I want to store an encrypted BYOK API key, so my org controls spend/provider. | P1 |
 | US-305 | As an Admin, I want versioned custom rules, so changes are auditable. | P1 |
 
-## Usage, Billing, Audit
+## Usage, GitHub Connect, Audit
 
 | ID | Story | Priority |
 | --- | --- | --- |
-| US-401 | As an Owner, I want to see org usage vs plan quota, so I predict cost. | P0 |
-| US-402 | As an Owner, I want to be warned before quota is exhausted, so I can act. | P0 |
-| US-403 | As an Owner, I want to upgrade/downgrade/cancel the plan, so billing fits. | P0 |
-| US-404 | As an Owner, I want a per-review cost breakdown (tokens, model, USD), so I trust the bill. | P0 |
+| US-401 | As an Owner, I want to see plain org usage reporting (per-review tokens, model, USD cost), so I know what the reviews cost — no plans or quotas. | P0 |
+| US-402 | As an Admin, I want to connect GitHub (handle-only personal OAuth) and re-enable disconnected repos from the connect card, so I extend review coverage without re-installing. | P0 |
+| US-403 | As an Admin, I want to choose which connected repos are active for review, so I control where VERCODE posts. | P0 |
+| US-404 | As an Owner, I want a per-review cost breakdown (tokens, model, USD), so I trust the usage numbers. | P0 |
 | US-405 | As an Owner, I want to export usage history, so I can report internally. | P1 |
 | US-406 | As an Admin, I want a complete audit log (actor, action, timestamp, IP), so I can investigate. | P0 |
 | US-407 | As an Admin, I want the audit log to survive retention policies, so it's trustworthy. | P0 |

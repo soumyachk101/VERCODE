@@ -4,7 +4,7 @@ Journeys are written as concrete, testable scenarios. Each maps to acceptance cr
 
 ## J1 — First-time onboarding (new org)
 
-1. Visitor lands on marketing site → "Start free" → sign-up.
+1. Visitor lands on marketing site → "Get started" → sign-up.
 2. Signs in (email+password) → landing at "create your organization".
 3. Creates org → becomes Owner.
 4. Dashboard shows empty state: "Connect GitHub to start reviewing PRs".
@@ -36,13 +36,15 @@ Journeys are written as concrete, testable scenarios. Each maps to acceptance cr
 5. He opens Custom Rules → suppresses "style:console" category for `worker-service` only.
 6. Next reviews on that repo no longer post console-log findings.
 
-## J4 — Org cost management (Aisha/Dana)
+## J4 — Repo connection & usage visibility (Dana/Aisha)
 
-1. Dana opens Usage → sees reviews/day and cost/PR trend; spot check: this week's spike correlates with a large-migration PR.
-2. Aisha opens Billing → current plan "Team", monthly reviews used 78% of cap.
-3. System sends 80% quota warning email + in-app banner.
-4. Aisha caps spend: sets a hard monthly token budget. Next review that would exceed it: job is **skipped** (status `skipped`), and a "review skipped — quota exceeded" notice is posted on the PR. No silent failure.
-5. Aisha upgrades to Enterprise; cap increases; next PRs review normally.
+1. Dana opens the repositories page → the repo-connect card shows the install's account + repository selection, with known-but-disconnected repos listed as candidates.
+2. Dana re-enables `payments-service` from the candidates (POST `/orgs/:id/github/connect`) → the repo's row flips to connected, an audit event `org.github_repos_updated` is written.
+3. Dana (admin) selects the active-for-review set on the repositories page → VERCODE now reviews only that set.
+4. Dana opens Usage → sees per-review token + cost reporting (plain visibility, no plans or quotas) and the platform spend-cap status; the cap (`PLATFORM_TOKEN_SPEND_CAP_USD`) is an operational backstop — when total platform spend crosses it, the *platform* is alerted, not the customer: no per-PR job is skipped for hitting it (there is no customer-visible "cap skip" today), and per-org usage is unlimited and visible only through the plain usage reports.
+5. Aisha (owner) checks Settings → GitHub connect: her personal GitHub handle is connected via OAuth (handle-only, no repo access) and shows on the account page.
+
+**Exit criterion:** from "connect a repo" to "first review of that repo visible in the dashboard" without any plan signup or billing step.
 
 ## J5 — DevSecOps security audit (Rahul)
 

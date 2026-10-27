@@ -1,6 +1,6 @@
 # VERCODE — Integration Test Plan
 
-The integration suite proves the *seams* (DB, queue, webhook, provider, GitHub, payment) with **real** Postgres + Redis (testcontainers) and **mock** external providers (the mock GitHub Octokit transport, the mock AI provider, the Stripe test-mode webhook signatures). A seam is tested real; only the *outer edge* (the network boundary) is mocked. A test that mocks the DB or the queue is not an integration test and is rejected in review.
+The integration suite proves the *seams* (DB, queue, webhook, provider, GitHub) with **real** Postgres + Redis (testcontainers) and **mock** external providers (the mock GitHub Octokit transport, the mock AI provider). There is *no payment seam*: the `billing` package, webhooks, and mock-billing service were removed with the no-paywall decision (commit `78b51d9`) — usage is plain visibility reporting, and the only bound is the platform's operational token-spend backstop. A seam is tested real; only the *outer edge* (the network boundary) is mocked. A test that mocks the DB or the queue is not an integration test and is rejected in review.
 
 The suite layout (`tests/integration/`) and the test IDs referenced from `ACCEPTANCE_CRITERIA.md` + `SECURITY_TEST_PLAN.md`:
 
@@ -11,7 +11,7 @@ The suite layout (`tests/integration/`) and the test IDs referenced from `ACCEPT
   - **mock AI provider** — a deterministic `completeStructured` that returns fixture-shaped outputs (a "good" output, a "schema-invalid" output, a "steered/leak" output, a "down" that throws). The test *selects* which behavior by a config flag, so one provider serves every case.
   - **mock GitHub** — an HTTP stub that serves a canned PR diff, an install-token exchange, and a review-publi
 cation endpoint that records what was posted (the assertion target). The *webhook direction* is driven by the test POSTing a pre-computed signed event (a fixture with a real HMAC against the test `GITHUB_WEBHOOK_SECRET`).
-- **The Stripe test-mode webhook** — a `Stripe.constructEvent`-style pre-computed payload + signature (the provider's test library, a deterministic signature, no live call).
+- **The GitHub webhook direction** is driven by the test POSTing a pre-computed signed event (a fixture with a real HMAC against the test `GITHUB_WEBHOOK_SECRET`); the *billing* seam is *gone* (the Stripe test-mode webhook + `billing` package were removed with the no-paywall decision, commit `78b51d9`) — there is *no* payment-event test in the suite.
 
 ## 2. GitHub webhook (the ingress seam, `IT-webhook-*`)
 
@@ -61,14 +61,13 @@ cation endpoint that records what was posted (the assertion target). The *webhoo
 | `IT-publish-summary-only` | A review with zero publishable findings | A summary review is posted (verdict + "no actionable findings above threshold"); *no* inline comments; the job is `succeeded` (an empty review is a valid outcome, not an error) |
 | `IT-publish-idempotent` | A re-run of a job that already published | The stored `published_github_review_id` → a no-op (no second review, NFR-13) |
 
-## 7. Payment events (the billing seam, `IT-payment-*`)
+## 7. Platform spend-cap backstop (`IT-spend-cap-*`)
+
+The *billing* seam (`org_billing`, `billing_events`, the plan state machine) is *removed* (the no-paywall decision, commit `78b51d9`); the only bound is the *platform's* operational token-spend cap, `PLATFORM_TOKEN_SPEND_CAP_USD` — a config-only backstop that raises a *platform alert* when total spend crosses the limit (`INTEGRATION_DESIGN §2.3`; the worker has *no* per-org enforcement). There is *no* per-org quota and no customer-visible per-PR skip.
 
 | Test | Setup | Assertion |
 | --- | --- | --- |
-| `IT-payment-01` | A verified `invoice.paid` / `customer.subscription.updated` | `org_billing.status` → `active` (the plan moves); the `organizations.plan` is reconciled; a `billing_events` row (the idempotency record) |
-| `IT-payment-02` | An *unsigned* / forged billing event, or a client claim "plan=enterprise" | `org_billing` is **unchanged** (a client claim is inert, AC-403); the event is rejected + audited |
-| `IT-payment-03` | A re-delivered event (same event id) | A 200 no-op; the state is not double-moved (the `billing_events` UK makes it a no-op) |
-| `IT-payment-grace` | An `invoice.payment_failed` → `past_due` | The org keeps its plan through the grace window (reviews still run, a warning surfaces); after grace → `canceled` → quota frozen + new reviews `skipped` with a notice (NFR-18, never a silent stop, never a silent over-bill) |
+| `IT-spend-cap-alert` | Platform-wide spend crosses `PLATFORM_TOKEN_SPEND_CAP_USD` | The *ops* alert fires (the anomaly signal, `RATE_LIMITING §2`'s "anomaly alert"); **no** job is skipped — the cap is a backstop, not a gate |
 
 ## 8. Tenant isolation (the release-gate seam, `IT-tenant-01..05`)
 
@@ -92,4 +91,4 @@ cation endpoint that records what was posted (the assertion target). The *webhoo
 
 ## 10. The seam rule (the review gate)
 
-A test is an **integration test** iff it: (a) uses the *real* Postgres + Redis (testcontainers), (b) exercises a *cross-boundary* behavior (a webhook→queue→worker→DB→GitHub flow, a payment-event→plan-state, a tenant read), and (c) mocks *only* the network outer edge (the GitHub transport, the AI provider, the provider-webhook signature — with the mocks being *deterministic* + the assertion targets being *recorded side-effects*). A test that fails any of (a)–(c) is either a unit test (move it to the package) or a defect (a mocked DB/queue, rejected in review).
+A test is an **integration test** iff it: (a) uses the *real* Postgres + Redis (testcontainers), (b) exercises a *cross-boundary* behavior (a webhook→queue→worker→DB→GitHub flow, a spend-cap→ops-alert, a tenant read), and (c) mocks *only* the network outer edge (the GitHub transport, the AI provider — with the mocks being *deterministic* + the assertion targets being *recorded side-effects*). A test that fails any of (a)–(c) is either a unit test (move it to the package) or a defect (a mocked DB/queue, rejected in review).

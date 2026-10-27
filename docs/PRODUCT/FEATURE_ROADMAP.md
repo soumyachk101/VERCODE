@@ -7,7 +7,7 @@ Phase 0 (MVP) is the foundation. Later phases build on it. Every phase lists its
 **Exit:** end-to-end checklist in `MVP_SCOPE.md` passes with at least one real (or credentialed-mock) PR review published to GitHub, dashboard live on real data, security suite green.
 
 Workstreams:
-1. **Contracts + plans** — close the broken `plans.js` import; lock the shared schemas. *(week 1)*
+1. **Contracts + shared schemas** — lock the shared schemas. *(week 1)*
 2. **Auth + org + roles + tenancy** — sessions, invitations, RBAC, `org_id` scoping middleware. *(weeks 1–3)*
 3. **Database + Prisma** — schema, migrations, indexes, tenant isolation. *(weeks 2–4)*
 4. **GitHub App + webhooks** — install, repo discovery, PR events, signature validation, rate-limit handling. *(weeks 4–6)*
@@ -15,7 +15,7 @@ Workstreams:
 6. **Publication** — inline comments + summary, validated anchoring, fallback, idempotency. *(weeks 9–10)*
 7. **Queue + worker** — BullMQ, retry policy, dead-letter, observability. *(weeks 8–11)*
 8. **Dashboard (all P0 pages)** — against real API, no fabricated data. *(weeks 10–14)*
-9. **Usage + billing (stub) + audit** — quotas enforced, Stripe state, audit log. *(weeks 12–14)*
+9. **Usage reporting + audit + GitHub connect** — plain usage analytics from `usage_events` (no plan/quota gating; the platform token-spend cap is the only spend backstop), audit log, GitHub connect settings + repo-connect UI. *(weeks 12–14)*
 10. **Security suite + observability + Docker/CI** — *(weeks 13–16)*
 
 ## Phase 1 — Trust & Scale (post-MVP, ~8–12 weeks)
@@ -23,7 +23,7 @@ Workstreams:
 - **P1 auth:** SSO (OIDC), passkeys, org lifecycle (leave/delete + purge)
 - **P1 AI:** BYOK key-management UX, multi-provider (Anthropic/Ollama), provider fallback polish, content-hash short-circuit for identical force-pushes
 - **P1 repo intelligence:** test-file discovery + missing-coverage hints
-- **P1 commercial:** live Stripe payment capture, invoices, usage export
+- **P1 reporting:** usage export (CSV/API), cost breakdowns per repo/provider
 - **Scale-out:** Postgres read replica for dashboard, Redis-based dashboard caching, connection pooling
 - **Exit:** SSO live on one org, BYOK on one org, content-hash dedup cuts review cost on re-pushes by ≥ 40%, zero cross-tenant regressions.
 
@@ -33,14 +33,14 @@ Workstreams:
 - **pgvector semantic retrieval** for large monorepos; incremental re-index on merge
 - **Multi-platform:** GitLab (first), Bitbucket (second) adapters behind the same review engine
 - **IDE extension** (VS Code) — read VERCODE findings in-editor, one-click re-review
-- **Exit:** sandboxed test-execution available on Team+ plans; ≥ 1 GitLab org live; IDE extension beta.
+- **Exit:** sandboxed test-execution available; ≥ 1 GitLab org live; IDE extension beta.
 
 ## Phase 3 — Enterprise & Product Depth (ongoing)
 
 - **Enterprise SSO + SCIM**, audit export (SIEM), data-residency regions
 - **Custom rules engine v2:** user-authored lint-as-prompt rules with test cases
 - **Review QA flywheel:** org "dismissed" findings feed a per-org preference model (privacy-scoped)
-- **Cost analytics + budget alerts** → automated plan-upgrade recommendations
+- **Cost analytics + budget alerts** → automated platform spend-cap tuning recommendations
 - **Exit:** ≥ 3 enterprise logos, SCIM live, zero PII in logs audited clean.
 
 ## Cross-cutting (every phase)

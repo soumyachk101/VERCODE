@@ -25,8 +25,8 @@
 
 - Cares about cost, throughput, and whether the AI tool is earning its seat.
 - Pain: AI spend is a black box; can't answer "what does each review cost" or "which team's PRs are the highest risk."
-- What VERCODE must do: per-review cost accounting, org usage vs plan quotas, review-coverage (% of merged PRs reviewed), cost/review trend.
-- Success for Dana: monthly report, one page, answers "are we getting value for the plan we're on?" in < 5 minutes.
+- What VERCODE must do: per-review cost accounting, org usage reporting (plain visibility, no plan tiers), review-coverage (% of merged PRs reviewed), cost/review trend.
+- Success for Dana: monthly report, one page, answers "are we getting value from the tool?" in < 5 minutes.
 
 ## Persona 4 — The DevSecOps / Platform Engineer
 
@@ -41,12 +41,12 @@
 
 **Name (anonymized): "Aisha"** · CTO, 15-person startup, founder-led.
 
-- Needs to keep cost predictable while scaling the team.
-- Pain: surprise AI bills; no way to set a hard cap.
-- What VERCODE must do: plan-based hard caps with graceful behavior (skip review + post notice on the PR, not fail silently), upgrade/downgrade path, cancellation with data export.
-- Success for Aisha: sets a monthly cap, gets warned at 80%, and the cap holds even under a bad week of large PRs.
+- Needs to keep AI spend predictable while scaling the team.
+- Pain: surprise token spend from a bad week of large PRs; no hard backstop.
+- What VERCODE must do: plain usage reporting so spend is always visible, and the platform token-spend cap as an abuse backstop (skips with posted notice, not silent).
+- Success for Aisha: sees cost/PR trends on the usage page, knows the backstop exists, and reviews keep flowing on the repos she chooses to connect.
 
 ## Persona notes
 
-- All personas see the **same dashboard** but different emphasis: Priya lives in *review detail*, Marcus in *security rollup + trends*, Dana in *cost/usage*, Rahul in *config + audit*, Aisha in *billing/quotas*.
+- All personas see the **same dashboard** but different emphasis: Priya lives in *review detail*, Marcus in *security rollup + trends*, Dana in *cost/usage*, Rahul in *config + audit*, Aisha in *usage + GitHub connect*.
 - The dashboard information architecture (`DESIGN/INFORMATION_ARCHITECTURE.md`) maps these five paths.

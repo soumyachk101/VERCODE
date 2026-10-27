@@ -1,6 +1,6 @@
 # VERCODE — Integration Design
 
-This document covers the two hard integrations: **GitHub** and **billing providers**. AI-provider integration is specified in `AI_SYSTEM_DESIGN.md` / `MODEL_ROUTING.md`.
+This document covers the two hard integrations: **GitHub** (App install + user OAuth connect) and **AI providers**. AI-provider integration is specified in `AI_SYSTEM_DESIGN.md` / `MODEL_ROUTING.md`.
 
 ## 1. GitHub App
 
@@ -73,52 +73,56 @@ worker ──(installation token)──▶ GitHub REST/GraphQL
 | Install removed mid-pipeline | Detection (401/404 on token) → job `skipped: install_removed`; no publish |
 | PR closed during review | Publish attempt gets a clean "PR closed" → mark job `skipped: pr_closed`, no retry |
 
-## 2. Billing providers
+## 2. GitHub user OAuth (connect settings + repo connect)
 
-### 2.1 Provider abstraction
+### 2.1 Scope
 
-`packages/billing` exposes a `BillingProvider` interface:
+Two complementary GitHub paths:
 
-```
-interface BillingProvider {
-  createCustomer(org): Promise<externalCustomerId>
-  startSubscription(org, plan, externalCustomerId): Promise<subscriptionId>
-  handleEvent(rawBody, signatureHeader): Promise<VerifiedEvent>   // verify + decode
-  cancelSubscription(subscriptionId, atPeriodEnd: boolean): Promise<void>
-  fetchInvoices(customerId): Promise<Invoice[]>
-}
-```
+- **GitHub App install (section 1)** — the org-level webhook/review integration: installs, installation tokens, PR webhooks, review publication.
+- **User-level GitHub OAuth** — the per-user "connect GitHub" flow on the account page and settings (`apps/web/src/app/settings/github/`): the user links their GitHub account and manages which of their repos are visible to the platform (the repo-connect UI). No billing of any kind exists in this integration; usage is a plain visibility report (section 2.3).
 
-Adapters: **Stripe** (default in dev + global-card production), **Rajatko/Razorpay** (India INR + UPI; see ADR-009 for the eligibility note). The *state machine* and the *webhook-verification pattern* are provider-agnostic; the adapter is a swappable leaf.
-
-### 2.2 State machine (org plan)
+### 2.2 OAuth flow (user connect)
 
 ```
-trialing → active(plan) ⇄ changed-plan
-                │
-                ├──> past_due (grace: reviews still run, warning surfaced)
-                │         │
-                │         └──> canceled (grace period → then `canceled`: quota frozen, new reviews skipped with notice, data retained per policy)
-                └──> paused / churned
+web (settings/github + account page)
+  ──▶ api GET /auth/github/start (session required)
+      → creates a `github_oauth_states` row (random token, 10-min TTL, anti-CSRF)
+      → returns the GitHub authorize URL (redirect_uri = ${WEB_BASE_URL}/auth/github/callback)
+  ──▶ GitHub authorize page (user grants)
+  ──▶ api GET /auth/github/callback
+      → verifies + consumes the `state` token (single use; stale/expired → re-start)
+      → exchanges the code for a token, stores it on `users`
+        (`github_provider_token`, `github_handle`); `handle` is the display name
+      → redirects to ${WEB_BASE_URL}/settings/account?github=connected
+  ──▶ api POST /auth/github/disconnect
+      → clears the user's token/handle (null = not connected)
 ```
 
-- **Only verified provider webhooks move this machine.** `invoice.paid`, `subscription.updated`, `subscription.deleted` are the authoritative inputs (AC-403).
-- **Idempotency:** a `billing_events(event_id PK)` table — a re-delivered event is a no-op.
-- **Grace on `past_due`:** the org keeps its plan until the grace period; after that, quota freezes and new reviews are `skipped` with a posted notice (NFR-18 behavior, not silent failure).
+Invariants: the `state` token is random + unguessable with a 10-minute TTL and is consumed exactly once (`usedAt` marks it); the token exchange happens server-side — the user's GitHub token never reaches the browser; the stored token is treated as user-scoped credential material, not org-scoped.
 
-### 2.3 Usage accounting
+### 2.3 Usage reporting (no billing)
 
-- Every completed review writes a `usage_events` row (`org_id`, `month`, `review_count +1`, `input_tokens`, `output_tokens`, `est_usd_cost`).
+There is no billing integration: no plan state, no quota gating, no payment webhooks. Usage is a plain visibility report.
+
+- Every completed review writes a `usage_events` row (`org_id`, month, review count, `input_tokens`, `output_tokens`, `est_usd_cost`, `model`, `prompt_version`).
 - An hourly rollup builds `usage_daily` (the dashboard read path, NFR-03).
-- The pre-flight quota check (worker) reads the *monthly* aggregate from `usage_events` + `org_billing.quota` (from `plans.ts`) — if `month_review_count >= quota.reviews` or `month_token_spend >= quota.token_spend_cap` → `skipped: quota_exceeded` (AC-401/402).
-
-### 2.4 What the dashboard shows vs. what it can do
+- Token spend is bounded only by the platform-level `PLATFORM_TOKEN_SPEND_CAP_USD` safety cap — an operational guardrail, not a per-org plan quota. Over-cap behavior is a platform alert, not a customer-visible skip.
 
 | Read | Mutate |
 | --- | --- |
-| Plan, invoices, usage, quota | Upgrade/downgrade/cancel (owner/admin only, via provider) |
+| Usage events + rollups, per-user GitHub connection state | Connect/disconnect GitHub (the user's own account only) |
 
-A client can *request* an upgrade; the actual plan change lands only when the provider webhook confirms it. The "Upgrading…" state is shown until then — never claimed complete from client input.
+### 2.4 Connect/repositories endpoints (org)
+
+The org-level connect surface (`apps/api` `github` routes, the P5 dashboard connect card):
+
+- `GET /:id/github/candidates` — known-but-disconnected repo rows under an ACTIVE install, for the connect card's pick list; `connected: false` switches the card to the "install the App" shape.
+- `POST /:id/github/connect` — the intent step (audit line + install URL), or pins a specific known repo row when given a `{ fullName }` body.
+- `GET /:id/github/repositories` — the superset of known repos (connected + disabled) for the settings list.
+- `PUT /:id/github-repos` — the org's active-for-review repo set, stored on `org_settings.activeReposForReview`.
+
+The actual install record still comes from the `installation` webhook (section 1.4) — the connect routes are intent/UI affordances around it.
 
 ## 3. AI provider integration
 

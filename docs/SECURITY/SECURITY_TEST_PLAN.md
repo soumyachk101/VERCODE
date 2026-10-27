@@ -1,6 +1,6 @@
 # VERCODE — Security Test Plan
 
-The test plan that *proves* the threat-model mitigations (T-01…T-16, `THREAT_MODEL.md`). These tests are **release gates**: a regression in any P0 security test blocks the release (a security defect cannot silently regress). Test IDs are referenced from `ACCEPTANCE_CRITERIA.md` and `TRACEABILITY_MATRIX.md`.
+The test plan that *proves* the threat-model mitigations (T-01…T-13, T-15, T-16 — T-14 removed with billing; `THREAT_MODEL.md`). These tests are **release gates**: a regression in any P0 security test blocks the release (a security defect cannot silently regress). Test IDs are referenced from `ACCEPTANCE_CRITERIA.md` and `TRACEABILITY_MATRIX.md`.
 
 All security tests live in `tests/security/` (a dedicated suite, run in CI on every PR + on every release candidate, in addition to the regular suite).
 
@@ -13,9 +13,8 @@ All security tests live in `tests/security/` (a dedicated suite, run in CI on ev
 | `ST-webhook-forged` | POST `/webhooks/github` with no signature / a wrong-key signature | 401 `WEBHOOK_REJECTED`; **no** queue write; an audit row is written with the source IP |
 | `ST-webhook-replay` | A valid event whose `X-Hub-Delivery` id was seen < 24 h ago | 200 no-op; the pipeline does **not** re-run; the dedup table has the id |
 | `ST-webhook-stale` | A valid signature but `X-Hub-Timestamp` > 5 min old | 401; audited |
-| `ST-billing-forged` | A billing webhook with a bad provider signature | 401 `BILLING_REJECTED`; `org_billing` state **unchanged** |
-| `ST-billing-replay` | A valid billing event, re-delivered (same event id) | 200 no-op; plan state is not double-moved |
-| `ST-billing-foreign` | A valid-signature event for a customer id VERCODE did not create | Rejected + audited; no org's plan state moves |
+
+> Note: `tests/fixtures/webhook-events/` still contains `stripe-*.json` fixtures from the removed billing flow. They are **dormant** — no live test or code path uses them; they remain only pending a separate cleanup decision (the Prisma schema's `OrgBilling`/`BillingEvent` models are likewise dormant).
 
 ### 1.2 Cross-tenant access (T-02) — the release gate
 
@@ -66,14 +65,11 @@ All security tests live in `tests/security/` (a dedicated suite, run in CI on ev
 | `ST-sandbox-cap` *(Phase 2)* | A sandboxed test OOMs / fork-bombs / loops | Hits its cap → structured `error`/`timeout`; the host is unharmed |
 | `ST-sandbox-clean` *(Phase 2)* | After a sandbox run | No filesystem/env residue |
 
-### 1.7 Billing manipulation (T-14)
+### 1.7 Cost abuse (T-11)
 
 | Test | Setup | Assertion |
 | --- | --- | --- |
-| `ST-billing-client-claim` | A client request body claims "plan=enterprise" | `org_billing` is **unchanged** (client state is inert; only a verified provider webhook moves it) |
-| `ST-billing-replay` | A payment event re-delivered | The idempotency table makes it a no-op |
-| `ST-quota-skip` (AC-402) | An org at 100% of its monthly review quota; a new PR webhook | The job is `skipped: quota_exceeded`, **zero** AI tokens consumed, a notice is posted on the PR |
-| `ST-cost-abuse` (T-11) | A flood of reviews against a misconfigured org | The platform token-spend ceiling holds (the provider-spend metric does not exceed the cap); over-cap jobs skip with a notice |
+| `ST-cost-abuse` | A flood of reviews against a misconfigured org | The platform token-spend cap (`PLATFORM_TOKEN_SPEND_CAP_USD`) holds — the provider-spend metric does not exceed the cap; over-cap jobs skip with a notice |
 
 ### 1.8 Privilege escalation (T-15)
 

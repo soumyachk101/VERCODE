@@ -9,7 +9,7 @@ The governing invariants (from the rest of the docs): **a failure is observable*
 | Severity | Definition | Examples | Response time |
 | --- | --- | --- | --- |
 | **SEV-1** (critical) | A *tenant-breach-class* or *total-outage* event | a cross-tenant row served (T-02 realized); a secret/platform-key leak (T-05/T-04); a *confirmed* prompt-injection that exfiltrated a secret (T-06); a Postgres loss with no PITR; a *provider outage that makes the whole product unavailable* | **immediate** (a page, a war-room within 15 min) |
-| **SEV-2** (high) | A *major-degradation* that a workaround doesn't fully cover | the AI provider is down (a *partial*-review degradation, not a total outage — the deterministic stage still works, ADR-005); the billing provider is down (a plan-state freeze); a *sustained* p95 latency breach (NFR-02); a *DLQ flood* (a queue back-pressure incident) | **within 1 h** (a named owner, a status page) |
+| **SEV-2** (high) | A *major-degradation* that a workaround doesn't fully cover | the AI provider is down (a *partial*-review degradation, not a total outage — the deterministic stage still works, ADR-005); a *sustained* p95 latency breach (NFR-02); a *DLQ flood* (a queue back-pressure incident) | **within 1 h** (a named owner, a status page) |
 | **SEV-3** (medium) | A *localized* defect or a *single-org* issue | a *specific* routing-table change regressed one org's review quality (the benchmark gate *should* have caught it — the incident is the "why did the gate pass"); a *single* repo's GitHub rate-limit exhaustion | **next business day** (a ticket + the owner) |
 | **SEV-4** (low) | A *cosmetic / no-customer-impact* issue | a dashboard label is wrong; a non-blocking 500 on a *dev-only* path | *normal* ticket cadence |
 

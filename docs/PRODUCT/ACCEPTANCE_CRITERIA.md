@@ -10,7 +10,7 @@ Criteria are test-oracle statements: each should be checkable by a named test or
 - Test: `UT-auth-01` (signup happy path), `UT-auth-02` (hashing), `IT-auth-lockout`.
 
 **AC-102 (FR-102)**
-- Given a signed-in user with no org, When creating an org, Then the user becomes a membership row with role `owner`; org row created with a default plan `free`; audit event `org.created`.
+- Given a signed-in user with no org, When creating an org, Then the user becomes a membership row with role `owner`; org row created; audit event `org.created`. (No plan tier: the org has no default plan — usage is recorded and visible from day one, nothing is gated.)
 
 **AC-103 (FR-103/FR-105)**
 - Given an owner/admin, When inviting an email, Then an invitation row is created with a role and a tokenized link; on acceptance the invitation is consumed and a membership row created. Invitations expire in 7 days. Duplicate pending invites for the same email collapse.
@@ -63,22 +63,18 @@ Criteria are test-oracle statements: each should be checkable by a named test or
 **AC-306 (FR-310)**
 - Every completed job records `input_tokens`, `output_tokens`, `model`, `provider`, `prompt_version`, and `est_usd_cost` (computed from the model's published per-token rates in the `config` package). These appear on the dashboard usage page without rounding below the cent.
 
-## Quotas & Billing
+## Usage & Spend Backstop
 
-**AC-401 (plan quotas, `plans.ts`)**
-- The four plans' quotas are defined in `packages/contracts/src/plans.ts` and are the *single source of truth*: the API quota check, the worker pre-flight check, and the dashboard display all import from there. A code review gate: no hardcoded quota numbers anywhere else.
-- Free: 50 reviews/mo, 20 files/review, concurrent 1, retention 30 d, 3 custom rules, model tier `standard`.
-- Developer: 500 reviews/mo, 60 files/review, concurrent 3, retention 90 d, 10 rules, `standard`.
-- Team: 5,000 reviews/mo, 100 files/review, concurrent 10, retention 1 y, 50 rules, `standard+strong`.
-- Enterprise: unlimited-ish caps configurable, retention custom, all model tiers, SSO/SCIM.
-- Test: `UT-plans-01` (import identity), `IT-quota-skip`.
+**AC-401 (usage reporting)**
+- Usage is a plain visibility report: the `usage_events` table and the per-job token/cost records (AC-306) are the source of truth. The dashboard usage pages render only rows for the requesting org; no plan, tier, or quota gates any review. There is no billing state, payment provider, or invoice in the system.
 
-**AC-402 (NFR-18)**
-- Given an org at 100% of its monthly review quota, When a new PR webhook arrives, Then the job is created with status `skipped` + reason `quota_exceeded`, a notice comment is posted on the PR, and *no* AI tokens are consumed for it. The user sees the skip on the dashboard with the reason.
+**AC-402 (NFR-18, platform spend cap)**
+- The platform token-spend cap (`PLATFORM_TOKEN_SPEND_CAP_USD`) is an *operational backstop*, not a plan quota: when total platform-wide token spend for the period reaches the cap, the platform raises an internal alert. It is **not** enforced per-org today and produces **no** per-PR customer-visible skip — per-org usage is unlimited and visible only via the plain usage reports (AC-401). No code emits a "spend-cap skipped" job status (the worker writes `same_sha`, `install_removed`, `pr_closed` skips only; the platform-cap backstop is config-only, no worker enforcement yet). With the cap unset, reviews proceed normally.
+- Test: `IT-spend-cap-alert` (cap crossed → the ops alert fires, **no** job is skipped), `IT-spend-cap-off` (unset → no gating).
 
-**AC-403 (billing state)**
-- Payment state changes come only from verified provider webhooks (Stripe `signature` header verified against the webhook secret). A client-supplied "payment complete" claim has no effect. Duplicate delivery of the same webhook event id is a no-op (idempotent handler, event id stored).
-- Test: `IT-payment-01` (verified webhook flips state), `IT-payment-02` (forged/unsigned ignored), `IT-payment-03` (replay no-op).
+**AC-403 (GitHub connect)**
+- Given an active GitHub App install, When the admin opens the GitHub connect settings page, Then they see the install account + repository selection and the list of known-but-disconnected repos (candidates); POSTing a candidate's `fullName` re-enables that repo row and returns `{ ok, fullName, installUrl }` with an audit event; an unknown name returns 404, an already-connected name a validation error. Choosing the active-for-review set persists to org settings (`github_repos_updated` audit event) and reviews run only against that set.
+- Test: `IT-github-connect-01` (candidate re-enable), `IT-github-connect-02` (unknown/already-connected errors), `IT-github-repos-set` (active-set persistence + audit).
 
 ## Dashboard & Observability
 
@@ -89,7 +85,7 @@ Criteria are test-oracle statements: each should be checkable by a named test or
 - A review pipeline run produces one OTel trace with spans: `webhook.ingest`, `job.enqueue`, `diff.fetch`, `static.analyze`, `ai.review`, `findings.validate`, `github.publish`, each carrying the correlation/job id; the trace is queryable by job id.
 
 **AC-503 (audit, FR-510)**
-- Every state-changing action (role change, rule change, key rotation, review skip, install removal, plan change) writes an audit event with actor id, action, target, timestamp, source IP; audit events are append-only (no update/delete path) and retained 180 d minimum. Test: `IT-audit-01`.
+- Every state-changing action (role change, rule change, key rotation, review skip, install removal, active-repo-set change) writes an audit event with actor id, action, target, timestamp, source IP; audit events are append-only (no update/delete path) and retained 180 d minimum. Test: `IT-audit-01`.
 
 ## Security (see `SECURITY/SECURITY_TEST_PLAN.md` for the full matrix)
 

@@ -104,9 +104,13 @@ it while open.
 
 ## Notes on what the security specs deliberately do NOT do
 
-- **No skipped / stubbed specs.** All four specs
-  (`security-webhook`, `security-tenant`, `security-injection`,
-  `security-quota`) run against real source and pass (18 tests total).
+- **No skipped / stubbed specs.** All three specs
+  (`security-webhook`, `security-tenant`, `security-injection`) run against
+  real source and pass (14 tests total). The fourth — `security-quota` —
+  was REMOVED (2026-10, no-paywall decision 78b51d9): `checkQuotaPlan` +
+  `FREE_QUOTA` no longer exist, so the spec could not compile. Cost abuse
+  is now bounded by the platform `PLATFORM_TOKEN_SPEND_CAP_USD` backstop
+  + an anomaly alert (`INTEGRATION_DESIGN.md §2.3`), not a per-org gate.
 - **Tenant spec** drives the *decision logic* (the 404-vs-403 split + the
   capability matrix) directly — it does not assert the dormant
   middleware, because asserting it would encode the P1 defect as
@@ -120,13 +124,15 @@ it while open.
   `verifyGitHubWebhook` + the in-memory queue seam (the `webhooks.test.ts`
   pattern), asserting forged → 401 + no enqueue + audit, replay → 200
   no-op.
-- **Quota spec** exercises the real `runReviewJob` + `checkQuotaPlan`
-  + `policy-engine` `checkQuota` with a mocked DB + a counting provider,
-  asserting over-quota → `skipped:quota_exceeded`, zero provider calls,
-  zero tokens, a posted notice.
+- **Quota spec** — REMOVED (2026-10). It exercised the real `runReviewJob`
+  + `checkQuotaPlan` + `policy-engine` `checkQuota`, asserting
+  over-quota → `skipped:quota_exceeded`, zero provider calls, zero
+  tokens, a posted notice. With the no-paywall decision (78b51d9) those
+  symbols are gone; the cost-abuse boundary is now the platform
+  `PLATFORM_TOKEN_SPEND_CAP_USD` backstop + an anomaly alert.
 
 **Pending M8 fixtures (marked, not fabricated):**
 `tests/fixtures/{injection,ai-malformed,webhook-events}/` exist but are
 empty — the specs generate their payloads inline so they run today. When
-M8 lands the fixture library, the four specs fold in by their ST-* ids
+M8 lands the fixture library, the three specs fold in by their ST-* ids
 (`README.md` "ST-* test id" column) without duplication.

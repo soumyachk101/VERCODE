@@ -1,10 +1,10 @@
 # VERCODE — Indexing Strategy
 
-Indexes are designed per query pattern, with `org_id` leading on every tenant-owned table (the tenancy invariant, `DATABASE_DESIGN.md` §8). Over-indexing is a write-cost and vacuum-cost liability; under-indexing is a p95-latency liability. This doc is the balance sheet.
+Indexes are designed per query pattern, with `org_id` leading on the tenant-scoped indexes that carry a tenancy filter (the tenancy invariant, `DATABASE_DESIGN.md` §8). A few job- or content-scoped indexes (e.g. `review_findings`'s `(job_id)` and `(file, line, category)`) are deliberately non-tenancy-prefixed because the query is already job-scoped. Over-indexing is a write-cost and vacuum-cost liability; under-indexing is a p95-latency liability. This doc is the balance sheet.
 
 ## 1. The tenancy rule
 
-Every index on a tenant-owned table **begins with `org_id`**. Consequences:
+Every tenant-owned index **begins with `org_id`** (where one exists). Consequences:
 
 - A tenant-scoped query is always an index prefix match → no cross-tenant row is ever scanned.
 - The leading `org_id` makes the tenancy property *physical*, not just logical: a query that omits `org_id` (a bug) either fails the tenancy middleware or, worst case, scans an org-sized slice, not the whole table.
@@ -16,11 +16,9 @@ Every index on a tenant-owned table **begins with `org_id`**. Consequences:
 | --- | --- | --- | --- |
 | `review_jobs` | `UK (org_id, repo_id, pr_number, commit_sha)` | Idempotency lookup; "was this commit reviewed?" | The dedup check (REVIEW_ENGINE_SPEC [1]) is a point lookup; the UK enforces it |
 | `review_jobs` | `(org_id, status, created_at)` | Dashboard "recent jobs", queue-drain, "failed reviews" filter | The overview + retries-observable views (DEFINITION OF DONE #12) |
-| `review_findings` | `(job_id)` | PR review detail (all findings for a job) | The detail page is job-scoped |
-| `review_findings` | `(org_id, severity, created_at)` | **Security rollup** (FR-504): high/critical findings, org-wide, time-filtered | The tech-lead triage path |
-| `review_findings` | `(org_id, category, created_at)` | Finding trends by category (FR-506) | The Marcus persona path |
-| `review_findings` | `(file, line, category)` | Dedup key lookup (in-memory primarily, but useful for the benchmark/audit joins) | REVIEW_ENGINE_SPEC [10] |
-| `usage_events` | `(org_id, month, created_at)` | Monthly quota gate aggregation + usage export | The pre-flight check (stage [0]) and AC-405 |
+| `review_findings` | `(job_id)` | PR review detail (all findings for a job) | The detail page is job-scoped (the live schema index) |
+| `review_findings` | `(file, line, category)` | Dedup key lookup (in-memory primarily, but useful for the benchmark/audit joins) | REVIEW_ENGINE_SPEC [10] (the live schema index) |
+| `usage_events` | `(org_id, month, created_at)` | Monthly usage aggregation + usage export | The usage-reporting path and AC-405 |
 | `usage_daily` | `UK (org_id, day)` | Dashboard trend charts (read path) | NFR-03 — never scan raw events for the chart |
 | `webhook_deliveries` | `(org_id, received_at)` + `UK (delivery_id)` | Replay dedup (point lookup on `delivery_id`) + org delivery history | NFR-06 |
 | `memberships` | `UK (org_id, user_id)` + `(org_id, role)` | Auth lookups; "who are this org's admins?" | RBAC resolution |
@@ -28,7 +26,7 @@ Every index on a tenant-owned table **begins with `org_id`**. Consequences:
 | `github_repos` | `UK (org_id, github_repo_id)` | "is this repo connected for this org?" | The repo-discovery upsert |
 | `audit_events` | `(org_id, created_at)` | Audit log page (org, time-ordered) | FR-510 |
 | `retention_jobs` | `(status, run_at)` | The retention queue pull (PENDING, due) | The scheduled-purge consumer |
-| `org_billing` | `PK (org_id)` | Plan state lookup | Billing state machine |
+| `org_billing` | `PK (org_id)` | Plan state lookup | **Dormant** — the billing feature was removed; no live queries read this table |
 | `byok_keys` | `UK (org_id, provider)` | "which key does this org use for provider X?" | Provider resolution |
 
 ## 3. What we deliberately do NOT index
